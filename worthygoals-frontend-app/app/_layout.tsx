@@ -7,6 +7,8 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { ROUTE_NAMES } from '@/constants/Routes';
+import { View } from 'react-native';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -51,8 +53,28 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name={ROUTE_NAMES.TABS.self} options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        <Stack.Screen
+          name={ROUTE_NAMES.AUTH.REGISTER}
+          options={{
+            headerShown: true,
+            headerTitle: () => <View />,
+          }}
+        />
+
+        <Stack.Screen
+          name={ROUTE_NAMES.AUTH.LOGIN}
+          options={{
+            headerShown: false
+          }}
+        />
+        <Stack.Screen
+          name={ROUTE_NAMES.ENTRY_SCREEN}
+          options={{
+            headerShown: false
+          }}
+        />
       </Stack>
     </ThemeProvider>
   );

@@ -6,6 +6,7 @@ import { Pressable } from 'react-native';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+import { ROUTE_NAMES } from '@/constants/Routes';
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
@@ -27,10 +28,10 @@ export default function TabLayout() {
         headerShown: useClientOnlyValue(false, true),
       }}>
       <Tabs.Screen
-        name="home-screen"
+        name={ROUTE_NAMES.TABS.HOME_SCREEN}
         options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: 'Home',
+          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
           headerRight: () => (
             <Link href="/modal" asChild>
               <Pressable>
@@ -48,10 +49,17 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="chat-screen"
+        name={ROUTE_NAMES.TABS.CHAT_SCREEN}
         options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: 'Mentors',
+          tabBarIcon: ({ color }) => <TabBarIcon name="users" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name={ROUTE_NAMES.TABS.INSPIRATION_SCREEN}
+        options={{
+          title: 'Inspiration',
+          tabBarIcon: ({ color }) => <TabBarIcon name="hacker-news" color={color} />,
         }}
       />
     </Tabs>
