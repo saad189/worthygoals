@@ -2,21 +2,19 @@ import React, { useState } from 'react';
 import { TouchableOpacity, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { emailValidator, passwordValidator } from '@/helpers';
-import BackButton from '@/components/SubComponents/BackButton';
 import Background from '@/components/SubComponents/Background';
+import { StackNavigationProp } from '@react-navigation/stack';
 import Logo from '@/components/SubComponents/Logo';
 import { Header } from 'react-native/Libraries/NewAppScreen';
 import TextInput from '@/components/SubComponents/TextInput';
 import Button from '@/components/SubComponents/Button';
 import { theme } from '@/core';
 import { ROUTE_NAMES } from '@/constants/Routes';
+import { useNavigation } from 'expo-router';
+import { ParamListBase } from '@react-navigation/native';
 
-
-type Props = {
-    navigation: any;
-};
-
-export default function LoginScreen({ navigation }: Props) {
+export default function LoginScreen() {
+    const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
     const [email, setEmail] = useState<{ value: string; error: string }>({ value: '', error: '' });
     const [password, setPassword] = useState<{ value: string; error: string }>({ value: '', error: '' });
 
@@ -36,7 +34,6 @@ export default function LoginScreen({ navigation }: Props) {
 
     return (
         <Background>
-            <BackButton goBack={navigation.goBack} />
             <Logo />
             <Header>Welcome back.</Header>
             <TextInput

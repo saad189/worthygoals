@@ -8,7 +8,6 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { ROUTE_NAMES } from '@/constants/Routes';
-import { View } from 'react-native';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -58,8 +57,7 @@ function RootLayoutNav() {
         <Stack.Screen
           name={ROUTE_NAMES.AUTH.REGISTER}
           options={{
-            headerShown: true,
-            headerTitle: () => <View />,
+            headerShown: false,
           }}
         />
 
@@ -75,6 +73,11 @@ function RootLayoutNav() {
             headerShown: false
           }}
         />
+        <Stack.Screen
+          name={ROUTE_NAMES.AUTH.START_AUTH}
+          options={{
+            headerShown: false
+          }} />
       </Stack>
     </ThemeProvider>
   );

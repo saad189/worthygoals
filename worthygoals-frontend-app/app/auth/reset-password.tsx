@@ -26,7 +26,7 @@ export default function ResetPasswordScreen({ navigation }: Props) {
 
     return (
         <Background>
-            <BackButton goBack={navigation.goBack} />
+            {/* <BackButton goBack={navigation.goBack} /> */}
             <Logo />
             <Header>Restore Password</Header>
             <TextInput

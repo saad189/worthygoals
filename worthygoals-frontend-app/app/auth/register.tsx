@@ -6,6 +6,9 @@ import TextInput from '@/components/SubComponents/TextInput';
 import { ROUTE_NAMES } from '@/constants/Routes';
 import { theme } from '@/core';
 import { emailValidator, nameValidator, passwordValidator } from '@/helpers';
+import { ParamListBase } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { useNavigation } from 'expo-router';
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
@@ -16,7 +19,8 @@ type Props = {
     navigation: any;
 };
 
-export default function RegisterScreen({ navigation }: Props) {
+export default function RegisterScreen() {
+    const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
     const [name, setName] = useState<{ value: string; error: string }>({ value: '', error: '' });
     const [email, setEmail] = useState<{ value: string; error: string }>({ value: '', error: '' });
     const [password, setPassword] = useState<{ value: string; error: string }>({ value: '', error: '' });
@@ -39,7 +43,7 @@ export default function RegisterScreen({ navigation }: Props) {
 
     return (
         <Background>
-            <BackButton goBack={navigation.goBack} />
+            {/* <BackButton goBack={navigation.goBack} /> */}
             <Logo />
             <Header>Create Account</Header>
             <TextInput
