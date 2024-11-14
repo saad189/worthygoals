@@ -16,7 +16,6 @@ type Props = {
 export default function StartScreen({ navigation }: Props) {
     return (
         <Background style={styles.container} >
-
             <Logo isWhite={true} />
             <Header>Evolve Membership</Header>
             <Button

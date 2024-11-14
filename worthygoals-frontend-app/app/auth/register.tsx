@@ -80,7 +80,7 @@ export default function RegisterScreen() {
                 Sign Up
             </Button>
             <View style={styles.row}>
-                <Text>Already have an account? </Text>
+                <Text style={{ color: theme.colors.primary }}>Already have an account? </Text>
                 <TouchableOpacity onPress={() => navigation.replace(ROUTE_NAMES.AUTH.LOGIN)}>
                     <Text style={styles.link}>Login</Text>
                 </TouchableOpacity>
@@ -96,6 +96,6 @@ const styles = StyleSheet.create({
     },
     link: {
         fontWeight: 'bold',
-        color: theme.colors.primary,
+        color: theme.colors.secondary,
     },
 });

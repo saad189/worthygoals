@@ -8,9 +8,9 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/splash-v1.png",
+      "image": "./assets/images/splash.png",
       "resizeMode": "cover",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#464546"
     },
     "ios": {
       "supportsTablet": true
@@ -18,9 +18,14 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/evolve-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#464546"
       },
       "package": "com.saad189.worthygoalsfrontendapp"
+    },
+    "androidStatusBar": {
+      "backgroundColor": "#464546",
+      "hidden": true,
+      "translucent": true
     },
     "web": {
       "bundler": "metro",

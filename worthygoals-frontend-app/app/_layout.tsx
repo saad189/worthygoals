@@ -3,11 +3,13 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import 'react-native-reanimated';
+import { View, StyleSheet, Animated } from 'react-native';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { ROUTE_NAMES } from '@/constants/Routes';
+import CustomSplashScreen from './custom-splash-screen';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -19,7 +21,6 @@ export const unstable_settings = {
   initialRouteName: '(tabs)',
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -29,22 +30,34 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
+  const [isSplashVisible, setIsSplashVisible] = useState(true);
+
+  // // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
   }, [error]);
 
   useEffect(() => {
+    // Simulate splash screen duration (e.g., 3 seconds)
+    const timer = setTimeout(() => {
+      setIsSplashVisible(false);
+    }, 100); // Adjust duration as needed
+
     if (loaded) {
       SplashScreen.hideAsync();
     }
+    return () => clearTimeout(timer); // Cleanup timer
   }, [loaded]);
 
   if (!loaded) {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <View style={{ flex: 1 }}>
+      {isSplashVisible || !loaded ? <CustomSplashScreen /> : <RootLayoutNav />}
+    </View>
+  );
 }
 
 function RootLayoutNav() {
@@ -59,19 +72,28 @@ function RootLayoutNav() {
           name={ROUTE_NAMES.AUTH.RESET_PASSWORD}
           options={{
             headerShown: true,
-            title: 'Reset Password'
+            title: 'Reset Password',
+            presentation: 'modal',
+            animationTypeForReplace: 'push',
+            animation: 'slide_from_bottom'
           }}
         />
         <Stack.Screen
           name={ROUTE_NAMES.AUTH.REGISTER}
           options={{
             headerShown: false,
+            presentation: 'modal',
+            animationTypeForReplace: 'push',
+            animation: 'slide_from_right'
           }}
         />
         <Stack.Screen
           name={ROUTE_NAMES.AUTH.LOGIN}
           options={{
-            headerShown: false
+            headerShown: false,
+            presentation: 'modal',
+            animationTypeForReplace: 'push',
+            animation: 'slide_from_left'
           }}
         />
         <Stack.Screen
@@ -83,7 +105,10 @@ function RootLayoutNav() {
         <Stack.Screen
           name={ROUTE_NAMES.AUTH.START_AUTH}
           options={{
-            headerShown: false
+            headerShown: false,
+            presentation: 'modal',
+            animationTypeForReplace: 'push',
+            animation: 'slide_from_bottom'
           }} />
       </Stack>
     </ThemeProvider>

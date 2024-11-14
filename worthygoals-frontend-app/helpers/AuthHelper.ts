@@ -13,7 +13,8 @@ export const emailValidator = (email: string) => {
 
 export const passwordValidator = (password: string) => {
     if (!password) return "Password can't be empty."
-    if (!validatePassword(password)) return 'Password not valid.'
+    // Activate later
+    //  if (!validatePassword(password)) return 'Password not valid.'
     return ''
 }
 
