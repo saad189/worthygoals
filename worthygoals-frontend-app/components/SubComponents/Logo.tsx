@@ -1,14 +1,19 @@
 import React from 'react';
 import { Image, StyleSheet } from 'react-native';
 
-export default function Logo() {
-    return <Image source={require('@/assets/images/AuthButtons/logo.png')} style={styles.image} />;
+export default function Logo({ isWhite }: { isWhite?: boolean }) {
+    const location = isWhite
+        ? require('@/assets/images/evolve-logo-white.png')
+        : require('@/assets/images/evolve-logo.png');
+
+
+    return <Image source={location} style={styles.image} />;
 }
 
 const styles = StyleSheet.create({
     image: {
-        width: 110,
-        height: 110,
+        width: 200,
+        height: 200,
         marginBottom: 8,
     },
 });

@@ -25,6 +25,7 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    Outfit: require('../assets/fonts/Outfit-VariableFont_wght.ttf'),
     ...FontAwesome.font,
   });
 
@@ -55,12 +56,18 @@ function RootLayoutNav() {
         <Stack.Screen name={ROUTE_NAMES.TABS.self} options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
         <Stack.Screen
+          name={ROUTE_NAMES.AUTH.RESET_PASSWORD}
+          options={{
+            headerShown: true,
+            title: 'Reset Password'
+          }}
+        />
+        <Stack.Screen
           name={ROUTE_NAMES.AUTH.REGISTER}
           options={{
             headerShown: false,
           }}
         />
-
         <Stack.Screen
           name={ROUTE_NAMES.AUTH.LOGIN}
           options={{

@@ -5,13 +5,14 @@ import { emailValidator, passwordValidator } from '@/helpers';
 import Background from '@/components/SubComponents/Background';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Logo from '@/components/SubComponents/Logo';
-import { Header } from 'react-native/Libraries/NewAppScreen';
+
 import TextInput from '@/components/SubComponents/TextInput';
 import Button from '@/components/SubComponents/Button';
 import { theme } from '@/core';
 import { ROUTE_NAMES } from '@/constants/Routes';
 import { useNavigation } from 'expo-router';
 import { ParamListBase } from '@react-navigation/native';
+import Header from '@/components/SubComponents/Header';
 
 export default function LoginScreen() {
     const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
@@ -26,6 +27,8 @@ export default function LoginScreen() {
             setPassword({ ...password, error: passwordError });
             return;
         }
+        // Add login functionlaity here
+        navigation.navigate(ROUTE_NAMES.TABS.HOME_SCREEN);
         navigation.reset({
             index: 0,
             routes: [{ name: ROUTE_NAMES.TABS.HOME_SCREEN }],
@@ -34,7 +37,7 @@ export default function LoginScreen() {
 
     return (
         <Background>
-            <Logo />
+            <Logo isWhite={true} />
             <Header>Welcome back.</Header>
             <TextInput
                 label="Email"

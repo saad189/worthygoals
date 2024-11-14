@@ -1,6 +1,7 @@
 import BackButton from '@/components/SubComponents/BackButton';
 import Background from '@/components/SubComponents/Background';
 import Button from '@/components/SubComponents/Button';
+import Header from '@/components/SubComponents/Header';
 import Logo from '@/components/SubComponents/Logo';
 import TextInput from '@/components/SubComponents/TextInput';
 import { ROUTE_NAMES } from '@/constants/Routes';
@@ -12,7 +13,7 @@ import { useNavigation } from 'expo-router';
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
-import { Header } from 'react-native/Libraries/NewAppScreen';
+
 
 
 type Props = {
@@ -35,6 +36,7 @@ export default function RegisterScreen() {
             setPassword({ ...password, error: passwordError });
             return;
         }
+        // We will add auth update here
         navigation.reset({
             index: 0,
             routes: [{ name: ROUTE_NAMES.TABS.HOME_SCREEN }],
@@ -44,7 +46,7 @@ export default function RegisterScreen() {
     return (
         <Background>
             {/* <BackButton goBack={navigation.goBack} /> */}
-            <Logo />
+            <Logo isWhite={true} />
             <Header>Create Account</Header>
             <TextInput
                 label="Name"

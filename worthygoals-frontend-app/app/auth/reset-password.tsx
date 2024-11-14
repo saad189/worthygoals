@@ -1,12 +1,12 @@
 import BackButton from '@/components/SubComponents/BackButton';
 import Background from '@/components/SubComponents/Background';
 import Button from '@/components/SubComponents/Button';
+import Header from '@/components/SubComponents/Header';
 import Logo from '@/components/SubComponents/Logo';
 import TextInput from '@/components/SubComponents/TextInput';
 import { ROUTE_NAMES } from '@/constants/Routes';
 import { emailValidator } from '@/helpers';
 import React, { useState } from 'react';
-import { Header } from 'react-native/Libraries/NewAppScreen';
 
 type Props = {
     navigation: any;
@@ -27,7 +27,7 @@ export default function ResetPasswordScreen({ navigation }: Props) {
     return (
         <Background>
             {/* <BackButton goBack={navigation.goBack} /> */}
-            <Logo />
+            <Logo isWhite={true} />
             <Header>Restore Password</Header>
             <TextInput
                 label="E-mail address"
