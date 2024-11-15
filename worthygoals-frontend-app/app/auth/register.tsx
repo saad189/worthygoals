@@ -14,8 +14,6 @@ import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 
-
-
 type Props = {
     navigation: any;
 };
@@ -37,10 +35,12 @@ export default function RegisterScreen() {
             return;
         }
         // We will add auth update here
+        navigation.navigate(ROUTE_NAMES.GOAL_SELECTION.self, { screen: ROUTE_NAMES.GOAL_SELECTION.SELECTION_SCREEN });
         navigation.reset({
             index: 0,
             routes: [{ name: ROUTE_NAMES.TABS.HOME_SCREEN }],
         });
+
     };
 
     return (

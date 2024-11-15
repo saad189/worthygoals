@@ -4,7 +4,7 @@ import { Stack } from "expo-router";
 export default function JourneyLayout() {
 
     return (
-        <Stack initialRouteName={ROUTE_NAMES.JOURNEY.INTRO_SCREEN}>
+        <Stack>
             <Stack.Screen name={ROUTE_NAMES.JOURNEY.INTRO_SCREEN} options={{ headerShown: false, animation: 'slide_from_right' }} />
             <Stack.Screen name={ROUTE_NAMES.JOURNEY.SELECT_DISCIPLINE_SCREEN} options={{ headerShown: false, animation: 'slide_from_right' }} />
             <Stack.Screen name={ROUTE_NAMES.JOURNEY.PROVIDE_INFO_SCREEN} options={{ headerShown: false, animation: 'slide_from_right' }} />

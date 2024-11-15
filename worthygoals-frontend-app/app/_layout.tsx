@@ -111,6 +111,8 @@ function RootLayoutNav() {
             animationTypeForReplace: 'push',
             animation: 'slide_from_bottom'
           }} />
+
+        <Stack.Screen name={ROUTE_NAMES.GOAL_SELECTION.self} options={{ headerShown: false, animation: 'slide_from_bottom' }} />
       </Stack>
     </ThemeProvider>
   );
