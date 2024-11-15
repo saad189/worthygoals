@@ -4,8 +4,11 @@ import Header from '@/components/SubComponents/Header';
 import Logo from '@/components/SubComponents/Logo';
 import SlidingText from '@/components/SubComponents/SlidingText';
 import { ROUTE_NAMES } from '@/constants/Routes';
+import { ParamListBase } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { useNavigation } from 'expo-router';
 import React from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
+import { Dimensions, StyleSheet } from 'react-native';
 
 // Get screen dimensions
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -13,7 +16,8 @@ type Props = {
     navigation: any;
 };
 
-export default function StartScreen({ navigation }: Props) {
+export default function StartScreen() {
+    const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
     return (
         <Background style={styles.container} >
             <Logo isWhite={true} />

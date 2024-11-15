@@ -66,6 +66,7 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
+        <Stack.Screen name={ROUTE_NAMES.JOURNEY.self} options={{ headerShown: false, animation: 'slide_from_right' }} />
         <Stack.Screen name={ROUTE_NAMES.TABS.self} options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
         <Stack.Screen

@@ -13,5 +13,16 @@ export const ROUTE_NAMES = {
         REGISTER: 'auth/register',
         RESET_PASSWORD: 'auth/reset-password',
     },
+    JOURNEY: {
+        self: 'journey',
+        INTRO_SCREEN: '1-intro-screen',
+        SELECT_DISCIPLINE_SCREEN: '2-select-disciplines-screen',
+        PROVIDE_INFO_SCREEN: '3-provide-info-screen',
+        PROCESSING_SCREEN: '4-processing-screen'
+    },
+    GOAL_SELECTION: {
+        self: 'goal-selection',
+        SELECTION_SCREEN: 'selection-screen'
+    },
     ABOUT: 'about'
 }

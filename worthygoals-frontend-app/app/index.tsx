@@ -1,7 +1,7 @@
 import React, { useState, useEffect, } from 'react';
 import { ScrollView, StyleSheet, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { StartScreen } from './auth';
+import IntroScreen from './journey/1-intro-screen';
 
 export default function Index() {
     const navigation = useNavigation();
@@ -21,7 +21,7 @@ export default function Index() {
 
     return (
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps='handled'>
-            <StartScreen navigation={navigation} />
+            <IntroScreen />
         </ScrollView>
     );
 }
