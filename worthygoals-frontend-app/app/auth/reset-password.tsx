@@ -5,9 +5,10 @@ import Header from '@/components/SubComponents/Header';
 import Logo from '@/components/SubComponents/Logo';
 import TextInput from '@/components/SubComponents/TextInput';
 import { ROUTE_NAMES } from '@/constants/Routes';
+import { theme } from '@/core';
 import { emailValidator } from '@/helpers';
 import React, { useState } from 'react';
-
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 type Props = {
     navigation: any;
 };
@@ -41,9 +42,23 @@ export default function ResetPasswordScreen({ navigation }: Props) {
                 keyboardType="email-address"
                 description="You will receive an email with a password reset link."
             />
-            <Button mode="contained" onPress={sendResetPasswordEmail} style={{ marginTop: 16 }}>
+            <Button mode="contained" onPress={sendResetPasswordEmail} style={styles.button}>
                 Send Instructions
             </Button>
         </Background>
     );
 }
+const styles = StyleSheet.create({
+    button: {
+        width: '100%',
+        marginTop: 16
+    },
+    row: {
+        flexDirection: 'row',
+        marginTop: 4,
+    },
+    link: {
+        fontWeight: 'bold',
+        color: theme.colors.secondary,
+    },
+});

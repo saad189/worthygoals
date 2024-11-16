@@ -64,7 +64,7 @@ export default function LoginScreen() {
                     <Text style={styles.forgot}>Forgot your password?</Text>
                 </TouchableOpacity>
             </View>
-            <Button mode="contained" onPress={onLoginPressed}>
+            <Button style={styles.button} mode="contained" onPress={onLoginPressed}>
                 Login
             </Button>
             <View style={styles.row}>
@@ -78,6 +78,9 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+    button: {
+        width: '100%'
+    },
     forgotPassword: {
         width: '100%',
         alignItems: 'flex-end',

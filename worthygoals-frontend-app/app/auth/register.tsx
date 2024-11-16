@@ -76,7 +76,7 @@ export default function RegisterScreen() {
                 errorText={password.error}
                 secureTextEntry
             />
-            <Button mode="contained" onPress={onSignUpPressed} style={{ marginTop: 24 }}>
+            <Button mode="contained" onPress={onSignUpPressed} style={styles.button}>
                 Sign Up
             </Button>
             <View style={styles.row}>
@@ -90,6 +90,10 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
+    button: {
+        width: '100%',
+        marginTop: 24
+    },
     row: {
         flexDirection: 'row',
         marginTop: 4,

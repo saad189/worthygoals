@@ -12,8 +12,8 @@ export default function Logo({ isWhite }: { isWhite?: boolean }) {
 
 const styles = StyleSheet.create({
     image: {
-        width: 200,
-        height: 200,
+        width: 150,
+        height: 150,
         marginBottom: 8,
     },
 });

@@ -14,5 +14,6 @@ const styles = StyleSheet.create({
         color: theme.colors.primary,
         fontWeight: '400',
         paddingVertical: 12,
+        textAlign: 'center'
     },
 });

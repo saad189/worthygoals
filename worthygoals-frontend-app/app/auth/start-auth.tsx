@@ -23,12 +23,14 @@ export default function StartScreen() {
             <Logo isWhite={true} />
             <Header>Evolve Membership</Header>
             <Button
+                style={styles.button}
                 mode="contained"
                 onPress={() => navigation.navigate(ROUTE_NAMES.AUTH.LOGIN)}
             >
                 Login
             </Button>
             <Button
+                style={styles.button}
                 mode="contained"
                 onPress={() => navigation.navigate(ROUTE_NAMES.AUTH.REGISTER)}
             >
@@ -42,6 +44,9 @@ export default function StartScreen() {
 }
 
 const styles = StyleSheet.create({
+    button: {
+        width: '100%'
+    },
     container: {
         flex: 1,
         padding: 20,

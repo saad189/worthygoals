@@ -26,15 +26,14 @@ export default function Button({ mode, style, ...props }: Props) {
 
 const styles = StyleSheet.create({
     button: {
-        width: '100%',
+        width: 'auto',
         borderRadius: 30,
         marginVertical: 10,
-        paddingVertical: 2,
         backgroundColor: theme.colors.buttonTheme
     },
     text: {
-        fontWeight: 'bold',
-        fontSize: 15,
-        lineHeight: 26,
+        fontWeight: '500',
+        fontSize: 20,
+        lineHeight: 20,
     },
 });

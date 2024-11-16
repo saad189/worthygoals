@@ -4,13 +4,13 @@ import Background from "@/components/SubComponents/Background";
 import Button from "@/components/SubComponents/Button";
 import Header from "@/components/SubComponents/Header";
 import Logo from "@/components/SubComponents/Logo";
-import ImageCard from "@/components/SubComponents/ImageCard";
 import ChipsList from "@/components/SubComponents/Chips";
 import { ROUTE_NAMES } from "@/constants/Routes";
 import { SelectGoal } from "@/models";
 import { ParamListBase } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useNavigation } from "expo-router";
+import ImageCardComponent from '@/components/SubComponents/ImageCard';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function SelectionScreen() {
@@ -87,7 +87,7 @@ export default function SelectionScreen() {
                 <Logo isWhite={true} />
                 <Header>Define Goals</Header>
                 <View style={styles.cardContainer}>
-                    <ImageCard card={currentGoal.card} />
+                    <ImageCardComponent card={currentGoal.card} />
                 </View>
                 <View style={styles.chipsContainer}>
                     {goals.map((goal, index) => (
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     },
     chipsContainer: {
         marginVertical: 20,
-        maxWidth: SCREEN_WIDTH * 0.8,
+        maxWidth: SCREEN_WIDTH * 0.85,
     },
     button: {
         width: 'auto',
