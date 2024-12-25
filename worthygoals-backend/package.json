@@ -29,6 +29,7 @@
     "typeorm:drop": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js schema:drop -d src/database/dataSource.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.699.0",
     "@nestjs/cache-manager": "^2.3.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.3.0",
@@ -43,6 +44,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "dotenv": "^16.4.5",
+    "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.11.4",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",

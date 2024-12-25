@@ -13,6 +13,7 @@ import { ROUTE_NAMES } from '@/constants/Routes';
 import { useNavigation } from 'expo-router';
 import { ParamListBase } from '@react-navigation/native';
 import Header from '@/components/SubComponents/Header';
+import { useAuth } from "react-oidc-context";
 
 export default function LoginScreen() {
     const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
