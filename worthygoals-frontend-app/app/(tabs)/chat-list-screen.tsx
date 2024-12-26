@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   SafeAreaView,
   View,
@@ -10,33 +10,35 @@ import {
 } from 'react-native';
 
 import { ChatListItem } from '@/models';
+import { useFocusEffect } from 'expo-router';
+import chatService from '@/services/chats.service';
+import { mapTime } from '@/helpers/TimeMapper';
 
-const CHAT_DATA: ChatListItem[] = [
-  {
-    id: '1',
-    name: 'McGregor',
-    avatar: require('@/assets/images/icon.png'),
-    lastMessage: 'Getup Champ! This is the moment to takeover, No Rest...',
-    time: '5:30 AM',
-    isRead: false,
-  },
-  {
-    id: '2',
-    name: 'Dr. Peterson',
-    avatar: require('@/assets/images/icon.png'),
-    lastMessage: '“Become One” says Dostoyevsky, because he knows...',
-    time: '8:30 AM',
-    isRead: true,
-  },
-  {
-    id: '3',
-    name: 'Scarlett',
-    avatar: require('@/assets/images/icon.png'),
-    lastMessage: 'Hey! How are you. Today is such a Beautiful Day...',
-    time: '11:30 PM',
-    isRead: true,
-  },
-];
+//   {
+//     id: '1',
+//     name: 'McGregor',
+//     avatar: require('@/assets/images/icon.png'),
+//     lastMessage: 'Getup Champ! This is the moment to takeover, No Rest...',
+//     time: '5:30 AM',
+//     isRead: false,
+//   },
+//   {
+//     id: '2',
+//     name: 'Dr. Peterson',
+//     avatar: require('@/assets/images/icon.png'),
+//     lastMessage: '“Become One” says Dostoyevsky, because he knows...',
+//     time: '8:30 AM',
+//     isRead: true,
+//   },
+//   {
+//     id: '3',
+//     name: 'Scarlett',
+//     avatar: require('@/assets/images/icon.png'),
+//     lastMessage: 'Hey! How are you. Today is such a Beautiful Day...',
+//     time: '11:30 PM',
+//     isRead: true,
+//   },
+// ];
 
 // Individual Chat Item
 const ChatItem = ({ chat }: { chat: ChatListItem }) => {
@@ -49,7 +51,7 @@ const ChatItem = ({ chat }: { chat: ChatListItem }) => {
       <View style={styles.chatTextContainer}>
         <View style={styles.chatRow}>
           <Text style={styles.chatName}>{name}</Text>
-          <Text style={styles.chatTime}>{time}</Text>
+          <Text style={styles.chatTime}>{mapTime(new Date(time))}</Text>
         </View>
 
         <View style={styles.chatRow}>
@@ -66,6 +68,17 @@ const ChatItem = ({ chat }: { chat: ChatListItem }) => {
 };
 
 export default function ChatListScreen() {
+  const [chatData, setChatData] = React.useState<ChatListItem[]>([]);
+
+
+  useFocusEffect(
+    useCallback(() => {
+      chatService.getUserChatList().then((data: ChatListItem[]) => {
+        const sortedData = data.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+        setChatData(sortedData);
+      })
+    }, [])
+  );
   const renderItem = ({ item }: { item: ChatListItem }) => <ChatItem chat={item} />;
 
   return (
@@ -77,7 +90,7 @@ export default function ChatListScreen() {
 
       {/* FLATLIST of CHATS */}
       <FlatList
-        data={CHAT_DATA}
+        data={chatData}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
