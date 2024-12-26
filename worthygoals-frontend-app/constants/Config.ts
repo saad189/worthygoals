@@ -16,6 +16,7 @@ const cognitoAuthConfig = {
     redirect_uri: "https://d84l1y8p4kdic.cloudfront.net",
     response_type: "code",
     scope: "email openid phone",
+    apiUrl: process.env.EXPO_PUBLIC_API_URL,
 };
 
 

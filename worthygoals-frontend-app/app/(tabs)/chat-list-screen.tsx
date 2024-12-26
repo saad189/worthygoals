@@ -8,19 +8,10 @@ import {
   Image,
   TouchableOpacity,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
-// Example Chat Data
-type Chat = {
-  id: string;
-  name: string;
-  avatar: any;           // Typically string (URL) or require(...) for local
-  lastMessage: string;
-  time: string;
-  isRead: boolean;
-};
+import { ChatListItem } from '@/models';
 
-const CHAT_DATA: Chat[] = [
+const CHAT_DATA: ChatListItem[] = [
   {
     id: '1',
     name: 'McGregor',
@@ -48,7 +39,7 @@ const CHAT_DATA: Chat[] = [
 ];
 
 // Individual Chat Item
-const ChatListItem = ({ chat }: { chat: Chat }) => {
+const ChatItem = ({ chat }: { chat: ChatListItem }) => {
   const { name, avatar, lastMessage, time, isRead } = chat;
 
   return (
@@ -75,16 +66,12 @@ const ChatListItem = ({ chat }: { chat: Chat }) => {
 };
 
 export default function ChatListScreen() {
-  const renderItem = ({ item }: { item: Chat }) => <ChatListItem chat={item} />;
+  const renderItem = ({ item }: { item: ChatListItem }) => <ChatItem chat={item} />;
 
   return (
     <SafeAreaView style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <View style={styles.logoContainer}>
-          {/* Replace with your actual logo */}
-          <Text style={styles.logoText}>e volve</Text>
-        </View>
         <Text style={styles.headerTitle}>Chat with Specialists</Text>
       </View>
 
@@ -96,20 +83,6 @@ export default function ChatListScreen() {
         contentContainerStyle={styles.listContent}
       />
 
-      {/* BOTTOM TABS (PLACEHOLDER) */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="home" size={24} color="#aaa" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="people" size={24} color="#aaa" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="person" size={24} color="#aaa" />
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }
@@ -125,11 +98,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#2f2f2f', // Something slightly lighter/darker
     borderBottomColor: '#444',
     borderBottomWidth: 1,
-  },
-  logoContainer: {
-    // For demonstration
-    marginBottom: 8,
-    alignItems: 'center',
   },
   logoText: {
     color: '#fff',
@@ -190,14 +158,6 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: '#00ff00',
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    paddingVertical: 12,
-    borderTopColor: '#333',
-    borderTopWidth: 1,
-    backgroundColor: '#2f2f2f',
-    justifyContent: 'space-around',
   },
   navItem: {
     alignItems: 'center',

@@ -49,7 +49,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name={ROUTE_NAMES.TABS.CHAT_SCREEN}
+        name={ROUTE_NAMES.TABS.CHAT_LIST_SCREEN}
         options={{
           title: 'Mentors',
           tabBarIcon: ({ color }) => <TabBarIcon name="users" color={color} />,

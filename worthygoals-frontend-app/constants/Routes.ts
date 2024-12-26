@@ -2,7 +2,7 @@ export const ROUTE_NAMES = {
     TABS: {
         self: '(tabs)',
         HOME_SCREEN: 'home-screen',
-        CHAT_SCREEN: 'chat-screen',
+        CHAT_LIST_SCREEN: 'chat-list-screen',
         SETTINGS_SCREEN: 'settings-screen',
         INSPIRATION_SCREEN: 'inspiration-screen'
     },
