@@ -14,7 +14,9 @@ const CHAT_DATA: ChatDetail[] = [
             id: '1',
             content: 'Getup Champ! This is the moment to takeover, No Rest...',
             time: '2024-12-26T14:28:54.088Z',
-            isRead: false
+            isRead: false,
+            type: "text",
+            senderId: ""
         }],
     },
     {
@@ -25,7 +27,9 @@ const CHAT_DATA: ChatDetail[] = [
             id: '1',
             content: '“Become One” says Dostoyevsky, because he knows...',
             time: '2024-12-25T12:28:54.088Z',
-            isRead: true
+            isRead: true,
+            type: "text",
+            senderId: ""
         }],
     },
     {
@@ -36,7 +40,9 @@ const CHAT_DATA: ChatDetail[] = [
             id: '1',
             content: 'Hey! How are you. Today is such a Beautiful Day...',
             time: '2024-12-26T10:28:54.088Z',
-            isRead: true
+            isRead: true,
+            type: "text",
+            senderId: ""
         }],
     },
 ];
@@ -110,7 +116,7 @@ export class ChatService {
             }
             console.log('Chat Data Saved')
         } catch (error: any) {
-            throw new Error(formatErrorMessage(error));
+            //   throw new Error(formatErrorMessage(error));
         }
     }
 }

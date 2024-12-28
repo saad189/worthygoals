@@ -1,23 +1,28 @@
+// models.ts
+
 export interface ChatListItem {
     id: string;
     name: string;
-    avatar: any;
+    avatar: string;   // you can store URIs or local require(...)
     lastMessage: string;
-    time: string;
+    time: string;     // e.g. "5:30 AM"
     isRead: boolean;
 }
+
+export type MessageType = 'text' | 'image' | 'audio' | 'video';
 
 export interface ChatMessage {
     id: string;
-    content: string | any;
-    time: string;
+    type: MessageType;
+    content: string;      // text, or URL for media
+    time: string;         // "5:30 AM", for example
     isRead: boolean;
+    senderId: string;     // e.g. "user" or "coach" or something unique
 }
-
 
 export interface ChatDetail {
     id: string;
     name: string;
-    avatar: any;
+    avatar: string;
     messages: ChatMessage[];
 }

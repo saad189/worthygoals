@@ -13,6 +13,10 @@ export const ROUTE_NAMES = {
         REGISTER: 'auth/register',
         RESET_PASSWORD: 'auth/reset-password',
     },
+    CHAT: {
+        self: 'chat',
+        CHAT_VIEW_SCREEN: 'chat-view-screen'
+    },
     JOURNEY: {
         self: 'journey',
         INTRO_SCREEN: '1-intro-screen',

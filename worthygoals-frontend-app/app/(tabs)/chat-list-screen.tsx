@@ -10,43 +10,22 @@ import {
 } from 'react-native';
 
 import { ChatListItem } from '@/models';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useNavigation } from 'expo-router';
 import chatService from '@/services/chats.service';
 import { mapTime } from '@/helpers/TimeMapper';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { ParamListBase } from '@react-navigation/native';
+import { ROUTE_NAMES } from '@/constants';
 
-//   {
-//     id: '1',
-//     name: 'McGregor',
-//     avatar: require('@/assets/images/icon.png'),
-//     lastMessage: 'Getup Champ! This is the moment to takeover, No Rest...',
-//     time: '5:30 AM',
-//     isRead: false,
-//   },
-//   {
-//     id: '2',
-//     name: 'Dr. Peterson',
-//     avatar: require('@/assets/images/icon.png'),
-//     lastMessage: '“Become One” says Dostoyevsky, because he knows...',
-//     time: '8:30 AM',
-//     isRead: true,
-//   },
-//   {
-//     id: '3',
-//     name: 'Scarlett',
-//     avatar: require('@/assets/images/icon.png'),
-//     lastMessage: 'Hey! How are you. Today is such a Beautiful Day...',
-//     time: '11:30 PM',
-//     isRead: true,
-//   },
-// ];
 
 // Individual Chat Item
 const ChatItem = ({ chat }: { chat: ChatListItem }) => {
-  const { name, avatar, lastMessage, time, isRead } = chat;
-
+  const { name, avatar, lastMessage, time, isRead, id } = chat;
+  const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
   return (
-    <TouchableOpacity style={styles.chatItem}>
-      <Image source={avatar} style={styles.avatar} />
+    <TouchableOpacity style={styles.chatItem} onPress={() =>
+      navigation.navigate(ROUTE_NAMES.CHAT.self, { screen: ROUTE_NAMES.CHAT.CHAT_VIEW_SCREEN, params: { id } })}>
+      <Image source={avatar as any} style={styles.avatar} />
 
       <View style={styles.chatTextContainer}>
         <View style={styles.chatRow}>
