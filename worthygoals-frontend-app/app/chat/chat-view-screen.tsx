@@ -135,12 +135,12 @@ In a real app, you might use:
             >
                 {/* Header row */}
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => { navigation.goBack(); console.log('PRESSED') }}>
+                    <TouchableOpacity onPress={navigation.goBack} style={{ paddingHorizontal: 10 }}>
                         <Ionicons name="arrow-back" size={24} color={iconColor} />
                     </TouchableOpacity>
 
                     <Image
-                        source={chatDetail.avatar as any}
+                        source={{ uri: chatDetail.avatar }}
                         style={styles.avatar}
                         resizeMode="cover"
                     />

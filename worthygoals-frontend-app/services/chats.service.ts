@@ -9,7 +9,7 @@ const CHAT_DATA: ChatDetail[] = [
     {
         id: '1',
         name: 'McGregor',
-        avatar: require('@/assets/images/icon.png'),
+        avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOKOsPbE9WMa8ZO1iNNeFgoI0DWBjH8cMCwg&s',
         messages: [
             {
                 id: 'm1',
@@ -65,7 +65,7 @@ const CHAT_DATA: ChatDetail[] = [
     {
         id: '2',
         name: 'Dr. Peterson',
-        avatar: require('@/assets/images/icon.png'),
+        avatar: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Jordan_Peterson_by_Gage_Skidmore.jpg/800px-Jordan_Peterson_by_Gage_Skidmore.jpg',
         messages: [{
             id: '1',
             content: '“Become One” says Dostoyevsky, because he knows...',
@@ -78,7 +78,7 @@ const CHAT_DATA: ChatDetail[] = [
     {
         id: '3',
         name: 'Scarlett',
-        avatar: require('@/assets/images/icon.png'),
+        avatar: 'https://m.media-amazon.com/images/M/MV5BMTM3OTUwMDYwNl5BMl5BanBnXkFtZTcwNTUyNzc3Nw@@._V1_.jpg',
         messages: [{
             id: '1',
             content: 'Hey! How are you. Today is such a Beautiful Day...',

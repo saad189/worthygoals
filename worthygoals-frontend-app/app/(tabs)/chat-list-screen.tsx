@@ -16,7 +16,15 @@ import { mapTime } from '@/helpers/TimeMapper';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { ParamListBase } from '@react-navigation/native';
 import { ROUTE_NAMES } from '@/constants';
+import Background from '@/components/SubComponents/Background';
 
+export default function ChatListWithBackground() {
+  return (
+    <Background style={styles.container}>
+      <ChatListScreen />
+    </Background>
+  )
+}
 
 // Individual Chat Item
 const ChatItem = ({ chat }: { chat: ChatListItem }) => {
@@ -34,7 +42,7 @@ const ChatItem = ({ chat }: { chat: ChatListItem }) => {
 
   return (
     <TouchableOpacity style={styles.chatItem} onPress={openChatDetail}>
-      <Image source={avatar as any} style={styles.avatar} />
+      <Image source={{ uri: avatar }} style={styles.avatar} />
 
       <View style={styles.chatTextContainer}>
         <View style={styles.chatRow}>
@@ -55,7 +63,7 @@ const ChatItem = ({ chat }: { chat: ChatListItem }) => {
   );
 };
 
-export default function ChatListScreen() {
+function ChatListScreen() {
   const [chatData, setChatData] = React.useState<ChatListItem[]>([]);
 
 
@@ -92,12 +100,9 @@ export default function ChatListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1c1c1c', // or your preferred background
   },
   header: {
     padding: 16,
-    backgroundColor: '#2f2f2f', // Something slightly lighter/darker
-    borderBottomColor: '#444',
     borderBottomWidth: 1,
   },
   logoText: {
@@ -156,9 +161,9 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: '#00ff00',
   },
   navItem: {
