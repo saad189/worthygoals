@@ -10,14 +10,57 @@ const CHAT_DATA: ChatDetail[] = [
         id: '1',
         name: 'McGregor',
         avatar: require('@/assets/images/icon.png'),
-        messages: [{
-            id: '1',
-            content: 'Getup Champ! This is the moment to takeover, No Rest...',
-            time: '2024-12-26T14:28:54.088Z',
-            isRead: false,
-            type: "text",
-            senderId: ""
-        }],
+        messages: [
+            {
+                id: 'm1',
+                type: 'text',
+                content: 'Getup Champ! This is the moment to takeover, No Rest, No Slacking, Champ...',
+                time: '2024-12-29T10:28:54.088Z',
+                isRead: true,
+                senderId: 'coach',
+            },
+            {
+                id: 'm2',
+                type: 'text',
+                content: 'Come On Man! Embrace the Suck.',
+                time: '2024-12-29T11:28:54.088Z',
+                isRead: true,
+                senderId: 'coach',
+            },
+            {
+                id: 'm3',
+                type: 'image',
+                content: 'https://mmajunkie.usatoday.com/wp-content/uploads/sites/91/2017/01/conor-mcgregor-ufc-205.jpg?w=1000&h=600&crop=1', // URL to an image
+                time: '2024-12-29T11:38:54.088Z',
+                isRead: true,
+                senderId: 'coach',
+            },
+            {
+                id: 'm4',
+                type: 'text',
+                content: 'Alright! I’m Up, Give me a Minute.',
+                time: '2024-12-29T12:28:54.088Z',
+                isRead: true,
+                senderId: 'user',
+            },
+            {
+                id: 'm5',
+                type: 'text',
+                content: 'That’s it! My Man.... Lets Fu@#ing Go!',
+                time: '2024-12-29T12:38:54.088Z',
+                isRead: true,
+                senderId: 'coach',
+            },
+            {
+                id: 'm6',
+                type: 'text',
+                content:
+                    'GOALS #01: Want to Go for an Early Morning Run Every Day of the Week, Starting Now. I want to be Active in the Mornings!',
+                time: '2024-12-30T10:28:54.088Z',
+                isRead: false,
+                senderId: 'coach',
+            },
+        ],
     },
     {
         id: '2',
@@ -59,7 +102,6 @@ export class ChatService {
     async getUserChatList(): Promise<ChatListItem[]> {
         try {
             const records = await Storage.getItem(USER_CHATS);
-            console.log({ records })
             if (records) {
                 return records.map((chat: ChatDetail) => (
                     {
@@ -100,7 +142,7 @@ export class ChatService {
             const records = Storage.getItem(USER_CHATS);
             const chats: ChatDetail[] = await records ?? [];
             console.log({ chats, chat })
-            await Storage.setItem(USER_CHATS, JSON.stringify([chat, ...chats]));
+            await Storage.setItem(USER_CHATS, [chat, ...chats]);
 
         } catch (error: any) {
             throw new Error(formatErrorMessage(error));

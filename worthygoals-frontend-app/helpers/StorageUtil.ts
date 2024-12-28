@@ -9,7 +9,7 @@ const Storage = {
         if (isWeb) {
             localStorage.setItem(key, JSON.stringify(value));
         } else {
-            await SecureStore.setItemAsync(key, value);
+            await SecureStore.setItemAsync(key, JSON.stringify(value));
         }
     },
     getItem: async (key: string) => {

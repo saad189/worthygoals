@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-import { ChatListItem } from '@/models';
+import { ChatDetail, ChatListItem } from '@/models';
 import { useFocusEffect, useNavigation } from 'expo-router';
 import chatService from '@/services/chats.service';
 import { mapTime } from '@/helpers/TimeMapper';
@@ -22,9 +22,18 @@ import { ROUTE_NAMES } from '@/constants';
 const ChatItem = ({ chat }: { chat: ChatListItem }) => {
   const { name, avatar, lastMessage, time, isRead, id } = chat;
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
+
+  const openChatDetail = () => {
+
+    chatService.getUserChat(id).then((data: ChatDetail | null) => {
+      console.log({ data })
+      if (data)
+        navigation.navigate(ROUTE_NAMES.CHAT.self, { screen: ROUTE_NAMES.CHAT.CHAT_VIEW_SCREEN, params: { chatData: data } })
+    })
+  }
+
   return (
-    <TouchableOpacity style={styles.chatItem} onPress={() =>
-      navigation.navigate(ROUTE_NAMES.CHAT.self, { screen: ROUTE_NAMES.CHAT.CHAT_VIEW_SCREEN, params: { id } })}>
+    <TouchableOpacity style={styles.chatItem} onPress={openChatDetail}>
       <Image source={avatar as any} style={styles.avatar} />
 
       <View style={styles.chatTextContainer}>
@@ -35,8 +44,8 @@ const ChatItem = ({ chat }: { chat: ChatListItem }) => {
 
         <View style={styles.chatRow}>
           {/* Show the snippet in a lighter style, or bold if unread */}
-          <Text style={[styles.chatMessageSnippet, !isRead && styles.unread]}>
-            {lastMessage}
+          <Text style={[styles.chatMessageSnippet, !isRead && styles.unread]} >
+            {lastMessage.length > 50 ? lastMessage.slice(0, 50) + '...' : lastMessage}
           </Text>
           {/* You could show a read/unread indicator here */}
           {!isRead && <View style={styles.unreadDot} />}
@@ -140,6 +149,7 @@ const styles = StyleSheet.create({
     color: '#ccc',
     flex: 1,
     marginRight: 8,
+
   },
   unread: {
     fontWeight: 'bold',

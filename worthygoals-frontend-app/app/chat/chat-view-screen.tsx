@@ -18,70 +18,28 @@ import { Ionicons } from '@expo/vector-icons';
 import { ChatDetail, ChatMessage, MessageType } from '@/models';
 import { useNavigation } from 'expo-router';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { ParamListBase } from '@react-navigation/native';
+import { ParamListBase, useRoute } from '@react-navigation/native';
+import chatService from '@/services/chats.service';
+import Background from '@/components/SubComponents/Background';
+import { mapTime } from '@/helpers/TimeMapper';
 
-const SAMPLE_CHAT_DETAIL: ChatDetail = {
-    id: '1',
-    name: 'McGregor',
-    avatar: 'https://example.com/mcgregor-avatar.jpg', // sample
-    messages: [
-        {
-            id: 'm1',
-            type: 'text',
-            content: 'Getup Champ! This is the moment to takeover, No Rest, No Slacking, Champ...',
-            time: '5:30 AM',
-            isRead: true,
-            senderId: 'coach',
-        },
-        {
-            id: 'm2',
-            type: 'text',
-            content: 'Come On Man! Embrace the Suck.',
-            time: '5:35 AM',
-            isRead: true,
-            senderId: 'coach',
-        },
-        {
-            id: 'm3',
-            type: 'image',
-            content: 'https://mmajunkie.usatoday.com/wp-content/uploads/sites/91/2017/01/conor-mcgregor-ufc-205.jpg?w=1000&h=600&crop=1', // URL to an image
-            time: '5:42 AM',
-            isRead: true,
-            senderId: 'coach',
-        },
-        {
-            id: 'm4',
-            type: 'text',
-            content: 'Alright! I’m Up, Give me a Minute.',
-            time: '5:45 AM',
-            isRead: true,
-            senderId: 'user',
-        },
-        {
-            id: 'm5',
-            type: 'text',
-            content: 'That’s it! My Man.... Lets Fu@#ing Go!',
-            time: '5:45 AM',
-            isRead: true,
-            senderId: 'coach',
-        },
-        {
-            id: 'm6',
-            type: 'text',
-            content:
-                'GOALS #01: Want to Go for an Early Morning Run Every Day of the Week, Starting Now. I want to be Active in the Mornings!',
-            time: '5:46 AM',
-            isRead: true,
-            senderId: 'coach',
-        },
-    ],
-};
+const iconColor = '#FFF';
 
-export default function ChatViewScreen() {
-    // const { params: { id } } = useRoute() as any;
+export default function ChatViewScreenWithBackground() {
+    return (
+        <Background style={styles.container}>
+            <ChatViewScreen />
+        </Background>
+    )
+}
+
+function ChatViewScreen() {
+    const { params: { chatData } } = useRoute() as any;
     const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
-    const [chatDetail, setChatDetail] = useState<ChatDetail>(SAMPLE_CHAT_DETAIL);
+    const [chatDetail, setChatDetail] = useState<ChatDetail>(chatData);
     const [inputText, setInputText] = useState<string>('');
+
+    const isItemTypeMedia = (type: MessageType) => ['image', 'audio', 'video'].includes(type);
 
     const renderMessage = ({ item }: { item: ChatMessage }) => {
         const isCurrentUser = item.senderId === 'user';
@@ -111,6 +69,7 @@ export default function ChatViewScreen() {
                 style={[
                     styles.messageContainer,
                     isCurrentUser ? styles.messageRight : styles.messageLeft,
+                    isItemTypeMedia(item.type) ? styles.mediaStyle : null
                 ]}
             >
                 {/* Different message bubble styles based on type */}
@@ -137,7 +96,7 @@ export default function ChatViewScreen() {
       */
                 )}
 
-                <Text style={styles.messageTime}>{item.time}</Text>
+                <Text style={[styles.messageTime, isItemTypeMedia(item.type) ? styles.mediaTime : null]}>{mapTime(new Date(item.time))}</Text>
             </View>
         );
     };
@@ -149,10 +108,7 @@ export default function ChatViewScreen() {
             id: `m-${Date.now()}`,
             type: 'text',
             content: inputText.trim(),
-            time: new Date().toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-            }),
+            time: (new Date()).toString(),
             isRead: false,
             senderId: 'user',
         };
@@ -174,18 +130,18 @@ export default function ChatViewScreen() {
                 {/* Header row */}
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => { navigation.goBack(); console.log('PRESSED') }}>
-                        <Ionicons name="arrow-back" size={24} color="#FFF" />
+                        <Ionicons name="arrow-back" size={24} color={iconColor} />
                     </TouchableOpacity>
 
                     <Image
-                        source={{ uri: chatDetail.avatar }}
+                        source={chatDetail.avatar as any}
                         style={styles.avatar}
                         resizeMode="cover"
                     />
                     <Text style={styles.headerTitle}>{chatDetail.name}</Text>
 
                     <TouchableOpacity onPress={() => { /* open overflow menu */ }}>
-                        <Ionicons name="ellipsis-vertical" size={20} color="#FFF" />
+                        <Ionicons name="ellipsis-vertical" size={20} color={iconColor} />
                     </TouchableOpacity>
                 </View>
 
@@ -196,7 +152,7 @@ export default function ChatViewScreen() {
                     style={styles.chatList}
                     contentContainerStyle={styles.chatContentContainer}
                 />
-
+                <View style={{ marginBottom: 20 }}></View>
                 {/* Input bar */}
                 <View style={styles.inputContainer}>
                     <TextInput
@@ -205,9 +161,11 @@ export default function ChatViewScreen() {
                         onChangeText={setInputText}
                         placeholder="Chat with your Coach..."
                         placeholderTextColor="#999"
+                        multiline={true}
+                        returnKeyType='default'
                     />
                     <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-                        <Ionicons name="send" size={18} color="#FFF" />
+                        <Ionicons name="send" size={18} color={iconColor} />
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
@@ -218,18 +176,17 @@ export default function ChatViewScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#121212', // Dark background
     },
     keyboardAvoiding: {
         flex: 1,
     },
     header: {
-        height: 90,
-        backgroundColor: '#1F1F1F',
+        height: 100,
+        backgroundColor: 'rgba(168, 168, 168, 0.33)',
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-end',
         paddingHorizontal: 15,
-        paddingTop: 10,
+        paddingBottom: 20,
         justifyContent: 'center',
     },
     avatar: {
@@ -237,6 +194,7 @@ const styles = StyleSheet.create({
         height: 36,
         borderRadius: 18,
         marginHorizontal: 8,
+        marginVertical: -6
     },
     headerTitle: {
         flex: 1,
@@ -253,41 +211,59 @@ const styles = StyleSheet.create({
         paddingBottom: 60, // allow space for input bar
     },
     messageContainer: {
-        maxWidth: '75%',
+        maxWidth: '80%',
         marginVertical: 4,
-        padding: 10,
+        margin: 10,
+        padding: 8,
+        paddingLeft: 12,
+        paddingRight: 20,
         borderRadius: 8,
     },
     messageLeft: {
         alignSelf: 'flex-start',
-        backgroundColor: '#1E1E1E',
-        borderTopLeftRadius: 0,
+        backgroundColor: '#F9F9F9',
     },
     messageRight: {
         alignSelf: 'flex-end',
-        backgroundColor: '#333333',
-        borderTopRightRadius: 0,
+        backgroundColor: '#F0F34E',
     },
     messageText: {
-        color: '#FFF',
-        fontSize: 15,
+        color: 'black',
+        fontSize: 14,
         marginBottom: 4,
     },
     messageTime: {
         fontSize: 12,
-        color: '#999',
         alignSelf: 'flex-end',
+        position: 'relative',
+        paddingTop: 4,
+        right: -12,
+        color: `#9D9D9D`
+    },
+    mediaTime: {
+        position: 'absolute',
+        bottom: 8,
+        right: 8,
+        color: `#9D9D9D`
     },
     imageMessage: {
-        width: 200,
-        height: 200,
+        width: 250,
+        height: 250,
         borderRadius: 8,
-        marginBottom: 4,
+    },
+    mediaStyle: {
+        marginVertical: 30,
+        padding: 2,
+        margin: 10,
+        paddingLeft: 2,
+        paddingRight: 2,
+
     },
     // Goals card styling
     goalsCardContainer: {
-        maxWidth: '75%',
+        maxWidth: '80%',
         marginVertical: 4,
+        margin: 10,
         borderRadius: 8,
         overflow: 'hidden', // so gradient corners are clipped
     },
