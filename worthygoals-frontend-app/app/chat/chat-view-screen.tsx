@@ -10,6 +10,7 @@ import {
     SafeAreaView,
     KeyboardAvoidingView,
     Platform,
+    ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 // If you want icons for the back arrow or overflow menu
@@ -39,26 +40,31 @@ function ChatViewScreen() {
     const [chatDetail, setChatDetail] = useState<ChatDetail>(chatData);
     const [inputText, setInputText] = useState<string>('');
 
-    const isItemTypeMedia = (type: MessageType) => ['image', 'audio', 'video'].includes(type);
-
-    const renderMessage = ({ item }: { item: ChatMessage }) => {
+    const renderMessage = ({ item, index }: { item: ChatMessage; index: number }) => {
         const isCurrentUser = item.senderId === 'user';
+        const messages = chatDetail.messages;          // Our full message array
+        const isLastMessage = index === messages.length - 1;
 
-        // A special check for "GOALS" text to show as gradient card (just as an example):
+        // Check if the next message has a different sender
+        let shouldAddMargin = !isLastMessage && messages[index + 1].senderId !== item.senderId;
+
+        const isMedia = ['image', 'audio', 'video'].includes(item.type);
+
+        // A special check for "GOALS" text to show as gradient card
         const isGoalsCard =
             item.type === 'text' && item.content.toLowerCase().includes('goals #01');
 
         if (isGoalsCard) {
-            // Return a gradient “card” for the Goals message
             return (
                 <View style={[styles.goalsCardContainer, styles.messageLeft]}>
                     <LinearGradient
                         colors={['#FF5F6D', '#FFC371']}
-                        // or maybe: ['#6A82FB', '#FC5C7D'] for a different combo
                         style={styles.goalsCardGradient}
                     >
                         <Text style={styles.goalsCardText}>{item.content}</Text>
-                        <Text style={styles.messageTime}>{item.time}</Text>
+                        <Text style={[styles.messageTime, styles.mediaTime]}>
+                            {mapTime(new Date(item.time))}
+                        </Text>
                     </LinearGradient>
                 </View>
             );
@@ -69,10 +75,11 @@ function ChatViewScreen() {
                 style={[
                     styles.messageContainer,
                     isCurrentUser ? styles.messageRight : styles.messageLeft,
-                    isItemTypeMedia(item.type) ? styles.mediaStyle : null
+                    isMedia && styles.mediaStyle,
+                    shouldAddMargin && !isMedia && { marginBottom: 10 }, // Add margin if user changed
                 ]}
             >
-                {/* Different message bubble styles based on type */}
+                {/* text, image, or audio/video display */}
                 {item.type === 'text' && (
                     <Text style={styles.messageText}>{item.content}</Text>
                 )}
@@ -90,13 +97,12 @@ function ChatViewScreen() {
                         {item.type.toUpperCase()} message: {item.content}
                     </Text>
                     /*
-        In a real app, you might use:
-          - <Video source={{ uri: item.content }} ... />
-          - or an Audio player library for `audio`
-      */
+In a real app, you might use:
+- <Video source={{ uri: item.content }} ... />
+- or an Audio player library for `audio`
+*/
                 )}
-
-                <Text style={[styles.messageTime, isItemTypeMedia(item.type) ? styles.mediaTime : null]}>{mapTime(new Date(item.time))}</Text>
+                <Text style={[styles.messageTime, isMedia ? styles.mediaTime : null]}>{mapTime(new Date(item.time))}</Text>
             </View>
         );
     };
@@ -152,22 +158,31 @@ function ChatViewScreen() {
                     style={styles.chatList}
                     contentContainerStyle={styles.chatContentContainer}
                 />
-                <View style={{ marginBottom: 20 }}></View>
+                <View style={{ marginBottom: 30 }}></View>
                 {/* Input bar */}
                 <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        value={inputText}
-                        onChangeText={setInputText}
-                        placeholder="Chat with your Coach..."
-                        placeholderTextColor="#999"
-                        multiline={true}
-                        returnKeyType='default'
-                    />
+                    <ScrollView
+                        style={styles.inputScrollView}
+                        contentContainerStyle={{ flexGrow: 1 }}
+                        keyboardShouldPersistTaps="handled"
+                        showsVerticalScrollIndicator={true}
+                    >
+                        <TextInput
+                            style={styles.input}
+                            value={inputText}
+                            onChangeText={setInputText}
+                            placeholder="Chat with your Coach..."
+                            placeholderTextColor="#999"
+                            multiline={true}
+                            returnKeyType='default'
+                        />
+                    </ScrollView>
                     <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-                        <Ionicons name="send" size={18} color={iconColor} />
+                        <Ionicons name="send" size={18} color={iconColor} style={{ marginLeft: 4 }} />
                     </TouchableOpacity>
                 </View>
+
+
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
@@ -204,11 +219,14 @@ const styles = StyleSheet.create({
     },
     chatList: {
         flex: 1,
+
     },
     chatContentContainer: {
         paddingHorizontal: 8,
         paddingVertical: 10,
         paddingBottom: 60, // allow space for input bar
+        justifyContent: 'flex-end',
+        flexGrow: 1,
     },
     messageContainer: {
         maxWidth: '80%',
@@ -284,17 +302,28 @@ const styles = StyleSheet.create({
         backgroundColor: '#1F1F1F',
         flexDirection: 'row',
         alignItems: 'center',
+        marginLeft: 8,
         paddingHorizontal: 8,
         paddingVertical: 6,
+        paddingBottom: 20
     },
     input: {
         flex: 1,
         paddingHorizontal: 12,
-        paddingVertical: 8,
+        paddingVertical: 3,
         fontSize: 15,
         backgroundColor: '#2E2E2E',
         color: '#FFF',
         borderRadius: 20,
+        marginRight: 8,
+    },
+    inputScrollView: {
+        flex: 1,
+        maxHeight: 100, // Adjust based on 5 lines and font size
+        backgroundColor: '#2E2E2E',
+        borderRadius: 20,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
         marginRight: 8,
     },
     sendButton: {
@@ -304,5 +333,6 @@ const styles = StyleSheet.create({
         height: 40,
         alignItems: 'center',
         justifyContent: 'center',
+        alignSelf: 'flex-end'
     },
 });
