@@ -23,6 +23,7 @@ import { ParamListBase, useRoute } from '@react-navigation/native';
 import chatService from '@/services/chats.service';
 import Background from '@/components/SubComponents/Background';
 import { mapTime } from '@/helpers/TimeMapper';
+import { ROUTE_NAMES } from '@/constants';
 
 const iconColor = '#FFF';
 
@@ -135,16 +136,19 @@ In a real app, you might use:
             >
                 {/* Header row */}
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={navigation.goBack} style={{ paddingHorizontal: 10 }}>
+                    <TouchableOpacity onPress={navigation.goBack} style={{ marginLeft: 5 }}>
                         <Ionicons name="arrow-back" size={24} color={iconColor} />
                     </TouchableOpacity>
 
-                    <Image
-                        source={{ uri: chatDetail.avatar }}
-                        style={styles.avatar}
-                        resizeMode="cover"
-                    />
-                    <Text style={styles.headerTitle}>{chatDetail.name}</Text>
+                    <TouchableOpacity onPress={() => { navigation.navigate(ROUTE_NAMES.CHAT.CHAT_SETTINGS_SCREEN, { id: chatDetail.id }) }}
+                        style={styles.profileImageWrapper}>
+                        <Image
+                            source={{ uri: chatDetail.avatar }}
+                            style={styles.avatar}
+                            resizeMode="cover"
+                        />
+                        <Text style={styles.headerTitle}>{chatDetail.name}</Text>
+                    </TouchableOpacity>
 
                     <TouchableOpacity onPress={() => { /* open overflow menu */ }}>
                         <Ionicons name="ellipsis-vertical" size={20} color={iconColor} />
@@ -212,7 +216,6 @@ const styles = StyleSheet.create({
         marginVertical: -6
     },
     headerTitle: {
-        flex: 1,
         color: '#FFF',
         fontSize: 17,
         fontWeight: '600',
@@ -276,6 +279,11 @@ const styles = StyleSheet.create({
         paddingLeft: 2,
         paddingRight: 2,
 
+    },
+    profileImageWrapper: {
+        paddingHorizontal: 10,
+        flex: 1,
+        flexDirection: 'row'
     },
     // Goals card styling
     goalsCardContainer: {

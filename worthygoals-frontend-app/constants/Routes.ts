@@ -15,7 +15,8 @@ export const ROUTE_NAMES = {
     },
     CHAT: {
         self: 'chat',
-        CHAT_VIEW_SCREEN: 'chat-view-screen'
+        CHAT_VIEW_SCREEN: 'chat-view-screen',
+        CHAT_SETTINGS_SCREEN: 'chat-settings-screen'
     },
     JOURNEY: {
         self: 'journey',

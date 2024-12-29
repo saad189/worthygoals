@@ -1,0 +1,275 @@
+// App.tsx (or any screen file)
+
+import React, { useState } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    Image,
+    TouchableOpacity,
+    FlatList,
+    SafeAreaView,
+    Dimensions,
+    ScrollView,
+} from 'react-native';
+// Using @expo/vector-icons for the arrow icons (make sure to install and import properly)
+import { Ionicons } from '@expo/vector-icons';
+import Background from '@/components/SubComponents/Background';
+import { ParamListBase, useNavigation, useRoute } from '@react-navigation/native';
+import CurrentGoalsComponent from '@/components/MentorSettings/CurrentGoals';
+import NewGoalsComponent from '@/components/MentorSettings/NewGoals';
+import AIPersonalitySettingsComponent from '@/components/MentorSettings/AIPersonalitySettings';
+import { StackNavigationProp } from '@react-navigation/stack';
+import GradientText from '@/components/SubComponents/GradientText';
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+// Define the available tabs
+enum Tabs {
+    CURRENT_GOALS = 'CurrentGoals',
+    AI_PERSONALITY = 'AIPersonality',
+    SET_GOALS = 'SetGoals',
+    SETTINGS = 'Settings',
+}
+const iconColor = '#FFF';
+
+type TabItem = {
+    key: Tabs;
+    title: string;
+    onPress: () => void;
+    logo: any;
+    component: React.FC;
+}
+
+const TabButton = ({ onPress, logo, title, isActive }: { onPress: () => void; logo: any; title: string; isActive: boolean }) => {
+    return (
+        <TouchableOpacity
+            style={[styles.tabButton, isActive && styles.tabButtonSelected]}
+            onPress={onPress}
+        >
+            <Image source={logo} style={{ width: SCREEN_WIDTH * 0.1, height: SCREEN_WIDTH * 0.11 }} />
+            <Text style={[styles.tabButtonText, isActive && styles.tabButtonTextSelected]} numberOfLines={2} adjustsFontSizeToFit={true}>
+                {title}
+            </Text>
+        </TouchableOpacity>
+    );
+}
+
+const SettingsScreen: React.FC = () => {
+    // Keep track of which tab is currently selected
+    const { params: { id } } = useRoute() as any;
+    const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
+    const [selectedTab, setSelectedTab] = useState<Tabs | null>(null);
+
+    // Sample menu items for the lower list
+    const menuItems = [
+        { title: 'General Settings', onPress: () => { } },
+        { title: 'Notifications', onPress: () => { } },
+        { title: 'Premium Features', onPress: () => { } },
+        { title: 'Language', onPress: () => { } },
+        { title: 'Share with Friends', onPress: () => { } },
+        { title: 'Terms of Use', onPress: () => { } },
+        { title: 'Support & FAQs', onPress: () => { } },
+    ];
+
+    const tabItems: TabItem[] = [
+        {
+            key: Tabs.CURRENT_GOALS,
+            title: 'Current Goals Status',
+            onPress: () => setSelectedTab(Tabs.CURRENT_GOALS),
+            logo: require('@/assets/images/icons/current_goals_icon.png'),
+            component: CurrentGoalsComponent
+        },
+        {
+            key: Tabs.AI_PERSONALITY,
+            title: 'AI Personality Settings',
+            onPress: () => setSelectedTab(Tabs.AI_PERSONALITY),
+            logo: require('@/assets/images/icons/ai_big_icon.png'),
+            component: AIPersonalitySettingsComponent
+        },
+        {
+            key: Tabs.SET_GOALS,
+            title: 'Set New Goals',
+            onPress: () => setSelectedTab(Tabs.SET_GOALS),
+            logo: require('@/assets/images/icons/new_goals_icon.png'),
+            component: NewGoalsComponent
+        },
+    ];
+
+    const settingsTab = {
+        key: Tabs.SETTINGS,
+        title: 'Settings',
+        onPress: () => setSelectedTab(Tabs.SETTINGS),
+        logo: require('@/assets/images/icons/settings_icon.png'),
+        component: () => <Text>Settings</Text>
+    }
+
+    const ActiveTabItem = tabItems.find(item => item.key === selectedTab);
+    const ActiveComponent = ActiveTabItem ? ActiveTabItem.component : settingsTab.component;
+
+    const renderMenuItem = ({ item }: { item: typeof menuItems[0] }) => {
+        return (
+            <>
+                <TouchableOpacity style={styles.menuItem} onPress={item.onPress}>
+                    <Text style={styles.menuItemText}>{item.title}</Text>
+                    <Ionicons name="chevron-forward" size={20} color="#AAA" />
+                </TouchableOpacity>
+                <View style={styles.line} />
+            </>
+        );
+    };
+
+    return (
+        <SafeAreaView style={styles.container}>
+            {/* Profile Section */}
+            <View style={styles.profileContainer}>
+
+                <View style={{ flexDirection: 'row', justifyContent: 'space-around', width: '100%', alignItems: 'center' }}>
+                    <TouchableOpacity onPress={navigation.goBack} style={{ marginLeft: 5 }}>
+                        <Ionicons name="arrow-back" size={24} color={iconColor} />
+                    </TouchableOpacity>
+                    <View style={styles.profileImageWrapper}>
+                        <Image
+                            source={{
+                                uri: 'https://mmajunkie.usatoday.com/wp-content/uploads/sites/91/2017/01/conor-mcgregor-ufc-205.jpg?w=1000&h=600&crop=1',
+                            }}
+                            style={styles.profileImage}
+                        />
+                    </View>
+                    <TouchableOpacity onPress={navigation.goBack} style={{ marginLeft: 5 }}>
+                        <Ionicons name="settings-outline" size={24} color={iconColor} />
+                    </TouchableOpacity>
+                </View>
+
+                <View style={{ minHeight: '8%', width: '100%', alignItems: 'center' }}>
+                    <GradientText text="AI McGregor"
+                        style={{ fontSize: 26, color: '#FFF', fontWeight: 'bold' }} />
+
+                </View>
+            </View>
+
+            {/* Top Tab Buttons */}
+            <View style={styles.tabsContainer}>
+                {tabItems.map(tab => (
+                    <TabButton
+                        key={tab.key}
+                        onPress={tab.onPress}
+                        logo={tab.logo}
+                        title={tab.title}
+                        isActive={selectedTab === tab.key}
+                    />
+                ))}
+            </View>
+
+            <View style={styles.contentContainer}>
+                {ActiveComponent ? <ActiveComponent /> : null}
+            </View>
+
+            {/* Menu Items List */}
+            <FlatList
+                data={menuItems}
+                keyExtractor={(item) => item.title}
+                renderItem={renderMenuItem}
+                style={styles.menuList}
+                contentContainerStyle={styles.menuListContainer}
+            />
+            <View style={{ marginBottom: 20 }}></View>
+        </SafeAreaView>
+    );
+};
+
+export default function SettingsScreenWithBackground() {
+    return (
+        <Background style={styles.container}>
+            <SettingsScreen />
+        </Background>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+    profileContainer: {
+        paddingTop: 50,
+        backgroundColor: 'rgba(168, 168, 168,0.3)'
+    },
+    profileImageWrapper: {
+        width: 150,
+        height: 150,
+        borderRadius: 75,
+        overflow: 'hidden',
+        marginBottom: 10,
+    },
+    profileImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
+    },
+    profileName: {
+        fontSize: 20,
+        color: '#FFF',
+        fontWeight: 'bold',
+    },
+    tabsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-evenly',
+        backgroundColor: 'rgba(168, 168, 168,0.3)',
+        borderBottomEndRadius: 30,
+        borderBottomLeftRadius: 30,
+        paddingVertical: 10,
+        marginBottom: 10
+    },
+    tabButton: {
+        paddingVertical: 8,
+        width: SCREEN_WIDTH / 3.3,
+        height: 100,
+        borderRadius: 20,
+        backgroundColor: '#D9D9D9',
+        alignItems: 'center',
+        justifyContent: 'space-evenly'
+    },
+    tabButtonSelected: {
+        backgroundColor: '#E65581',
+    },
+    tabButtonText: {
+        fontWeight: '600',
+        width: '75%',
+        textAlign: 'center',
+        fontSize: 12,
+    },
+    tabButtonTextSelected: {
+        color: '#FFF',
+    },
+    contentContainer: {
+        backgroundColor: 'orange',
+        padding: 20,
+    },
+    contentText: {
+        color: '#FFF',
+        fontSize: 16,
+        marginBottom: 10,
+    },
+    menuList: {
+        flex: 1,
+    },
+    menuListContainer: {
+
+    },
+    menuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 20,
+
+    },
+    menuItemText: {
+        flex: 1,
+        color: '#FFF',
+        fontSize: 16,
+    },
+    line: {
+        height: 1,
+        width: '85%',
+        backgroundColor: '#B3B3B3',
+        alignSelf: 'center',
+    },
+});
