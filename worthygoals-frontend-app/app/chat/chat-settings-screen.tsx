@@ -7,12 +7,10 @@ import {
     StyleSheet,
     Image,
     TouchableOpacity,
-    FlatList,
     SafeAreaView,
     Dimensions,
-    ScrollView,
 } from 'react-native';
-// Using @expo/vector-icons for the arrow icons (make sure to install and import properly)
+
 import { Ionicons } from '@expo/vector-icons';
 import Background from '@/components/SubComponents/Background';
 import { ParamListBase, useNavigation, useRoute } from '@react-navigation/native';
@@ -21,6 +19,8 @@ import NewGoalsComponent from '@/components/MentorSettings/NewGoals';
 import AIPersonalitySettingsComponent from '@/components/MentorSettings/AIPersonalitySettings';
 import { StackNavigationProp } from '@react-navigation/stack';
 import GradientText from '@/components/SubComponents/GradientText';
+import DefaultSettingsComponent from '@/components/MentorSettings/DefaultSettings';
+
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 // Define the available tabs
 enum Tabs {
@@ -57,18 +57,6 @@ const SettingsScreen: React.FC = () => {
     // Keep track of which tab is currently selected
     const { params: { id } } = useRoute() as any;
     const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
-    const [selectedTab, setSelectedTab] = useState<Tabs | null>(null);
-
-    // Sample menu items for the lower list
-    const menuItems = [
-        { title: 'General Settings', onPress: () => { } },
-        { title: 'Notifications', onPress: () => { } },
-        { title: 'Premium Features', onPress: () => { } },
-        { title: 'Language', onPress: () => { } },
-        { title: 'Share with Friends', onPress: () => { } },
-        { title: 'Terms of Use', onPress: () => { } },
-        { title: 'Support & FAQs', onPress: () => { } },
-    ];
 
     const tabItems: TabItem[] = [
         {
@@ -99,23 +87,13 @@ const SettingsScreen: React.FC = () => {
         title: 'Settings',
         onPress: () => setSelectedTab(Tabs.SETTINGS),
         logo: require('@/assets/images/icons/settings_icon.png'),
-        component: () => <Text>Settings</Text>
-    }
+        component: DefaultSettingsComponent
+    };
+
+    const [selectedTab, setSelectedTab] = useState<Tabs | null>(settingsTab.key);
 
     const ActiveTabItem = tabItems.find(item => item.key === selectedTab);
     const ActiveComponent = ActiveTabItem ? ActiveTabItem.component : settingsTab.component;
-
-    const renderMenuItem = ({ item }: { item: typeof menuItems[0] }) => {
-        return (
-            <>
-                <TouchableOpacity style={styles.menuItem} onPress={item.onPress}>
-                    <Text style={styles.menuItemText}>{item.title}</Text>
-                    <Ionicons name="chevron-forward" size={20} color="#AAA" />
-                </TouchableOpacity>
-                <View style={styles.line} />
-            </>
-        );
-    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -134,12 +112,12 @@ const SettingsScreen: React.FC = () => {
                             style={styles.profileImage}
                         />
                     </View>
-                    <TouchableOpacity onPress={navigation.goBack} style={{ marginLeft: 5 }}>
-                        <Ionicons name="settings-outline" size={24} color={iconColor} />
+                    <TouchableOpacity onPress={settingsTab.onPress} style={{ marginLeft: 5 }} >
+                        <Ionicons name="settings-outline" size={24} color={selectedTab == settingsTab.key ? ' #E65581' : iconColor} />
                     </TouchableOpacity>
                 </View>
 
-                <View style={{ minHeight: '8%', width: '100%', alignItems: 'center' }}>
+                <View style={{ minHeight: '5%', width: '100%', alignItems: 'center' }}>
                     <GradientText text="AI McGregor"
                         style={{ fontSize: 26, color: '#FFF', fontWeight: 'bold' }} />
 
@@ -162,15 +140,6 @@ const SettingsScreen: React.FC = () => {
             <View style={styles.contentContainer}>
                 {ActiveComponent ? <ActiveComponent /> : null}
             </View>
-
-            {/* Menu Items List */}
-            <FlatList
-                data={menuItems}
-                keyExtractor={(item) => item.title}
-                renderItem={renderMenuItem}
-                style={styles.menuList}
-                contentContainerStyle={styles.menuListContainer}
-            />
             <View style={{ marginBottom: 20 }}></View>
         </SafeAreaView>
     );
@@ -215,7 +184,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(168, 168, 168,0.3)',
         borderBottomEndRadius: 30,
         borderBottomLeftRadius: 30,
-        paddingVertical: 10,
+        paddingVertical: 20,
         marginBottom: 10
     },
     tabButton: {
@@ -240,20 +209,15 @@ const styles = StyleSheet.create({
         color: '#FFF',
     },
     contentContainer: {
-        backgroundColor: 'orange',
-        padding: 20,
+        padding: 10,
+        flex: 1,
     },
     contentText: {
         color: '#FFF',
         fontSize: 16,
         marginBottom: 10,
     },
-    menuList: {
-        flex: 1,
-    },
-    menuListContainer: {
 
-    },
     menuItem: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -265,11 +229,5 @@ const styles = StyleSheet.create({
         flex: 1,
         color: '#FFF',
         fontSize: 16,
-    },
-    line: {
-        height: 1,
-        width: '85%',
-        backgroundColor: '#B3B3B3',
-        alignSelf: 'center',
     },
 });

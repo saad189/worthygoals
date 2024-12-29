@@ -7,7 +7,7 @@ const GradientText = ({ text, style }: { text: string; style?: StyleProp<ViewSty
     const fontSize = style?.fontSize || 12;
     return (
         <View style={[styles.container, style]}>
-            <Svg height="50" width={Math.round((text.length + 1) * fontSize / 2)}>
+            <Svg height={Math.round(fontSize * 1.5)} width={Math.round((text.length + 1) * fontSize / 2)}>
                 <Defs>
                     <LinearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
                         <Stop offset="0%" stopColor="#FF5F6D" />
@@ -19,7 +19,7 @@ const GradientText = ({ text, style }: { text: string; style?: StyleProp<ViewSty
                     fontSize={fontSize}
                     fontWeight="bold"
                     x="0"
-                    y="40"
+                    y="30"
                     textAnchor="start"
                 >
                     {text}
@@ -32,8 +32,7 @@ const GradientText = ({ text, style }: { text: string; style?: StyleProp<ViewSty
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'flex-end',
+
         // backgroundColor: '#20232a',
     },
 });
