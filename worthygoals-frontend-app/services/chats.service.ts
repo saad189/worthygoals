@@ -1,7 +1,7 @@
-import { ChatDetail, ChatListItem } from "@/models";
+import { ChatDetail, ChatListItem, ChatMessage } from "@/models";
 import ApiService from "./api.service";
 import { formatErrorMessage } from "@/helpers";
-import Storage from "@/helpers/StorageUtil";
+import Storage from "@/helpers/StorageUtilAsync";
 
 // Note that Chat and ChatList are different
 const USER_CHATS = 'user-chats';
@@ -18,6 +18,7 @@ const CHAT_DATA: ChatDetail[] = [
                 time: '2024-12-29T10:28:54.088Z',
                 isRead: true,
                 senderId: 'coach',
+                recepientType: "user"
             },
             {
                 id: 'm2',
@@ -26,6 +27,7 @@ const CHAT_DATA: ChatDetail[] = [
                 time: '2024-12-29T11:28:54.088Z',
                 isRead: true,
                 senderId: 'coach',
+                recepientType: "user"
             },
             {
                 id: 'm3',
@@ -34,6 +36,7 @@ const CHAT_DATA: ChatDetail[] = [
                 time: '2024-12-29T11:38:54.088Z',
                 isRead: true,
                 senderId: 'coach',
+                recepientType: "user"
             },
             {
                 id: 'm4',
@@ -42,6 +45,7 @@ const CHAT_DATA: ChatDetail[] = [
                 time: '2024-12-29T12:28:54.088Z',
                 isRead: true,
                 senderId: 'user',
+                recepientType: "mentor"
             },
             {
                 id: 'm5',
@@ -50,15 +54,16 @@ const CHAT_DATA: ChatDetail[] = [
                 time: '2024-12-29T12:38:54.088Z',
                 isRead: true,
                 senderId: 'coach',
+                recepientType: "user"
             },
             {
                 id: 'm6',
                 type: 'text',
-                content:
-                    'GOALS #01: Want to Go for an Early Morning Run Every Day of the Week, Starting Now. I want to be Active in the Mornings!',
+                content: 'GOALS #01: Want to Go for an Early Morning Run Every Day of the Week, Starting Now. I want to be Active in the Mornings!',
                 time: '2024-12-30T10:28:54.088Z',
                 isRead: false,
                 senderId: 'coach',
+                recepientType: "user"
             },
         ],
     },
@@ -72,7 +77,8 @@ const CHAT_DATA: ChatDetail[] = [
             time: '2024-12-25T12:28:54.088Z',
             isRead: true,
             type: "text",
-            senderId: ""
+            senderId: "",
+            recepientType: "user"
         }],
     },
     {
@@ -85,80 +91,124 @@ const CHAT_DATA: ChatDetail[] = [
             time: '2024-12-26T10:28:54.088Z',
             isRead: true,
             type: "text",
-            senderId: ""
+            senderId: "",
+            recepientType: "user"
         }],
     },
 ];
 export class ChatService {
-
     private endpoint: string;
+    private chats: ChatDetail[] | null = null; // Local cache for chats
 
     constructor(private readonly apiService: ApiService) {
         this.endpoint = 'chats';
-        this.removeChats();
-
     }
 
+    // Ensure USER_CHATS is initialized with CHAT_DATA if empty
+    private async initializeChats() {
+        if (this.chats === null) {
+            const records = await Storage.getItem(USER_CHATS);
+            if (records && records.length > 0) {
+                this.chats = records;
+            } else {
+                // Initialize with CHAT_DATA if no chats exist
+                this.chats = [...CHAT_DATA];
+                await Storage.setItem(USER_CHATS, this.chats);
+            }
+        }
+    }
+
+    // Get the list of all chats
     async getUserChatList(): Promise<ChatListItem[]> {
         try {
-            const records = await Storage.getItem(USER_CHATS);
-            if (records) {
-                return records.map((chat: ChatDetail) => (
-                    {
-                        id: chat.id,
-                        name: chat.name,
-                        avatar: chat.avatar,
-                        lastMessage: chat.messages[chat.messages.length - 1].content,
-                        time: chat.messages[chat.messages.length - 1].time,
-                        isRead: chat.messages[chat.messages.length - 1].isRead
-                    }
-                ));
+            await this.initializeChats();
+
+            if (this.chats) {
+                return this.chats.map((chat: ChatDetail) => ({
+                    id: chat.id,
+                    name: chat.name,
+                    avatar: chat.avatar,
+                    lastMessage: chat.messages[chat.messages.length - 1]?.content || '',
+                    time: chat.messages[chat.messages.length - 1]?.time || '',
+                    isRead: chat.messages[chat.messages.length - 1]?.isRead || chat.messages[chat.messages.length - 1]?.recepientType == 'mentor' || false,
+                }));
             }
 
             return [];
-
         } catch (error: any) {
             throw new Error(formatErrorMessage(error));
         }
     }
 
+    // Get details of a specific chat
     async getUserChat(chatId: string): Promise<ChatDetail | null> {
         try {
-            const records = Storage.getItem(USER_CHATS);
-            const chats: ChatDetail[] = await records ?? [];
-
-            const chat = chats.find((c: ChatDetail) => c.id === chatId);
-
-            return chat ?? null;
-
+            await this.initializeChats();
+            return this.chats?.find((c: ChatDetail) => c.id === chatId) ?? null;
         } catch (error: any) {
             throw new Error(formatErrorMessage(error));
         }
     }
 
-
-    async saveChat(chat: any) {
+    // Save a new message to a specific chat
+    async saveMessage(chatId: string, message: ChatMessage) {
         try {
-            const records = Storage.getItem(USER_CHATS);
-            const chats: ChatDetail[] = await records ?? [];
+            const chat = await this.getUserChat(chatId);
 
-            await Storage.setItem(USER_CHATS, [chat, ...chats]);
-
-        } catch (error: any) {
-            throw new Error(formatErrorMessage(error));
-        }
-    }
-
-    async removeChats() {
-        try {
-            console.log('Removing Chats');
-            await Storage.removeItem(USER_CHATS);
-            for (let i = 0; i < CHAT_DATA.length; i++) {
-                await this.saveChat(CHAT_DATA[i]);
+            if (!chat) {
+                throw new Error(`Chat with id ${chatId} not found.`);
             }
-            console.log('Chat Data Saved')
+
+            // Add the new message to the chat
+            const updatedChat: ChatDetail = {
+                ...chat,
+                messages: [...chat.messages, message],
+            };
+
+            // Save the updated chat
+            await this.saveChat(updatedChat);
         } catch (error: any) {
-            //   throw new Error(formatErrorMessage(error));
+            throw new Error(formatErrorMessage(error));
+        }
+    }
+
+    // Save or update a chat
+    async saveChat(updatedChat: ChatDetail) {
+        try {
+            await this.initializeChats();
+
+            if (!this.chats) {
+                throw new Error('Chats not initialized.');
+            }
+
+            // Update or add the chat in the local cache
+            const updatedChats = this.chats.map((chat) =>
+                chat.id === updatedChat.id ? updatedChat : chat
+            );
+
+            const chatExists = this.chats.some((chat) => chat.id === updatedChat.id);
+            if (!chatExists) {
+                updatedChats.push(updatedChat);
+            }
+
+            // Update local cache and storage
+            this.chats = updatedChats;
+            await Storage.setItem(USER_CHATS, this.chats);
+        } catch (error: any) {
+            throw new Error(formatErrorMessage(error));
+        }
+    }
+
+    // Clear all chats and reinitialize with CHAT_DATA
+    async resetChats() {
+        try {
+            console.log('Resetting Chats...');
+            await Storage.removeItem(USER_CHATS);
+            this.chats = [...CHAT_DATA];
+            await Storage.setItem(USER_CHATS, this.chats);
+            console.log('Chats reset to initial CHAT_DATA.');
+        } catch (error: any) {
+            throw new Error(formatErrorMessage(error));
         }
     }
 }
@@ -166,3 +216,4 @@ export class ChatService {
 const chatService = new ChatService(ApiService);
 
 export default chatService;
+

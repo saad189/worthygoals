@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -40,6 +40,19 @@ function ChatViewScreen() {
     const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
     const [chatDetail, setChatDetail] = useState<ChatDetail>(chatData);
     const [inputText, setInputText] = useState<string>('');
+
+    const updateRead = () => {
+        const updatedMessages = chatDetail.messages.map((message) => ({
+            ...message,
+            isRead: true,
+        }));
+        const updatedChatDetail = { ...chatDetail, messages: updatedMessages };
+        setChatDetail(updatedChatDetail);
+        chatService.saveChat(updatedChatDetail);
+    }
+    useEffect(() => {
+        updateRead();
+    }, []);
 
     const renderMessage = ({ item, index }: { item: ChatMessage; index: number }) => {
         const isCurrentUser = item.senderId === 'user';
@@ -118,8 +131,9 @@ In a real app, you might use:
             time: (new Date()).toString(),
             isRead: false,
             senderId: 'user',
+            recepientType: 'mentor'
         };
-
+        chatService.saveMessage(chatDetail.id, newMessage);
         setChatDetail((prev) => ({
             ...prev,
             messages: [...prev.messages, newMessage],

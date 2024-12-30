@@ -10,13 +10,14 @@ export interface ChatListItem {
 }
 
 export type MessageType = 'text' | 'image' | 'audio' | 'video';
-
+export type ReceipientType = 'user' | 'mentor'
 export interface ChatMessage {
     id: string;
     type: MessageType;
     content: string;      // text, or URL for media
     time: string;         // "5:30 AM", for example
     isRead: boolean;
+    recepientType: ReceipientType;
     senderId: string;     // e.g. "user" or "coach" or something unique
 }
 
