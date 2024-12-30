@@ -5,3 +5,10 @@ export interface SelectGoal {
     tasks: Chip[];
     id: number;
 }
+export interface GoalItem {
+    id: number;
+    title: string;
+    description: string;
+    duration: string;
+    imageUri: string;
+}

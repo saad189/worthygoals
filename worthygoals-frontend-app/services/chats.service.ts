@@ -141,7 +141,7 @@ export class ChatService {
         try {
             const records = Storage.getItem(USER_CHATS);
             const chats: ChatDetail[] = await records ?? [];
-            console.log({ chats, chat })
+
             await Storage.setItem(USER_CHATS, [chat, ...chats]);
 
         } catch (error: any) {

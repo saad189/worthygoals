@@ -13,8 +13,6 @@ import {
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function DefaultSettingsComponent() {
-
-    // Sample menu items for the lower list
     const menuItems = [
         { title: 'General Settings', logo: require('@/assets/images/icons/settings_icon.png'), onPress: () => { } },
         { title: 'Notifications', logo: require('@/assets/images/icons/notification.png'), onPress: () => { } },
@@ -24,7 +22,7 @@ export default function DefaultSettingsComponent() {
         { title: 'Terms of Use', logo: require('@/assets/images/icons/settings_icon.png'), onPress: () => { } },
         { title: 'Support & FAQs', logo: require('@/assets/images/icons/settings_icon.png'), onPress: () => { } },
     ];
-    console.log('DefaultSettingsComponent');
+
     const renderMenuItem = ({ item }: { item: typeof menuItems[0] }) => {
         return (
             <>

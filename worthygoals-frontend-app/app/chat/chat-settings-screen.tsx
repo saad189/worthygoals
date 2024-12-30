@@ -30,22 +30,25 @@ enum Tabs {
     SETTINGS = 'Settings',
 }
 const iconColor = '#FFF';
+const iconColorActive = '#E65581';
 
 type TabItem = {
     key: Tabs;
     title: string;
     onPress: () => void;
     logo: any;
+    logoActive: any;
     component: React.FC;
 }
 
-const TabButton = ({ onPress, logo, title, isActive }: { onPress: () => void; logo: any; title: string; isActive: boolean }) => {
+const TabButton = ({ onPress, logo, title, logoActive, isActive }: TabItem & { isActive: boolean }) => {
+
     return (
         <TouchableOpacity
             style={[styles.tabButton, isActive && styles.tabButtonSelected]}
             onPress={onPress}
         >
-            <Image source={logo} style={{ width: SCREEN_WIDTH * 0.1, height: SCREEN_WIDTH * 0.11 }} />
+            <Image source={isActive ? logoActive : logo} style={{ width: SCREEN_WIDTH * 0.1, height: SCREEN_WIDTH * 0.11 }} />
             <Text style={[styles.tabButtonText, isActive && styles.tabButtonTextSelected]} numberOfLines={2} adjustsFontSizeToFit={true}>
                 {title}
             </Text>
@@ -64,21 +67,24 @@ const SettingsScreen: React.FC = () => {
             title: 'Current Goals Status',
             onPress: () => setSelectedTab(Tabs.CURRENT_GOALS),
             logo: require('@/assets/images/icons/current_goals_icon.png'),
-            component: CurrentGoalsComponent
+            component: CurrentGoalsComponent,
+            logoActive: require('@/assets/images/icons/current_goals_active_icon.png'),
         },
         {
             key: Tabs.AI_PERSONALITY,
             title: 'AI Personality Settings',
             onPress: () => setSelectedTab(Tabs.AI_PERSONALITY),
             logo: require('@/assets/images/icons/ai_big_icon.png'),
-            component: AIPersonalitySettingsComponent
+            component: AIPersonalitySettingsComponent,
+            logoActive: require('@/assets/images/icons/ai_big_active_icon.png'),
         },
         {
             key: Tabs.SET_GOALS,
             title: 'Set New Goals',
             onPress: () => setSelectedTab(Tabs.SET_GOALS),
             logo: require('@/assets/images/icons/new_goals_icon.png'),
-            component: NewGoalsComponent
+            component: NewGoalsComponent,
+            logoActive: require('@/assets/images/icons/new_goals_active_icon.png'),
         },
     ];
 
@@ -113,7 +119,7 @@ const SettingsScreen: React.FC = () => {
                         />
                     </View>
                     <TouchableOpacity onPress={settingsTab.onPress} style={{ marginLeft: 5 }} >
-                        <Ionicons name="settings-outline" size={24} color={selectedTab == settingsTab.key ? ' #E65581' : iconColor} />
+                        <Ionicons name="settings" size={24} color={selectedTab == settingsTab.key ? iconColorActive : iconColor} />
                     </TouchableOpacity>
                 </View>
 
@@ -128,10 +134,7 @@ const SettingsScreen: React.FC = () => {
             <View style={styles.tabsContainer}>
                 {tabItems.map(tab => (
                     <TabButton
-                        key={tab.key}
-                        onPress={tab.onPress}
-                        logo={tab.logo}
-                        title={tab.title}
+                        {...tab}
                         isActive={selectedTab === tab.key}
                     />
                 ))}
