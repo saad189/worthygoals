@@ -6,66 +6,109 @@ import {
     TextInput,
     TouchableOpacity,
     Alert,
+    KeyboardAvoidingView,
+    Platform
 } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
+
+import { GoalCategory, GoalCategoryEnum, GoalItem } from '@/models';
+import { capitalizeFirstLetter, getEnumValues, getImageUri } from '@/helpers';
+import goalService from '@/services/goals.service';
+
+const categoryOptions = getEnumValues(GoalCategoryEnum);
+const emptyGoal: GoalItem = {
+    title: '',
+    id: 0,
+    description: '',
+    durationInDays: 0,
+    imageUri: '',
+    category: 'Power',
+    creationDate: new Date()
+};
 
 const NewGoalsComponent: React.FC = () => {
-    const [goal, setGoal] = useState({
-        title: '',
-        description: '',
-        duration: ''
-    });
+    const [goal, setGoal] = useState<GoalItem>(emptyGoal);
+
+    const [value, setValue] = useState<any>([]);
+    const [items, setItems] = useState(
+        categoryOptions.map(option => ({ label: capitalizeFirstLetter(option), value: (option) })));
 
     const setGoalTitle = (title: string) => setGoal(prev => ({ ...prev, title }));
     const setGoalDescription = (description: string) => setGoal(prev => ({ ...prev, description }));
-    const setGoalDuration = (duration: string) => setGoal(prev => ({ ...prev, duration }));
+    const setGoalDuration = (durationInDays: string) => setGoal(prev => ({ ...prev, durationInDays: Number(durationInDays) }));
+
+    const [open, setOpen] = useState(false);
 
     const handleSaveGoal = () => {
-        if (!goal.title || !goal.description || !goal.duration) {
+        if (!goal)
+            return;
+
+        if (!goal.title || !goal.description || !goal.durationInDays) {
             Alert.alert('Missing Fields', 'Please fill all fields to continue.');
             return;
         }
         // Save logic goes here, e.g. POST to an API or local state
+        goalService.saveGoal({ ...goal, imageUri: getImageUri(goal.category), category: value });
         Alert.alert('Goal Saved!', `${goal.title} has been added.`);
-        setGoal({
-            title: '',
-            description: '',
-            duration: ''
-        });
+        setGoal(emptyGoal);
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.header}>Set a New Goal</Text>
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+        >
+            <View style={styles.container}>
+                <Text style={styles.label}>Goal Title</Text>
+                <TextInput
+                    style={styles.input}
+                    value={goal.title}
+                    placeholderTextColor="#aaa"
+                    placeholder="Enter Goal Title"
+                    onChangeText={setGoalTitle}
+                />
 
-            <TextInput
-                style={styles.input}
-                value={goal.title}
-                placeholderTextColor="#aaa"
-                placeholder="Enter Goal Title"
-                onChangeText={setGoalTitle}
-            />
+                <Text style={styles.label}>Category</Text>
+                <DropDownPicker
+                    open={open}
+                    value={value}
+                    items={items}
+                    setOpen={setOpen}
+                    setValue={setValue}
+                    setItems={setItems}
+                    theme="LIGHT"
+                    multiple={false}
+                    mode="BADGE"
+                    placeholder='Choose a Category'
+                    style={[styles.input, { marginBottom: 20 }]}
+                />
 
-            <TextInput
-                style={[styles.input, styles.multilineInput]}
-                value={goal.description}
-                placeholderTextColor="#aaa"
-                placeholder="Enter Goal Description"
-                onChangeText={setGoalDescription}
-                multiline
-            />
+                <Text style={styles.label}>Goal Description</Text>
+                <TextInput
+                    style={[styles.input, styles.multilineInput]}
+                    value={goal.description}
+                    placeholderTextColor="#aaa"
+                    placeholder="Enter Goal Description"
+                    onChangeText={setGoalDescription}
+                    multiline
+                />
 
-            <TextInput
-                style={styles.input}
-                value={goal.duration}
-                placeholderTextColor="#aaa"
-                placeholder="Enter Goal Duration"
-                onChangeText={setGoalDuration}
-            />
+                <Text style={styles.label}>Goal Duration (in Days)</Text>
+                <TextInput
+                    style={styles.input}
+                    value={goal.durationInDays.toString()}
+                    placeholderTextColor="#aaa"
+                    placeholder="Enter Goal Duration"
+                    inputMode='numeric'
+                    onChangeText={setGoalDuration}
+                />
 
-            <TouchableOpacity style={styles.saveButton} onPress={handleSaveGoal}>
-                <Text style={styles.saveButtonText}>Save Goal</Text>
-            </TouchableOpacity>
-        </View>
+                <TouchableOpacity style={styles.saveButton} onPress={handleSaveGoal}>
+                    <Text style={styles.saveButtonText}>Save Goal</Text>
+                </TouchableOpacity>
+            </View>
+        </KeyboardAvoidingView>
     );
 };
 
@@ -74,27 +117,26 @@ export default NewGoalsComponent;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
-        justifyContent: 'flex-start',
+        paddingHorizontal: 16,
+        marginBottom: 10,
     },
-    header: {
-        fontSize: 22,
-        fontWeight: '700',
-        marginBottom: 20,
+    label: {
+        fontSize: 14,
         color: '#fff',
-        textAlign: 'center',
+        marginBottom: 8,
     },
     input: {
         backgroundColor: '#fff',
         borderRadius: 8,
-        marginBottom: 12,
+        marginBottom: 10,
         paddingHorizontal: 10,
-        height: 50,
-        fontSize: 16,
+        height: 40,
+        fontSize: 14,
         color: '#000',
     },
     multilineInput: {
-        height: 80,
+        height: 60,
+        paddingVertical: 5,
         textAlignVertical: 'top',
     },
     saveButton: {
@@ -106,7 +148,7 @@ const styles = StyleSheet.create({
     },
     saveButtonText: {
         color: '#FFF',
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '600',
     },
 });

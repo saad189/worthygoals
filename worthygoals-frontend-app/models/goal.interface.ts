@@ -1,5 +1,12 @@
 import { Chip, ImageCard } from ".";
 
+export enum GoalCategoryEnum {
+    Power = "power",
+    Knowledge = "knowledge",
+    Spiritual = "spiritual",
+}
+
+export type GoalCategory = keyof typeof GoalCategoryEnum;
 export interface SelectGoal {
     card: ImageCard;
     tasks: Chip[];
@@ -9,6 +16,8 @@ export interface GoalItem {
     id: number;
     title: string;
     description: string;
-    duration: string;
+    durationInDays: number; // in Days
     imageUri: string;
+    category: GoalCategory;
+    creationDate: Date;
 }
