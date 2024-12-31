@@ -6,6 +6,7 @@ import {
     Image,
     TouchableOpacity,
     SafeAreaView,
+    ScrollView,
     Dimensions,
 } from 'react-native';
 
@@ -122,47 +123,49 @@ const SettingsScreen: React.FC = () => {
     return (
         <SafeAreaView style={styles.container}>
             {/* Profile Section */}
-            <View style={styles.profileContainer}>
+            <ScrollView>
+                <View style={styles.profileContainer}>
 
-                <View style={{ flexDirection: 'row', justifyContent: 'space-around', width: '100%', alignItems: 'center' }}>
-                    <TouchableOpacity onPress={navigation.goBack} style={{ marginLeft: 5 }}>
-                        <Ionicons name="arrow-back" size={24} color={iconColor} />
-                    </TouchableOpacity>
-                    <View style={styles.profileImageWrapper}>
-                        <Image
-                            source={{
-                                uri: mentor.imageUri,
-                            }}
-                            style={styles.profileImage}
-                        />
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-around', width: '100%', alignItems: 'center' }}>
+                        <TouchableOpacity onPress={navigation.goBack} style={{ marginLeft: 5 }}>
+                            <Ionicons name="arrow-back" size={24} color={iconColor} />
+                        </TouchableOpacity>
+                        <View style={styles.profileImageWrapper}>
+                            <Image
+                                source={{
+                                    uri: mentor.imageUri,
+                                }}
+                                style={styles.profileImage}
+                            />
+                        </View>
+                        <TouchableOpacity onPress={settingsTab.onPress} style={{ marginLeft: 5 }} >
+                            <Ionicons name="settings" size={24} color={selectedTab == settingsTab.key ? iconColorActive : iconColor} />
+                        </TouchableOpacity>
                     </View>
-                    <TouchableOpacity onPress={settingsTab.onPress} style={{ marginLeft: 5 }} >
-                        <Ionicons name="settings" size={24} color={selectedTab == settingsTab.key ? iconColorActive : iconColor} />
-                    </TouchableOpacity>
-                </View>
 
-                <View style={{ minHeight: '5%', width: '100%', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 26, color: '#FFC371', fontWeight: 'bold' }}>AI {mentor.name}</Text>
-                    {/* <GradientText text={`AI ${mentor.name}`}
+                    <View style={{ minHeight: '5%', width: '100%', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 26, color: '#FFC371', fontWeight: 'bold' }}>AI {mentor.name}</Text>
+                        {/* <GradientText text={`AI ${mentor.name}`}
                         style={{ fontSize: 26, color: '#FFF', fontWeight: 'bold' }} /> */}
 
+                    </View>
                 </View>
-            </View>
 
-            {/* Top Tab Buttons */}
-            <View style={styles.tabsContainer}>
-                {tabItems.map(tab => (
-                    <TabButton
-                        {...tab}
-                        isActive={selectedTab === tab.key}
-                    />
-                ))}
-            </View>
+                {/* Top Tab Buttons */}
+                <View style={styles.tabsContainer}>
+                    {tabItems.map(tab => (
+                        <TabButton
+                            {...tab}
+                            isActive={selectedTab === tab.key}
+                        />
+                    ))}
+                </View>
 
-            <View style={styles.contentContainer}>
-                {ActiveComponent ? <ActiveComponent /> : null}
-            </View>
-            <View style={{ marginBottom: 20 }}></View>
+                <View style={styles.contentContainer}>
+                    {ActiveComponent ? <ActiveComponent /> : null}
+                </View>
+                <View style={{ marginBottom: 20 }}></View>
+            </ScrollView>
         </SafeAreaView>
     );
 };
