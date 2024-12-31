@@ -26,4 +26,6 @@ export interface ChatDetail {
     name: string;
     avatar: string;
     messages: ChatMessage[];
+    userId: number;
+    mentorId: number;
 }

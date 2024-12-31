@@ -5,9 +5,11 @@ import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-s
 const GradientText = ({ text, style }: { text: string; style?: StyleProp<ViewStyle | TextStyle> }) => {
 
     const fontSize = style?.fontSize || 12;
+    const width = Math.round(3.8 * fontSize + 5 * text.length);
+
     return (
         <View style={[styles.container, style]}>
-            <Svg height={Math.round(fontSize * 1.5)} width={Math.round((text.length + 1) * fontSize / 2)}>
+            <Svg height={Math.round(fontSize * 1.5)} width={width}>
                 <Defs>
                     <LinearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
                         <Stop offset="0%" stopColor="#FF5F6D" />

@@ -3,3 +3,4 @@ export * from './goal.interface';
 export * from './imagecard.interface';
 export * from './chat.interface';
 export * from './icon.interface';
+export * from './mentor.interface';

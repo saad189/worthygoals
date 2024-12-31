@@ -1,6 +1,4 @@
-// App.tsx (or any screen file)
-
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
     View,
     Text,
@@ -13,13 +11,15 @@ import {
 
 import { Ionicons } from '@expo/vector-icons';
 import Background from '@/components/SubComponents/Background';
-import { ParamListBase, useNavigation, useRoute } from '@react-navigation/native';
+import { ParamListBase, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import CurrentGoalsComponent from '@/components/MentorSettings/CurrentGoals';
 import NewGoalsComponent from '@/components/MentorSettings/NewGoals';
 import AIPersonalitySettingsComponent from '@/components/MentorSettings/AIPersonalitySettings';
 import { StackNavigationProp } from '@react-navigation/stack';
 import GradientText from '@/components/SubComponents/GradientText';
 import DefaultSettingsComponent from '@/components/MentorSettings/DefaultSettings';
+import mentorService from '@/services/mentor.service';
+import { Mentor } from '@/models';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 // Define the available tabs
@@ -58,7 +58,25 @@ const TabButton = ({ onPress, logo, title, logoActive, isActive }: TabItem & { i
 
 const SettingsScreen: React.FC = () => {
     // Keep track of which tab is currently selected
-    const { params: { id } } = useRoute() as any;
+    const { params: { mentorId } } = useRoute() as any;
+    const id = Number(mentorId);
+    const [mentor, setMentor] = useState<Mentor>({
+        id: 0,
+        name: "",
+        description: "",
+        personalityStats: { energy: 90, focus: 80 },
+        imageUri: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOKOsPbE9WMa8ZO1iNNeFgoI0DWBjH8cMCwg&s",
+    },)
+
+    useFocusEffect(
+        useCallback(() => {
+            mentorService.getMentorById(id).then((data: Mentor | null) => {
+                console.log({ fetchedData: data, mentorId })
+                if (data)
+                    setMentor(data);
+            })
+        }, [])
+    );
     const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
 
     const tabItems: TabItem[] = [
@@ -113,7 +131,7 @@ const SettingsScreen: React.FC = () => {
                     <View style={styles.profileImageWrapper}>
                         <Image
                             source={{
-                                uri: 'https://mmajunkie.usatoday.com/wp-content/uploads/sites/91/2017/01/conor-mcgregor-ufc-205.jpg?w=1000&h=600&crop=1',
+                                uri: mentor.imageUri,
                             }}
                             style={styles.profileImage}
                         />
@@ -124,8 +142,9 @@ const SettingsScreen: React.FC = () => {
                 </View>
 
                 <View style={{ minHeight: '5%', width: '100%', alignItems: 'center' }}>
-                    <GradientText text="AI McGregor"
-                        style={{ fontSize: 26, color: '#FFF', fontWeight: 'bold' }} />
+                    <Text style={{ fontSize: 26, color: '#FFC371', fontWeight: 'bold' }}>AI {mentor.name}</Text>
+                    {/* <GradientText text={`AI ${mentor.name}`}
+                        style={{ fontSize: 26, color: '#FFF', fontWeight: 'bold' }} /> */}
 
                 </View>
             </View>

@@ -29,5 +29,5 @@ const images = [
 ];
 
 export function getImageUri(category: GoalCategory): string {
-    return images.find(image => image.category == category)?.imageUri || '';
+    return images.find(image => image.category == category.toLowerCase())?.imageUri || '';
 }

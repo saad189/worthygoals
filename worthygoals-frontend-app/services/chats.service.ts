@@ -66,6 +66,8 @@ const CHAT_DATA: ChatDetail[] = [
                 recepientType: "user"
             },
         ],
+        userId: 0,
+        mentorId: 1
     },
     {
         id: '2',
@@ -80,6 +82,8 @@ const CHAT_DATA: ChatDetail[] = [
             senderId: "",
             recepientType: "user"
         }],
+        userId: 0,
+        mentorId: 2
     },
     {
         id: '3',
@@ -94,6 +98,8 @@ const CHAT_DATA: ChatDetail[] = [
             senderId: "",
             recepientType: "user"
         }],
+        userId: 0,
+        mentorId: 3
     },
 ];
 export class ChatService {

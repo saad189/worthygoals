@@ -41,7 +41,7 @@ function ChatViewScreen() {
     const [chatDetail, setChatDetail] = useState<ChatDetail>(chatData);
     const [inputText, setInputText] = useState<string>('');
 
-    const updateRead = () => {
+    const updateChat = () => {
         const updatedMessages = chatDetail.messages.map((message) => ({
             ...message,
             isRead: true,
@@ -51,7 +51,7 @@ function ChatViewScreen() {
         chatService.saveChat(updatedChatDetail);
     }
     useEffect(() => {
-        updateRead();
+        updateChat();
     }, []);
 
     const renderMessage = ({ item, index }: { item: ChatMessage; index: number }) => {
@@ -154,7 +154,7 @@ In a real app, you might use:
                         <Ionicons name="arrow-back" size={24} color={iconColor} />
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={() => { navigation.navigate(ROUTE_NAMES.CHAT.CHAT_SETTINGS_SCREEN, { id: chatDetail.id }) }}
+                    <TouchableOpacity onPress={() => { navigation.navigate(ROUTE_NAMES.CHAT.CHAT_SETTINGS_SCREEN, { mentorId: chatDetail.mentorId }) }}
                         style={styles.profileImageWrapper}>
                         <Image
                             source={{ uri: chatDetail.avatar }}

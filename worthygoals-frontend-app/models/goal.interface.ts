@@ -13,7 +13,7 @@ export interface SelectGoal {
     id: number;
 }
 export interface GoalItem {
-    id: number;
+    id: string;
     title: string;
     description: string;
     durationInDays: number; // in Days

@@ -50,7 +50,7 @@ export default function ProcessingScreen() {
                         <Text style={styles.text}>Processing</Text>
                         <SlidingText textSize={textSize} text="DISCIPLINE" startPosition={-SCREEN_WIDTH + 100} endPosition={SCREEN_WIDTH} />
                         <SlidingText textSize={textSize} text="ENDURE" startPosition={SCREEN_WIDTH} endPosition={-SCREEN_WIDTH} />
-                        <SlidingText textSize={textSize} text="WARRUIR" startPosition={-SCREEN_WIDTH} endPosition={SCREEN_WIDTH} />
+                        <SlidingText textSize={textSize} text="WARRIOR" startPosition={-SCREEN_WIDTH} endPosition={SCREEN_WIDTH} />
                     </View> :
                     <View style={styles.processedContainer}>
                         <Text style={styles.text}>Processed</Text>

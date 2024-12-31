@@ -18,7 +18,7 @@ import goalService from '@/services/goals.service';
 const categoryOptions = getEnumValues(GoalCategoryEnum);
 const emptyGoal: GoalItem = {
     title: '',
-    id: 0,
+    id: '',
     description: '',
     durationInDays: 0,
     imageUri: '',
@@ -48,7 +48,8 @@ const NewGoalsComponent: React.FC = () => {
             return;
         }
         // Save logic goes here, e.g. POST to an API or local state
-        goalService.saveGoal({ ...goal, imageUri: getImageUri(goal.category), category: value });
+
+        goalService.saveGoal({ ...goal, imageUri: getImageUri(goal.category), category: value, id: `m-${Date.now()}`, });
         Alert.alert('Goal Saved!', `${goal.title} has been added.`);
         setGoal(emptyGoal);
     };

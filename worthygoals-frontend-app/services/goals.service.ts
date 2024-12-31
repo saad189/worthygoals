@@ -6,7 +6,7 @@ import Storage from "@/helpers/StorageUtilAsync";
 const USER_GOALS = 'user-goals';
 const mockGoals: GoalItem[] = [
     {
-        id: 1,
+        id: "1",
         title: '20 Min Run in the Morning',
         description: 'Establish a Healthy Early Morning Routine by getting up at 0600 and going for a 20 Min Run.',
         durationInDays: 7,
@@ -15,7 +15,7 @@ const mockGoals: GoalItem[] = [
         creationDate: new Date()
     },
     {
-        id: 2,
+        id: "2",
         title: 'Hike a Mountain',
         description: 'Go for Nature-based experience/exercise. Hike a nearby mountain once a weekend.',
         durationInDays: 14,
@@ -24,7 +24,7 @@ const mockGoals: GoalItem[] = [
         category: "Spiritual"
     },
     {
-        id: 3,
+        id: "3",
         title: 'Start to Box',
         description: 'Establish a Good Athletic Routine by starting some boxing. Start by hitting the bag for 15 min sets daily.',
         durationInDays: 5,
@@ -63,7 +63,7 @@ export class GoalService {
     }
 
     // Get details of a specific goal
-    async getGoalById(goalId: number): Promise<GoalItem | null> {
+    async getGoalById(goalId: string): Promise<GoalItem | null> {
         try {
             await this.initializeGoals();
             return this.goals?.find((goal: GoalItem) => goal.id === goalId) ?? null;
@@ -74,6 +74,7 @@ export class GoalService {
 
     // Save or update a goal
     async saveGoal(updatedGoal: GoalItem) {
+        console.log({ receivedGoal: updatedGoal })
         try {
             await this.initializeGoals();
 
