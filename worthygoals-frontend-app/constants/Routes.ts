@@ -29,5 +29,9 @@ export const ROUTE_NAMES = {
         self: 'goal-selection',
         SELECTION_SCREEN: 'selection-screen'
     },
+    COMMON: {
+        self: 'common',
+        IMAGE_VIEWER: 'image-viewer-screen'
+    },
     ABOUT: 'about'
 }

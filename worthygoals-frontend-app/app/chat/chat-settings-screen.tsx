@@ -8,6 +8,7 @@ import {
     SafeAreaView,
     ScrollView,
     Dimensions,
+    Platform,
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -17,10 +18,11 @@ import CurrentGoalsComponent from '@/components/MentorSettings/CurrentGoals';
 import NewGoalsComponent from '@/components/MentorSettings/NewGoals';
 import AIPersonalitySettingsComponent from '@/components/MentorSettings/AIPersonalitySettings';
 import { StackNavigationProp } from '@react-navigation/stack';
-import GradientText from '@/components/SubComponents/GradientText';
 import DefaultSettingsComponent from '@/components/MentorSettings/DefaultSettings';
 import mentorService from '@/services/mentor.service';
 import { Mentor } from '@/models';
+import { ROUTE_NAMES } from '@/constants';
+import Animated, { } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 // Define the available tabs
@@ -72,7 +74,6 @@ const SettingsScreen: React.FC = () => {
     useFocusEffect(
         useCallback(() => {
             mentorService.getMentorById(id).then((data: Mentor | null) => {
-                console.log({ fetchedData: data, mentorId })
                 if (data)
                     setMentor(data);
             })
@@ -125,18 +126,25 @@ const SettingsScreen: React.FC = () => {
             {/* Profile Section */}
             <ScrollView>
                 <View style={styles.profileContainer}>
-
                     <View style={{ flexDirection: 'row', justifyContent: 'space-around', width: '100%', alignItems: 'center' }}>
                         <TouchableOpacity onPress={navigation.goBack} style={{ marginLeft: 5 }}>
                             <Ionicons name="arrow-back" size={24} color={iconColor} />
                         </TouchableOpacity>
+
                         <View style={styles.profileImageWrapper}>
-                            <Image
-                                source={{
-                                    uri: mentor.imageUri,
-                                }}
-                                style={styles.profileImage}
-                            />
+                            <TouchableOpacity onPress={() => {
+                                navigation.navigate(ROUTE_NAMES.COMMON.IMAGE_VIEWER, { mentor })
+                            }}
+                                style={{ minWidth: 150, minHeight: 150 }}
+                            >
+                                <Animated.Image
+                                    source={{
+                                        uri: mentor.imageUri,
+                                    }}
+                                    sharedTransitionTag='tag'
+                                    style={styles.profileImage}
+                                />
+                            </TouchableOpacity>
                         </View>
                         <TouchableOpacity onPress={settingsTab.onPress} style={{ marginLeft: 5 }} >
                             <Ionicons name="settings" size={24} color={selectedTab == settingsTab.key ? iconColorActive : iconColor} />
@@ -197,6 +205,7 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         resizeMode: 'cover',
+        borderRadius: 75,
     },
     profileName: {
         fontSize: 20,

@@ -74,7 +74,6 @@ export class GoalService {
 
     // Save or update a goal
     async saveGoal(updatedGoal: GoalItem) {
-        console.log({ receivedGoal: updatedGoal })
         try {
             await this.initializeGoals();
 
