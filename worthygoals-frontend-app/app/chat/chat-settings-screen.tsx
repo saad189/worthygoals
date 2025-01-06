@@ -133,7 +133,7 @@ const SettingsScreen: React.FC = () => {
 
                         <View style={styles.profileImageWrapper}>
                             <TouchableOpacity onPress={() => {
-                                navigation.navigate(ROUTE_NAMES.COMMON.IMAGE_VIEWER, { mentor })
+                                navigation.navigate(ROUTE_NAMES.COMMON.IMAGE_VIEWER, { imageUri: mentor.imageUri, tag: `${mentor.id}-tag` })
                             }}
                                 style={{ minWidth: 150, minHeight: 150 }}
                             >
@@ -141,7 +141,7 @@ const SettingsScreen: React.FC = () => {
                                     source={{
                                         uri: mentor.imageUri,
                                     }}
-                                    sharedTransitionTag='tag'
+                                    sharedTransitionTag={`${mentor.id}-tag`}
                                     style={styles.profileImage}
                                 />
                             </TouchableOpacity>

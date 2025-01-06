@@ -24,7 +24,7 @@ import chatService from '@/services/chats.service';
 import Background from '@/components/SubComponents/Background';
 import { mapTime } from '@/helpers/TimeMapper';
 import { ROUTE_NAMES } from '@/constants';
-
+import Animated from 'react-native-reanimated';
 const iconColor = '#FFF';
 
 export default function ChatViewScreenWithBackground() {
@@ -99,11 +99,18 @@ function ChatViewScreen() {
                 )}
 
                 {item.type === 'image' && (
-                    <Image
-                        source={{ uri: item.content }}
-                        style={styles.imageMessage}
-                        resizeMode="cover"
-                    />
+                    <TouchableOpacity onPress={() => {
+                        navigation.navigate(ROUTE_NAMES.COMMON.IMAGE_VIEWER, { imageUri: item.content, tag: `${item.id}-tag` })
+                    }}
+                        style={{ minWidth: 150, minHeight: 150 }}
+                    >
+                        <Animated.Image
+                            source={{ uri: item.content }}
+                            resizeMode="cover"
+                            sharedTransitionTag={`${item.id}-tag`}
+                            style={styles.imageMessage}
+                        />
+                    </TouchableOpacity>
                 )}
 
                 {(item.type === 'audio' || item.type === 'video') && (
@@ -111,10 +118,10 @@ function ChatViewScreen() {
                         {item.type.toUpperCase()} message: {item.content}
                     </Text>
                     /*
-In a real app, you might use:
-- <Video source={{ uri: item.content }} ... />
-- or an Audio player library for `audio`
-*/
+                In a real app, you might use:
+                - <Video source={{ uri: item.content }} ... />
+                - or an Audio player library for `audio`
+                */
                 )}
                 <Text style={[styles.messageTime, isMedia ? styles.mediaTime : null]}>{mapTime(new Date(item.time))}</Text>
             </View>
