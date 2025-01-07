@@ -3,18 +3,16 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import { CalendarList } from 'react-native-calendars'; // or Calendar, Agenda, etc.
 import Header from '@/components/SubComponents/Header';
 import Background from '@/components/SubComponents/Background';
 import { LinearGradient } from 'expo-linear-gradient';
-import { mapTime } from '@/helpers/TimeMapper';
 import { theme } from '@/core';
 import WeeklyDatePicker from '@/components/CalenderView';
+import BorderGradient from '@/components/Common/BorderGradient';
 
 const DashboardScreen = () => {
   const [selectedDate, setSelectedDate] = useState('2023-10-14');
@@ -81,32 +79,13 @@ const DashboardScreen = () => {
         </View>
 
         <WeeklyDatePicker />
-        {/* <CalendarList
-          horizontal
-          pagingEnabled
-          onDayPress={(day: { dateString: React.SetStateAction<string>; }) => {
-            console.log('selected day', day);
-            setSelectedDate(day.dateString);
-          }}
-          markedDates={{
-            [selectedDate]: { selected: true },
-          }}
-          theme={{
-            calendarBackground: '#rgba(255,255,255,0.2)',
-            textSectionTitleColor: '#aaa',
-            dayTextColor: '#fff',
-            selectedDayBackgroundColor: '#fff',
-            selectedDayTextColor: '#000',
-          }}
-        /> */}
-
-        {/* Circular Progress + Goals info */}
 
         <View style={styles.goalsContainer}>
           <LinearGradient
             colors={['#4796E4', '#E6738C']}
             style={styles.goalsCardGradient}
             start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
           >
             <View style={styles.goalsContent}>
               <View style={{ flexDirection: 'row', borderRadius: 50, borderWidth: 2, borderColor: 'white', alignItems: 'center', }}>
@@ -132,23 +111,29 @@ const DashboardScreen = () => {
         </View>
         {/* Cards */}
         <View style={styles.cardsContainer}>
-          {cardsData.map((card) => (
-            <View key={card.id} style={styles.card}>
-              <Text style={styles.cardTitle}>{card.title}</Text>
-              <Text style={[styles.cardDayStreak, { borderColor: card.borderColor }]}>
-                {card.dayStreak} days
-              </Text>
+          {cardsData.map((card, i) => (
+            <BorderGradient borderWidth={2} colors={[card.borderColor, '#1F1F21']}
+              start={{ x: i % 2 == 0 ? 1 : 0, y: i % 2 == 0 ? 1 : 0 }}
+              end={{ x: i % 2 == 1 ? 1 : 0, y: i % 2 == 0 ? 1 : 0 }}
+              outerStyle={{ marginVertical: 5 }}
+            >
+              <View key={card.id} style={styles.card}>
+                <Text style={styles.cardTitle}>{card.title}</Text>
+                <Text style={styles.cardDayStreak}>
+                  {card.dayStreak} days
+                </Text>
 
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={styles.cardProgress}>{card.progressCurrent} / {card.progressTotal}</Text>
-                <Text style={styles.cardProgressUnit}>{card.progressUnit}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={styles.cardProgress}>{card.progressCurrent} / {card.progressTotal}</Text>
+                  <Text style={styles.cardProgressUnit}>{card.progressUnit}</Text>
+                </View>
+
+                {/* + Button (Add progress) */}
+                <TouchableOpacity style={styles.addButton}>
+                  <Text style={styles.addButtonText}>+</Text>
+                </TouchableOpacity>
               </View>
-
-              {/* + Button (Add progress) */}
-              <TouchableOpacity style={styles.addButton}>
-                <Text style={styles.addButtonText}>+</Text>
-              </TouchableOpacity>
-            </View>
+            </BorderGradient>
           ))}
         </View>
 
@@ -157,7 +142,7 @@ const DashboardScreen = () => {
         {/* Add your challenge section here */}
 
       </ScrollView>
-    </Background>
+    </Background >
   );
 };
 
@@ -171,7 +156,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 50
   },
   title: {
@@ -191,6 +176,7 @@ const styles = StyleSheet.create({
   },
   goalsContainer: {
     marginBottom: 20,
+    marginHorizontal: 4
   },
   goalsCardGradient: {
     // padding: 12,
@@ -239,15 +225,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   card: {
-    width: width / 2.25,
-    height: width / 2.25,
+    width: width / 2.3,
+    height: width / 2.3,
     backgroundColor: '#1F2937',
-    borderColor: '#D87EEC',
-    borderWidth: 1,
-    marginBottom: 16,
     borderRadius: 12,
     padding: 16,
-    justifyContent: 'space-around'
+    justifyContent: 'space-around',
   },
   cardTitle: {
     marginTop: 20,
