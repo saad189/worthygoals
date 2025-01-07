@@ -30,6 +30,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name={ROUTE_NAMES.TABS.HOME_SCREEN}
         options={{
+          headerShown: false,
           title: 'Home',
           tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
           headerRight: () => (
