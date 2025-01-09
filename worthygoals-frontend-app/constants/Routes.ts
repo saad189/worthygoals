@@ -3,16 +3,10 @@ export const ROUTE_NAMES = {
         self: '(tabs)',
         HOME_SCREEN: 'home-screen',
         SETTINGS_SCREEN: 'settings-screen',
+        CHAT_LIST_SCREEN: 'chat-list-screen',
         INSPIRATION: {
             self: 'inspiration',
             DEFAULT_SCREEN: 'default-screen',
-            IMAGE_VIEWER: 'image-viewer-screen'
-        },
-        CHAT: {
-            self: 'chat',
-            CHAT_LIST_SCREEN: 'chat-list-screen',
-            CHAT_VIEW_SCREEN: 'chat-view-screen',
-            CHAT_SETTINGS_SCREEN: 'chat-settings-screen',
             IMAGE_VIEWER: 'image-viewer-screen'
         },
     },
@@ -33,6 +27,12 @@ export const ROUTE_NAMES = {
     GOAL_SELECTION: {
         self: 'goal-selection',
         SELECTION_SCREEN: 'selection-screen'
+    },
+    CHAT: {
+        self: 'chat',
+        CHAT_VIEW_SCREEN: 'chat-view-screen',
+        CHAT_SETTINGS_SCREEN: 'chat-settings-screen',
+        IMAGE_VIEWER: 'image-viewer-screen'
     },
 
     ABOUT: 'about'

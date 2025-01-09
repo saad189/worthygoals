@@ -50,9 +50,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name={ROUTE_NAMES.TABS.CHAT.self}
+        name={ROUTE_NAMES.TABS.CHAT_LIST_SCREEN}
         options={{
-          headerShown: false,
+          headerShown: true,
           title: 'Mentors',
           tabBarIcon: ({ color }) => <TabBarIcon name="users" color={color} />,
         }}

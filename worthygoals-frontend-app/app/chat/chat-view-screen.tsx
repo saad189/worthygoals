@@ -101,7 +101,7 @@ function ChatViewScreen() {
 
                 {item.type === 'image' && (
                     <TouchableOpacity onPress={() => {
-                        navigation.navigate(ROUTE_NAMES.TABS.CHAT.IMAGE_VIEWER, { imageUri: item.content, tag: `${item.id}-tag` })
+                        navigation.navigate(ROUTE_NAMES.CHAT.IMAGE_VIEWER, { imageUri: item.content, tag: `${item.id}-tag` })
                     }}
                         style={{ minWidth: 150, minHeight: 150 }}
                     >
@@ -162,7 +162,7 @@ function ChatViewScreen() {
                         <Ionicons name="arrow-back" size={24} color={iconColor} />
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={() => { navigation.navigate(ROUTE_NAMES.TABS.CHAT.CHAT_SETTINGS_SCREEN, { mentorId: chatDetail.mentorId }) }}
+                    <TouchableOpacity onPress={() => { navigation.navigate(ROUTE_NAMES.CHAT.CHAT_SETTINGS_SCREEN, { mentorId: chatDetail.mentorId }) }}
                         style={styles.profileImageWrapper}>
                         <Image
                             source={{ uri: chatDetail.avatar }}
