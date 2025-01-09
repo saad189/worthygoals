@@ -1,3 +1,4 @@
+import BorderGradient from '@/components/Common/BorderGradient';
 import Background from '@/components/SubComponents/Background';
 import Header from '@/components/SubComponents/Header';
 import { ROUTE_NAMES } from '@/constants';
@@ -22,7 +23,8 @@ type BoardsCardItem = {
     type: string;
     author: string;
     uri: string,
-    category: string
+    category: string,
+    borderColor: string
 }
 const cardsData: BoardsCardItem[] = [
     {
@@ -30,55 +32,63 @@ const cardsData: BoardsCardItem[] = [
         type: 'quote',
         author: 'William James',
         uri: 'https://plus.unsplash.com/premium_photo-1671599016130-7882dbff302f?q=80&w=2487&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-        category: 'Workout'
+        category: 'Workout',
+        borderColor: '#E0748F'
     }, {
         id: 2,
         type: 'quote',
         uri: 'https://images.unsplash.com/photo-1534196511436-921a4e99f297?q=80&w=2487&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
         author: 'Scarlett Johansson',
-        category: 'Workout'
+        category: 'Workout',
+        borderColor: '#4995E2'
     },
     {
         id: 3,
         type: 'image',
         uri: 'https://images.unsplash.com/photo-1523293836414-f04e712e1f3b?q=80&w=2503&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
         author: 'Scarlett Johansson',
-        category: 'Books'
+        category: 'Books',
+        borderColor: '#D87EEC'
     },
     {
         id: 4,
         type: 'quote',
         uri: 'https://images.unsplash.com/photo-1528716321680-815a8cdb8cbe?q=80&w=2565&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
         author: 'Walt Whitman',
-        category: 'Books'
+        category: 'Books',
+        borderColor: '#D87EEC'
     },
     {
         id: 5,
         type: 'image',
         uri: 'https://images.unsplash.com/photo-1495001258031-d1b407bc1776?q=80&w=2487&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
         author: '',
-        category: 'Reading'
+        category: 'Reading',
+        borderColor: '#E0748F'
     },
     {
         id: 6,
         type: 'image',
         uri: 'https://images.unsplash.com/photo-1612436524004-4f90d7fe71a5?q=80&w=2487&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
         author: '',
-        category: 'Reading'
+        category: 'Reading',
+        borderColor: '#E0748F'
     },
     {
         id: 7,
         type: 'image',
         uri: 'https://images.unsplash.com/photo-1608999383953-d61f5d9c1ace?q=80&w=2487&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
         author: '',
-        category: 'Reading'
+        category: 'Reading',
+        borderColor: '#4995E2'
     },
     {
         id: 8,
         type: 'image',
         uri: 'https://images.unsplash.com/photo-1669477377105-0736689c9935?q=80&w=2021&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
         author: '',
-        category: 'Reading'
+        category: 'Reading',
+        borderColor: '#4995E2'
     },
 ];
 
@@ -114,14 +124,17 @@ const MotivationalBoardsScreen: React.FC = () => {
             </ScrollView>
 
             <ScrollView contentContainerStyle={styles.cardsContainer}>
-                {cardsData.map((card) => {
+                {cardsData.map((card, i) => {
                     return (
-                        <View style={styles.card} key={card.id}>
-                            <TouchableOpacity onPress={() => {
-                                navigation.navigate(ROUTE_NAMES.TABS.INSPIRATION.IMAGE_VIEWER, { imageUri: card.uri, tag: `${card.id}-tag-board` })
-                            }}
-                                style={styles.cardButton}
-                            >
+                        <BorderGradient borderWidth={3} colors={[card.borderColor, '#1F1F21']} key={card.id}
+                            start={{ x: i % 2 == 0 ? 1 : 0, y: i % 2 == 0 ? 1 : 0 }}
+                            end={{ x: i % 2 == 1 ? 1 : 0, y: i % 2 == 0 ? 1 : 0 }}
+                            outerStyle={{ marginVertical: 5 }}
+                        >
+                            <TouchableOpacity key={card.id} onPress={() => {
+                                navigation.navigate(ROUTE_NAMES.TABS.INSPIRATION.IMAGE_VIEWER,
+                                    { imageUri: card.uri, tag: `${card.id}-tag-board`, borderColor: card.borderColor })
+                            }} style={styles.cardButton} >
                                 <Animated.Image
                                     source={{
                                         uri: card.uri,
@@ -130,7 +143,7 @@ const MotivationalBoardsScreen: React.FC = () => {
                                     style={styles.profileImage}
                                 />
                             </TouchableOpacity>
-                        </View>
+                        </BorderGradient>
                     );
                 })}
             </ScrollView>
@@ -173,17 +186,12 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
         flexDirection: 'row',
         flexWrap: 'wrap',
-        justifyContent: 'space-around',
+        justifyContent: 'space-between',
     },
     profileImage: {
         width: '100%',
         height: '100%',
         resizeMode: 'cover',
-    },
-    card: {
-        backgroundColor: '#1F2937',
-        borderRadius: 12,
-        marginVertical: 5,
     },
     cardButton: {
         width: width / 2.4,

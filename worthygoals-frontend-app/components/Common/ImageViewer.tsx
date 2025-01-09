@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Dimensions, Pressable } from 'react-native';
+import { StyleSheet, Dimensions, Pressable, StyleProp, ImageStyle } from 'react-native';
 import { ParamListBase, useNavigation, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Animated, {
@@ -10,11 +10,14 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 import { PinchGestureHandler, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Background from '@/components/SubComponents/Background';
 
-const { width, height } = Dimensions.get('window');
-
-const ImageViewerModalComponent = ({ imageUri, tag }: { imageUri: any, tag: string }) => {
+const { width } = Dimensions.get('window');
+export interface ImageViewerProps {
+    imageUri: string;
+    tag: string;
+    extraStyles?: StyleProp<ImageStyle>;
+}
+const ImageViewerModalComponent = ({ imageUri, tag, extraStyles }: ImageViewerProps) => {
     const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
 
     const scale = useSharedValue(1); // Shared value for scaling
@@ -50,21 +53,17 @@ const ImageViewerModalComponent = ({ imageUri, tag }: { imageUri: any, tag: stri
     }));
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
-            <Background>
-                <Pressable onPress={navigation.goBack} style={styles.container}>
-                    <PinchGestureHandler onGestureEvent={pinchHandler}>
-                        <Animated.View>
-                            <Animated.Image
-                                source={{
-                                    uri: imageUri,
-                                }}
-                                sharedTransitionTag={tag}
-                                style={[styles.profileImage, animatedStyle]}
-                            />
-                        </Animated.View>
-                    </PinchGestureHandler>
-                </Pressable>
-            </Background>
+            <Pressable onPress={navigation.goBack} style={styles.container}>
+                <PinchGestureHandler onGestureEvent={pinchHandler}>
+                    <Animated.Image
+                        source={{
+                            uri: imageUri,
+                        }}
+                        sharedTransitionTag={tag}
+                        style={[extraStyles ? extraStyles : styles.profileImage, animatedStyle]}
+                    />
+                </PinchGestureHandler>
+            </Pressable>
         </GestureHandlerRootView>
     );
 };

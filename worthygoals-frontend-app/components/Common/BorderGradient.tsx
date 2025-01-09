@@ -42,8 +42,8 @@ const styles = StyleSheet.create({
     },
     innerContainer: {
         flex: 1,
-        borderRadius: 12, // Default Inner Border Radius
-        backgroundColor: '#fff',
+        borderRadius: 12,
+        backgroundColor: 'rgb(0,0,0,0.9)',
     },
 });
 
