@@ -10,7 +10,6 @@ import {
     Text,
     StyleSheet,
     ScrollView,
-    Image,
     TouchableOpacity,
     Dimensions,
 } from 'react-native';
@@ -81,7 +80,6 @@ const cardsData: BoardsCardItem[] = [
         author: '',
         category: 'Reading'
     },
-
 ];
 
 const MotivationalBoardsScreen: React.FC = () => {
@@ -116,28 +114,25 @@ const MotivationalBoardsScreen: React.FC = () => {
             </ScrollView>
 
             <ScrollView contentContainerStyle={styles.cardsContainer}>
-                <View style={styles.cardsGrid}>
-                    {cardsData.map((card) => {
-                        return (
-                            <View style={styles.card} key={card.id}>
-
-                                <TouchableOpacity onPress={() => {
-                                    navigation.navigate(ROUTE_NAMES.TABS.INSPIRATION.IMAGE_VIEWER, { imageUri: card.uri, tag: `${card.id}-tag-board` })
-                                }}
-                                    style={{ minWidth: 150, minHeight: 150 }}
-                                >
-                                    <Animated.Image
-                                        source={{
-                                            uri: card.uri,
-                                        }}
-                                        sharedTransitionTag={`${card.id}-tag-board`}
-                                        style={styles.profileImage}
-                                    />
-                                </TouchableOpacity>
-                            </View>
-                        );
-                    })}
-                </View>
+                {cardsData.map((card) => {
+                    return (
+                        <View style={styles.card} key={card.id}>
+                            <TouchableOpacity onPress={() => {
+                                navigation.navigate(ROUTE_NAMES.TABS.INSPIRATION.IMAGE_VIEWER, { imageUri: card.uri, tag: `${card.id}-tag-board` })
+                            }}
+                                style={styles.cardButton}
+                            >
+                                <Animated.Image
+                                    source={{
+                                        uri: card.uri,
+                                    }}
+                                    sharedTransitionTag={`${card.id}-tag-board`}
+                                    style={styles.profileImage}
+                                />
+                            </TouchableOpacity>
+                        </View>
+                    );
+                })}
             </ScrollView>
         </Background>
     );
@@ -175,31 +170,25 @@ const styles = StyleSheet.create({
     },
     cardsContainer: {
         padding: 8,
-        // Ensure there’s some spacing at bottom so content is not hidden by bottom nav
-        paddingBottom: 80,
+        paddingBottom: 40,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-around',
     },
     profileImage: {
         width: '100%',
         height: '100%',
         resizeMode: 'cover',
-        overflow: 'hidden'
-    },
-    cardsGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
     },
     card: {
-        width: width / 2.3,
-        height: width / 2.3,
         backgroundColor: '#1F2937',
         borderRadius: 12,
-        padding: 16,
-        justifyContent: 'space-around',
+        marginVertical: 5,
     },
-    cardImage: {
-        width: '100%',
-        height: '100%',
+    cardButton: {
+        width: width / 2.4,
+        height: width / 2.4,
+        borderRadius: 12,
+        overflow: 'hidden',
     },
-
 });

@@ -133,7 +133,7 @@ const SettingsScreen: React.FC = () => {
 
                         <View style={styles.profileImageWrapper}>
                             <TouchableOpacity onPress={() => {
-                                navigation.navigate(ROUTE_NAMES.CHAT.IMAGE_VIEWER, { imageUri: mentor.imageUri, tag: `${mentor.id}-tag` })
+                                navigation.navigate(ROUTE_NAMES.TABS.CHAT.IMAGE_VIEWER, { imageUri: mentor.imageUri, tag: `${mentor.id}-tag` })
                             }}
                                 style={{ minWidth: 150, minHeight: 150 }}
                             >

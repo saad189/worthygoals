@@ -35,7 +35,7 @@ const ChatItem = ({ chat }: { chat: ChatListItem }) => {
 
     chatService.getUserChat(id).then((data: ChatDetail | null) => {
       if (data)
-        navigation.navigate(ROUTE_NAMES.CHAT.self, { screen: ROUTE_NAMES.CHAT.CHAT_VIEW_SCREEN, params: { chatData: data } })
+        navigation.navigate(ROUTE_NAMES.TABS.CHAT.CHAT_VIEW_SCREEN, { chatData: data })
     })
   }
 
