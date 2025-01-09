@@ -100,7 +100,7 @@ function ChatViewScreen() {
 
                 {item.type === 'image' && (
                     <TouchableOpacity onPress={() => {
-                        navigation.navigate(ROUTE_NAMES.COMMON.IMAGE_VIEWER, { imageUri: item.content, tag: `${item.id}-tag` })
+                        navigation.navigate(ROUTE_NAMES.CHAT.IMAGE_VIEWER, { imageUri: item.content, tag: `${item.id}-tag` })
                     }}
                         style={{ minWidth: 150, minHeight: 150 }}
                     >

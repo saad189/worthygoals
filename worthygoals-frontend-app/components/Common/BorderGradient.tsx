@@ -21,7 +21,7 @@ const BorderGradient: React.FC<BorderGradientProps> = ({
     outerStyle,
     innerStyle,
 }) => {
-    console.log({ colors, start, end })
+
     return (
         <LinearGradient
             colors={colors}

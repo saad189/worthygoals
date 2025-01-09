@@ -6,7 +6,7 @@ export default function ChatLayout() {
         <Stack>
             <Stack.Screen name={ROUTE_NAMES.CHAT.CHAT_VIEW_SCREEN} options={{ headerShown: false }} />
             <Stack.Screen name={ROUTE_NAMES.CHAT.CHAT_SETTINGS_SCREEN} options={{ headerShown: false }} />
-            <Stack.Screen name={ROUTE_NAMES.COMMON.IMAGE_VIEWER} options={{ headerShown: false, presentation: 'transparentModal', animation: 'simple_push', }} />
+            <Stack.Screen name={ROUTE_NAMES.CHAT.IMAGE_VIEWER} options={{ headerShown: false, presentation: 'transparentModal', animation: 'simple_push', }} />
         </Stack>
     )
 

@@ -59,6 +59,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name={ROUTE_NAMES.TABS.INSPIRATION_SCREEN}
         options={{
+          headerShown: false,
           title: 'Inspiration',
           tabBarIcon: ({ color }) => <TabBarIcon name="hacker-news" color={color} />,
         }}

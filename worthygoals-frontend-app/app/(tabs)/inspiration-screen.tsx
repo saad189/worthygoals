@@ -1,31 +1,23 @@
-import { StyleSheet } from 'react-native';
+import Background from '@/components/SubComponents/Background';
+import { ROUTE_NAMES } from '@/constants';
+import { ParamListBase } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { useNavigation } from 'expo-router';
+import React, { useState } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    SafeAreaView,
+    ScrollView,
+    Image,
+    TouchableOpacity,
+} from 'react-native';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+const MotivationalBoardsScreen = () => {
+    const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
+    navigation.navigate(ROUTE_NAMES.INSPIRATION.self, { screen: ROUTE_NAMES.INSPIRATION.DEFAULT_SCREEN })
 
-export default function InspirationScreen() {
-    return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Inspirations</Text>
-            <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-            <EditScreenInfo path="app/(tabs)/home-screen.tsx" />
-        </View>
-    );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: 'bold',
-    },
-    separator: {
-        marginVertical: 30,
-        height: 1,
-        width: '80%',
-    },
-});
+export default MotivationalBoardsScreen;

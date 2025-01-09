@@ -65,7 +65,6 @@ const ChatItem = ({ chat }: { chat: ChatListItem }) => {
 function ChatListScreen() {
   const [chatData, setChatData] = React.useState<ChatListItem[]>([]);
 
-
   useFocusEffect(
     useCallback(() => {
       chatService.getUserChatList().then((data: ChatListItem[]) => {

@@ -112,12 +112,12 @@ const DashboardScreen = () => {
         {/* Cards */}
         <View style={styles.cardsContainer}>
           {cardsData.map((card, i) => (
-            <BorderGradient borderWidth={2} colors={[card.borderColor, '#1F1F21']}
+            <BorderGradient borderWidth={2} colors={[card.borderColor, '#1F1F21']} key={card.id}
               start={{ x: i % 2 == 0 ? 1 : 0, y: i % 2 == 0 ? 1 : 0 }}
               end={{ x: i % 2 == 1 ? 1 : 0, y: i % 2 == 0 ? 1 : 0 }}
               outerStyle={{ marginVertical: 5 }}
             >
-              <View key={card.id} style={styles.card}>
+              <View style={styles.card}>
                 <Text style={styles.cardTitle}>{card.title}</Text>
                 <Text style={styles.cardDayStreak}>
                   {card.dayStreak} days
