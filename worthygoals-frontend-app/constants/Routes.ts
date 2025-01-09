@@ -4,7 +4,11 @@ export const ROUTE_NAMES = {
         HOME_SCREEN: 'home-screen',
         CHAT_LIST_SCREEN: 'chat-list-screen',
         SETTINGS_SCREEN: 'settings-screen',
-        INSPIRATION_SCREEN: 'inspiration-screen'
+        INSPIRATION: {
+            self: 'inspiration',
+            DEFAULT_SCREEN: 'default-screen',
+            IMAGE_VIEWER: 'image-viewer-screen'
+        },
     },
     ENTRY_SCREEN: 'index',
     AUTH: {
@@ -30,10 +34,6 @@ export const ROUTE_NAMES = {
         self: 'goal-selection',
         SELECTION_SCREEN: 'selection-screen'
     },
-    INSPIRATION: {
-        self: 'inspiration',
-        DEFAULT_SCREEN: 'default-screen',
-        IMAGE_VIEWER: 'image-viewer-screen'
-    },
+
     ABOUT: 'about'
 }

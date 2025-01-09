@@ -57,7 +57,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name={ROUTE_NAMES.TABS.INSPIRATION_SCREEN}
+        name={ROUTE_NAMES.TABS.INSPIRATION.self}
         options={{
           headerShown: false,
           title: 'Inspiration',

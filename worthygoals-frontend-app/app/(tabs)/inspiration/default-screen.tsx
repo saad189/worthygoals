@@ -122,7 +122,7 @@ const MotivationalBoardsScreen: React.FC = () => {
                             <View style={styles.card} key={card.id}>
 
                                 <TouchableOpacity onPress={() => {
-                                    navigation.navigate(ROUTE_NAMES.INSPIRATION.IMAGE_VIEWER, { imageUri: card.uri, tag: `${card.id}-tag-board` })
+                                    navigation.navigate(ROUTE_NAMES.TABS.INSPIRATION.IMAGE_VIEWER, { imageUri: card.uri, tag: `${card.id}-tag-board` })
                                 }}
                                     style={{ minWidth: 150, minHeight: 150 }}
                                 >
