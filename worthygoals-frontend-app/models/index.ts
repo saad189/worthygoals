@@ -4,3 +4,4 @@ export * from './imagecard.interface';
 export * from './chat.interface';
 export * from './icon.interface';
 export * from './mentor.interface';
+export * from './inspiration.interface';

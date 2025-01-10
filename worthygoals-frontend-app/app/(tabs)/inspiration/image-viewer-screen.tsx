@@ -12,18 +12,18 @@ const { width, height } = Dimensions.get('window');
 const ImageViewerModal = () => {
     const { params: { imageUri, tag, borderColor } } = useRoute() as any;
 
-    const containerWidth = 0.85 * width;
+    const containerWidth = 0.9 * width;
     const containerHeight = 0.7 * height;
-    const borderWidth = 6;
+    const borderWidth = 5;
     const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
     return (
         <Pressable style={styles.container} onPress={navigation.goBack}>
             <BlurView intensity={15} style={styles.container}>
                 <BorderGradient
                     borderWidth={borderWidth}
-                    colors={[borderColor, '#1F1F21']}
+                    colors={[borderColor, borderColor, '#1F1F21',]}
                     start={{ x: 1, y: 1 }}
-                    end={{ x: 0, y: 1 }}
+                    end={{ x: 0, y: 0 }}
                     outerStyle={{
                         marginTop: 90,
                         justifyContent: 'center',
