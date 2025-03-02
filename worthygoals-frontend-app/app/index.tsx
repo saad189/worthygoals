@@ -21,7 +21,7 @@ export default function Index() {
             dimensionListener.remove();
         };
     }, []);
-
+    // Still needs fixing
     return (
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps='handled'>
             {/* <IntroScreen /> */}

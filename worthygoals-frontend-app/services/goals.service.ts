@@ -3,7 +3,7 @@ import ApiService from "./api.service";
 import { formatErrorMessage } from "@/helpers";
 import Storage from "@/helpers/StorageUtilAsync";
 
-const USER_GOALS = 'user-goals';
+const USER_GOALS = 'evolve-user-goals';
 const mockGoals: GoalItem[] = [
     {
         id: "1",

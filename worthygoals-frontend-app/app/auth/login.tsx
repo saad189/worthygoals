@@ -17,8 +17,8 @@ import { useAuth } from "react-oidc-context";
 
 export default function LoginScreen() {
     const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
-    const [email, setEmail] = useState<{ value: string; error: string }>({ value: '', error: '' });
-    const [password, setPassword] = useState<{ value: string; error: string }>({ value: '', error: '' });
+    const [email, setEmail] = useState<{ value: string; error: string }>({ value: 'saad18910@hotmail.com', error: '' });
+    const [password, setPassword] = useState<{ value: string; error: string }>({ value: 'ss', error: '' });
 
     const onLoginPressed = () => {
         const emailError = emailValidator(email.value);
