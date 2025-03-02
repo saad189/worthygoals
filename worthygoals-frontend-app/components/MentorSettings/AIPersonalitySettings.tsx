@@ -109,7 +109,7 @@ const AIPersonalitySettingsComponent: React.FC = () => {
                                     <View>
                                         <Text numberOfLines={2}
                                             style={styles.stepMarker}>
-                                            {value++ == 0 ? `Low` : (value == 2 ? `Normal ${JSON.stringify(i)}` : `High`)} {setting.name}
+                                            {value++ == 0 ? `Low` : (value == 2 ? `Normal` : `High`)} {setting.name}
                                         </Text>
                                         <Text style={{ display: 'none' }}>{value > 2 ? value = 0 : null}</Text>
                                     </View>
