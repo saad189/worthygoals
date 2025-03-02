@@ -2,10 +2,12 @@ import { Module, ValidationPipe } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { EntitySchema } from 'typeorm';
-import { CustomConfigModule, TypeOrmDatabaseModule } from './config';
+
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_PIPE } from '@nestjs/core';
-import { CoreModule } from './core';
+import { CoreModule } from 'src/core';
+import { CustomConfigModule, TypeOrmDatabaseModule } from 'src/config';
+
 
 const modules = [];
 const entities = [__dirname + '/**/*.entity{.ts,.js}'] as unknown as EntitySchema[];
