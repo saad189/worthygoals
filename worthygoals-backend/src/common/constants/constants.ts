@@ -32,7 +32,7 @@ export enum ScheduleType {
 }
 
 export enum USER_ROLES {
-    PARENT = 'Parent',
-    CHILD = 'Child',
-    ADMIN = 'Admin'
+    USER = 'User',
+    ADMIN = 'Admin',
+
 }

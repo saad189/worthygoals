@@ -210,9 +210,9 @@ export class UsersService {
   private async getRole(user: User): Promise<Role> {
     try {
       if (!user) throw new NotFoundException('User not found.');
-      const { CHILD, ADMIN } = USER_ROLES;
+      const { USER, ADMIN } = USER_ROLES;
 
-      const roleName = user.isAdmin ? ADMIN : CHILD;
+      const roleName = user.isAdmin ? ADMIN : USER;
 
       return this.roleRepository.findOne({
         where: { name: roleName },

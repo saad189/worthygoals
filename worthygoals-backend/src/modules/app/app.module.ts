@@ -6,9 +6,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_PIPE } from '@nestjs/core';
 import { CoreModule } from 'src/core';
 import { CustomConfigModule, TypeOrmDatabaseModule } from 'src/config';
+import { UsersModule } from '../users/users.module';
+import { AuthModule } from '../auth/auth.module';
 
 
-const modules = [];
+const modules = [UsersModule, AuthModule];
 const entities = [__dirname + '/**/*.entity{.ts,.js}'] as unknown as EntitySchema[];
 @Module({
   imports: [

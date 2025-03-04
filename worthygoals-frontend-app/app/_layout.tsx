@@ -71,6 +71,13 @@ function ProtectedRoutes() {
       <Stack.Screen name={ROUTE_NAMES.GOAL_SELECTION.self} options={{ headerShown: false, animation: 'slide_from_bottom' }} />
       <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       <Stack.Screen name={ROUTE_NAMES.CHAT.self} options={{ animation: 'slide_from_right', headerShown: false }} />
+      <Stack.Screen
+        name={`${ROUTE_NAMES.PROFILE.self}/${ROUTE_NAMES.PROFILE.REGISTER_PROFILE}`}
+        options={{
+          headerLeft: () => <View />,
+          title: ' Register Profile'
+        }}
+      />
     </Stack>
   );
 }
@@ -108,13 +115,13 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <RootSiblingParent>
-        <ToastProvider>
-          <LoaderProvider>
-            <AuthProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <LoaderProvider>
               <Stacks />
-            </AuthProvider>
-          </LoaderProvider>
-        </ToastProvider>
+            </LoaderProvider>
+          </ToastProvider>
+        </AuthProvider>
       </RootSiblingParent>
     </ThemeProvider>
   );

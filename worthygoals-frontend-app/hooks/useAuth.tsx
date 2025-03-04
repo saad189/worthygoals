@@ -28,7 +28,6 @@ const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
-    const { showSuccessMessage, showErrorMessage, showInfoMessage } = useToast();
     const [userProfile, setUserProfile] = useState<Partial<UserModel> | null>(null);
 
     // Create a custom Navigator that will be used throughout the app, so that it checks for routes and roles
@@ -37,10 +36,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [userLocation, setUserLocation] = useState<LocationCoordinates | undefined>(undefined);
 
 
-    const getUserLocation = async () => {
-        const location = await getUserLocationAsync();
-        setUserLocation(location);
-    }
+    // const getUserLocation = async () => {
+    //     const location = await getUserLocationAsync();
+    //     setUserLocation(location);
+    // }
 
     const checkAuth = async () => {
         const token = await Storage.getItem(ID_TOKEN);
@@ -55,9 +54,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     useEffect(() => {
-
-        getUserLocation();
-
         const logoutHandler = () => {
             logout();
             console.log('Log out event by Token outdate!');
@@ -69,7 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     const login = async (email: string) => {
-        showSuccessMessage(`Logged In as ${email}`);
+        //   showSuccessMessage(`Logged In as ${email}`);
         setUserProfile({ email });
         setIsAuthenticated(true);
         await onSuccessfulLogin();
@@ -99,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const logout = async () => {
         await clearTokens();
         setIsAuthenticated(false);
-        showInfoMessage('Logged out!');
+        //     showInfoMessage('Logged out!');
         // navigation.dispatch(
         //     CommonActions.reset({
         //         index: 0,
