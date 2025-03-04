@@ -5,3 +5,7 @@ export * from './chat.interface';
 export * from './icon.interface';
 export * from './mentor.interface';
 export * from './inspiration.interface';
+export * from './auth.interface';
+export * from './jwt.interface';
+export * from './location.interface';
+export * from './user.interface';

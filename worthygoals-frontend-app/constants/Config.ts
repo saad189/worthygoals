@@ -10,14 +10,10 @@
 
 // export default awsConfig;
 
-const cognitoAuthConfig = {
-    authority: "https://cognito-idp.eu-north-1.amazonaws.com/eu-north-1_SDeWWTU2X",
-    client_id: "4qgdldt5nqddo9f9jh074tmbfn",
-    redirect_uri: "https://d84l1y8p4kdic.cloudfront.net",
-    response_type: "code",
+const config = {
     scope: "email openid phone",
     apiUrl: process.env.EXPO_PUBLIC_API_URL,
 };
 
 
-export default cognitoAuthConfig;
+export default config;

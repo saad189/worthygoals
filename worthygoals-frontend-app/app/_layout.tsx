@@ -1,16 +1,17 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 import { View } from 'react-native';
-
+import { RootSiblingParent } from 'react-native-root-siblings';
 import { useColorScheme } from '@/components/useColorScheme';
 import { ROUTE_NAMES } from '@/constants/Routes';
 import CustomSplashScreen from './custom-splash-screen';
-import { AuthProvider } from 'react-oidc-context';
+import { AuthProvider, LoaderProvider, ToastProvider, useAuth } from '@/hooks';
+
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -61,52 +62,23 @@ export default function RootLayout() {
   );
 }
 
-function Stacks() {
+
+function ProtectedRoutes() {
   return (
     <Stack>
       <Stack.Screen name={ROUTE_NAMES.TABS.self} options={{ headerShown: false }} />
-      <Stack.Screen
-        name={ROUTE_NAMES.AUTH.LOGIN}
-        options={{
-          headerShown: false,
-          presentation: 'modal',
-          animationTypeForReplace: 'push',
-          animation: 'slide_from_left'
-        }}
-      />
-      <Stack.Screen
-        name={ROUTE_NAMES.AUTH.REGISTER}
-        options={{
-          headerShown: false,
-          presentation: 'modal',
-          animationTypeForReplace: 'push',
-          animation: 'slide_from_right'
-        }}
-      />
-      <Stack.Screen
-        name={ROUTE_NAMES.AUTH.RESET_PASSWORD}
-        options={{
-          headerShown: true,
-          title: 'Reset Password',
-          presentation: 'modal',
-          animationTypeForReplace: 'push',
-          animation: 'slide_from_bottom'
-        }}
-      />
-      <Stack.Screen
-        name={ROUTE_NAMES.AUTH.START_AUTH}
-        options={{
-          headerShown: false,
-          presentation: 'modal',
-          animationTypeForReplace: 'push',
-          animation: 'slide_from_bottom'
-        }} />
-      <Stack.Screen name={ROUTE_NAMES.JOURNEY.self}
-        options={{ headerShown: false, animation: 'slide_from_right' }} />
+      <Stack.Screen name={ROUTE_NAMES.JOURNEY.self} options={{ headerShown: false, animation: 'slide_from_right' }} />
       <Stack.Screen name={ROUTE_NAMES.GOAL_SELECTION.self} options={{ headerShown: false, animation: 'slide_from_bottom' }} />
       <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-
       <Stack.Screen name={ROUTE_NAMES.CHAT.self} options={{ animation: 'slide_from_right', headerShown: false }} />
+    </Stack>
+  );
+}
+
+function OpenRoutes() {
+  return (
+    <Stack>
+      <Stack.Screen name={ROUTE_NAMES.AUTH.self} options={{ headerShown: false }} />
 
       <Stack.Screen
         name={ROUTE_NAMES.ENTRY_SCREEN}
@@ -117,12 +89,33 @@ function Stacks() {
     </Stack>);
 }
 
+function Stacks() {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <>
+      {!isAuthenticated && (
+        <Redirect href={{ pathname: ROUTE_NAMES.AUTH.self as any, params: { screen: ROUTE_NAMES.AUTH.LOGIN } }} />
+      )}
+      {isAuthenticated ? <ProtectedRoutes /> : <OpenRoutes />}
+    </>
+  );
+}
+
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stacks />
+      <RootSiblingParent>
+        <ToastProvider>
+          <LoaderProvider>
+            <AuthProvider>
+              <Stacks />
+            </AuthProvider>
+          </LoaderProvider>
+        </ToastProvider>
+      </RootSiblingParent>
     </ThemeProvider>
   );
 }

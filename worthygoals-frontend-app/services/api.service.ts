@@ -1,6 +1,6 @@
 import axios, { InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
-import Storage from '@/helpers/StorageUtil';
+import Storage from '@/helpers/SecureStorageUtil';
 import config from '@/constants/Config';
 import { AUTH_TOKEN } from '@/constants';
 

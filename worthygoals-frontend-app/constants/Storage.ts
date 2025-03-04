@@ -1,4 +1,8 @@
-export const USER_TRANSCRIPTION_SETTINGS = 'evolve-settings';
-export const AUTH_TOKEN = 'auth-token-evolve';
-export const USER_PROFILE = 'evolve-user-profile';
-export const USER_CREDENTIALS = 'evolve-user-cred';
+const appName = 'evolve';
+
+export const ACCESS_TOKEN = `${appName}-access-token`;
+export const ID_TOKEN = `${appName}-id-token`;
+export const REFRESH_TOKEN = `${appName}-setback-tkn`;
+export const USER_PROFILE = `${appName}-user-profile`;
+export const USER_LOCATION = `${appName}-user-location`;
+export const USER_CREDENTIALS = `${appName}-user-cred`;

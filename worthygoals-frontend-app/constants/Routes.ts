@@ -11,11 +11,18 @@ export const ROUTE_NAMES = {
         },
     },
     ENTRY_SCREEN: 'index',
+    PROFILE: {
+        self: 'profile',
+        REGISTER_PROFILE: 'register-profile-screen'
+    },
     AUTH: {
-        LOGIN: 'auth/login',
-        START_AUTH: 'auth/start-auth',
-        REGISTER: 'auth/register',
-        RESET_PASSWORD: 'auth/reset-password',
+        self: 'auth',
+        LOGIN: 'login',
+        START_AUTH: 'start-auth',
+        REGISTER: 'register',
+        RESET_PASSWORD: 'reset-password',
+        VERIFY_EMAIL_SCREEN: 'verify-email',
+        NEW_PASSWORD_SCREEN: 'new-password'
     },
     JOURNEY: {
         self: 'journey',

@@ -31,3 +31,9 @@ const images = [
 export function getImageUri(category: GoalCategory): string {
     return images.find(image => image.category == category.toLowerCase())?.imageUri || '';
 }
+
+export function toTitleCase(str: string): string {
+    return str.replace(/\w\S*/g, (txt) => {
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
+}

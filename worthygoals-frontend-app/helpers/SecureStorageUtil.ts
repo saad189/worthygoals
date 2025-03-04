@@ -1,8 +1,9 @@
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 const isWeb = Platform.OS === 'web';
+// Warning! Not recommended for Web Storage, as it doesn't securely store the credentials!
 
-const Storage = {
+const SecureStorage = {
     setItem: async (key: string, value: any, expiry?: number) => {
         let dataToStore = value;
         if (expiry)
@@ -12,7 +13,7 @@ const Storage = {
         if (isWeb) {
             localStorage.setItem(key, stringified);
         } else {
-            await AsyncStorage.setItem(key, stringified);
+            await SecureStore.setItemAsync(key, stringified);
         }
     },
 
@@ -24,7 +25,7 @@ const Storage = {
         if (isWeb) {
             item = localStorage.getItem(key);
         } else {
-            item = await AsyncStorage.getItem(key);
+            item = await SecureStore.getItemAsync(key);
         }
         if (!item) return null;
 
@@ -32,7 +33,7 @@ const Storage = {
             const parsed = JSON.parse(item);
             if (parsed && typeof parsed === 'object' && parsed._expiry) {
                 if (Date.now() > parsed._expiry) {
-                    await Storage.removeItem(key);
+                    await SecureStorage.removeItem(key);
                     return null;
                 }
                 return parsed._data;
@@ -48,9 +49,9 @@ const Storage = {
         if (isWeb) {
             localStorage.removeItem(key);
         } else {
-            await AsyncStorage.removeItem(key);
+            await SecureStore.deleteItemAsync(key);
         }
     }
 };
 
-export default Storage;
+export default SecureStorage;
