@@ -9,13 +9,12 @@ import Button from '@/components/SubComponents/Button';
 import Header from '@/components/SubComponents/Header';
 import Logo from '@/components/SubComponents/Logo';
 import TextInput from '@/components/SubComponents/TextInput';
-
+import PasswordField from '@/components/SubComponents/PasswordField';
 import { theme } from '@/core';
 import { passwordValidator, repeatPasswordValidator } from '@/helpers';
 import { useLoader, useToast } from '@/hooks';
 import authService from '@/services/AuthService';
 import { ROUTE_NAMES } from '@/constants';
-import PasswordField from '@/components/SubComponents/PasswordField';
 
 type FormState = {
     code: { value: string; error: string };
