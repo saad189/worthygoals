@@ -3,10 +3,11 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Link, Tabs } from 'expo-router';
 import { Pressable } from 'react-native';
 
-import Colors from '@/constants/Colors';
+
 import { useColorScheme } from '@/components/useColorScheme';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { ROUTE_NAMES } from '@/constants/Routes';
+import { Colors } from '@/constants';
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
@@ -30,6 +31,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name={ROUTE_NAMES.TABS.HOME_SCREEN}
         options={{
+          headerShown: false,
           title: 'Home',
           tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
           headerRight: () => (
@@ -49,15 +51,17 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name={ROUTE_NAMES.TABS.CHAT_SCREEN}
+        name={ROUTE_NAMES.TABS.CHAT_LIST_SCREEN}
         options={{
+          headerShown: true,
           title: 'Mentors',
           tabBarIcon: ({ color }) => <TabBarIcon name="users" color={color} />,
         }}
       />
       <Tabs.Screen
-        name={ROUTE_NAMES.TABS.INSPIRATION_SCREEN}
+        name={ROUTE_NAMES.TABS.INSPIRATION.self}
         options={{
+          headerShown: false,
           title: 'Inspiration',
           tabBarIcon: ({ color }) => <TabBarIcon name="hacker-news" color={color} />,
         }}

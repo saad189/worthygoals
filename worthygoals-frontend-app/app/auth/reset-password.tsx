@@ -1,4 +1,3 @@
-import BackButton from '@/components/SubComponents/BackButton';
 import Background from '@/components/SubComponents/Background';
 import Button from '@/components/SubComponents/Button';
 import Header from '@/components/SubComponents/Header';
@@ -7,22 +6,44 @@ import TextInput from '@/components/SubComponents/TextInput';
 import { ROUTE_NAMES } from '@/constants/Routes';
 import { theme } from '@/core';
 import { emailValidator } from '@/helpers';
+import { useLoader, useToast } from '@/hooks';
+import authService from '@/services/AuthService';
+import { ParamListBase } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { useNavigation } from 'expo-router';
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-type Props = {
-    navigation: any;
-};
+import { Keyboard, StyleSheet } from 'react-native';
 
-export default function ResetPasswordScreen({ navigation }: Props) {
+export default function ResetPasswordScreen() {
+    const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
+
     const [email, setEmail] = useState<{ value: string; error: string }>({ value: '', error: '' });
+    const { isLoading, setLoading } = useLoader();
+    const { showInfoMessage, showErrorMessage } = useToast();
 
-    const sendResetPasswordEmail = () => {
+    const sendResetPasswordEmail = async () => {
         const emailError = emailValidator(email.value);
         if (emailError) {
             setEmail({ ...email, error: emailError });
             return;
         }
-        navigation.navigate(ROUTE_NAMES.AUTH.LOGIN);
+
+        try {
+            Keyboard.dismiss();
+            setLoading(true);
+
+            await authService.sendForgotPasswordCode(email.value);
+
+            showInfoMessage(`Reset Password Code Sent to ${email.value}`);
+
+            navigation.navigate(ROUTE_NAMES.AUTH.NEW_PASSWORD_SCREEN, { email: email.value });
+
+
+        } catch (error: any) {
+            showErrorMessage(error.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -40,9 +61,9 @@ export default function ResetPasswordScreen({ navigation }: Props) {
                 autoCapitalize="none"
                 textContentType="emailAddress"
                 keyboardType="email-address"
-                description="You will receive an email with a password reset link."
+                description="You will receive an email with a one-time code for resetting the password."
             />
-            <Button mode="contained" onPress={sendResetPasswordEmail} style={styles.button}>
+            <Button mode="contained" onPress={sendResetPasswordEmail} style={styles.button} loading={isLoading}>
                 Send Instructions
             </Button>
         </Background>

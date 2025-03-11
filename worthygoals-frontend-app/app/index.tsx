@@ -2,6 +2,9 @@ import React, { useState, useEffect, } from 'react';
 import { ScrollView, StyleSheet, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import IntroScreen from './journey/1-intro-screen';
+import HomeScreen from './(tabs)/home-screen';
+import TabLayout from './(tabs)/_layout';
+import { LoginScreen } from './auth';
 
 export default function Index() {
     const navigation = useNavigation();
@@ -18,10 +21,11 @@ export default function Index() {
             dimensionListener.remove();
         };
     }, []);
-
+    // Still needs fixing
     return (
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps='handled'>
-            <IntroScreen />
+            {/* <IntroScreen /> */}
+            <LoginScreen />
         </ScrollView>
     );
 }

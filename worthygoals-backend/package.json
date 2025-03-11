@@ -29,10 +29,12 @@
     "typeorm:drop": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js schema:drop -d src/database/dataSource.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.699.0",
     "@nestjs/cache-manager": "^2.3.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.3.0",
     "@nestjs/core": "^10.0.0",
+    "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^10.4.7",
     "@nestjs/platform-socket.io": "^10.4.7",
     "@nestjs/swagger": "^8.0.4",
@@ -42,12 +44,17 @@
     "cache-manager": "^5.7.6",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "date-fns": "^4.1.0",
     "dotenv": "^16.4.5",
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.1.0",
     "mysql2": "^3.11.4",
+    "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "swagger-ui-express": "^5.0.1",
-    "typeorm": "^0.3.20"
+    "typeorm": "^0.3.20",
+    "typeorm-extension": "^3.7.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

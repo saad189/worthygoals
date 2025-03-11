@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { TouchableOpacity, StyleSheet, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { TouchableOpacity, StyleSheet, View, Keyboard, useColorScheme, Switch } from 'react-native';
 import { Text } from 'react-native-paper';
-import { emailValidator, passwordValidator } from '@/helpers';
+import { emailValidator, getRememberedUserCredentials, rememberUserCredentials } from '@/helpers';
 import Background from '@/components/SubComponents/Background';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Logo from '@/components/SubComponents/Logo';
@@ -10,74 +10,157 @@ import TextInput from '@/components/SubComponents/TextInput';
 import Button from '@/components/SubComponents/Button';
 import { theme } from '@/core';
 import { ROUTE_NAMES } from '@/constants/Routes';
-import { useNavigation } from 'expo-router';
+import { useFocusEffect, useNavigation } from 'expo-router';
 import { ParamListBase } from '@react-navigation/native';
 import Header from '@/components/SubComponents/Header';
 
+import { LoginInfo } from '@/models';
+import authService from '@/services/AuthService';
+import { useAuth, useLoader, useToast } from '@/hooks';
+import { Colors } from '@/constants';
+import PasswordField from '@/components/SubComponents/PasswordField';
+
 export default function LoginScreen() {
     const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
-    const [email, setEmail] = useState<{ value: string; error: string }>({ value: '', error: '' });
-    const [password, setPassword] = useState<{ value: string; error: string }>({ value: '', error: '' });
+    const colorScheme = useColorScheme();
+    const colors = Colors[colorScheme ?? 'light'];
+    const emptyLoginInfo = { email: '', password: '' };
+
+    const [email, setEmail] = useState<{ value: string; error: string }>({ value: emptyLoginInfo.email, error: '' });
+    const [password, setPassword] = useState<{ value: string; error: string }>({ value: emptyLoginInfo.password, error: '' });
+    const [rememberMe, setRememberMe] = useState<boolean>(false);
+
+    const { isAuthenticated, login, checkAuth } = useAuth();
+    const { showErrorMessage, showInfoMessage } = useToast();
+
+    const { isLoading, setLoading } = useLoader();
+
+    useFocusEffect(
+        React.useCallback(() => {
+            setLoading(true);
+            checkAuth().catch((error) => {
+                showErrorMessage((error as Error).message);
+            }).finally(() => setLoading(false));
+
+        }, [])
+    );
+
+    useEffect(() => {
+        const updateLoginInfo = async ({ email, password }: LoginInfo) => {
+            setEmail({ value: email, error: '' });
+            setPassword({ value: password, error: '' });
+        }
+
+        const checkSavedCredentials = async () => {
+            try {
+                const { loginInfo, rememberMe } = await getRememberedUserCredentials();
+                updateLoginInfo(loginInfo);
+                setRememberMe(rememberMe);
+            } catch (error) {
+                showErrorMessage((error as Error).message);
+            }
+        }
+
+        if (!isAuthenticated)
+            checkSavedCredentials();
+
+    }, [isAuthenticated]);
 
     const onLoginPressed = () => {
         const emailError = emailValidator(email.value);
-        const passwordError = passwordValidator(password.value);
+        const passwordError = !password.value ? 'Password field cannot be empty' : '';
+
         if (emailError || passwordError) {
             setEmail({ ...email, error: emailError });
             setPassword({ ...password, error: passwordError });
             return;
         }
-        // Add login functionlaity here
-        navigation.navigate(ROUTE_NAMES.TABS.HOME_SCREEN);
-        navigation.reset({
-            index: 0,
-            routes: [{ name: ROUTE_NAMES.TABS.HOME_SCREEN }],
-        });
+
+        handleLogin();
     };
+
+    const handleLogin = async () => {
+        try {
+            Keyboard.dismiss();
+            setLoading(true);
+
+            const loginInfo: LoginInfo = { email: email.value, password: password.value }
+            const isValidUser = await authService.loginUser(loginInfo);
+
+            if (isValidUser) {
+                rememberUserCredentials({ loginInfo: rememberMe ? loginInfo : emptyLoginInfo, rememberMe });
+                await login(email.value);
+            } else {
+                showInfoMessage('The email is not verified yet!');
+                navigation.navigate(ROUTE_NAMES.AUTH.self, { screen: ROUTE_NAMES.AUTH.VERIFY_EMAIL_SCREEN, params: { email: email.value } })
+            }
+        } catch (error) {
+            showErrorMessage((error as Error).message);
+        } finally {
+            setLoading(false);
+        }
+    }
 
     return (
         <Background>
             <Logo isWhite={true} />
-            <Header>Welcome back.</Header>
-            <TextInput
-                label="Email"
-                returnKeyType="next"
-                value={email.value}
-                onChangeText={(text: any) => setEmail({ value: text, error: '' })}
-                error={!!email.error}
-                errorText={email.error}
-                autoCapitalize="none"
-                textContentType="emailAddress"
-                keyboardType="email-address"
-            />
-            <TextInput
-                label="Password"
-                returnKeyType="done"
-                value={password.value}
-                onChangeText={(text: any) => setPassword({ value: text, error: '' })}
-                error={!!password.error}
-                errorText={password.error}
-                secureTextEntry
-            />
-            <View style={styles.forgotPassword}>
-                <TouchableOpacity onPress={() => navigation.navigate(ROUTE_NAMES.AUTH.RESET_PASSWORD)}>
-                    <Text style={styles.forgot}>Forgot your password?</Text>
-                </TouchableOpacity>
-            </View>
-            <Button style={styles.button} mode="contained" onPress={onLoginPressed}>
-                Login
-            </Button>
-            <View style={styles.row}>
-                <Text style={{ color: theme.colors.primary }}>Don’t have an account? </Text>
-                <TouchableOpacity onPress={() => navigation.replace(ROUTE_NAMES.AUTH.REGISTER)}>
-                    <Text style={styles.link}>Sign up</Text>
-                </TouchableOpacity>
+            <View style={styles.container}>
+
+                <Header>Welcome back!</Header>
+                <TextInput
+                    label="Email"
+                    returnKeyType="next"
+                    value={email.value}
+                    onChangeText={(text: any) => setEmail({ value: text, error: '' })}
+                    error={!!email.error}
+                    errorText={email.error}
+                    autoCapitalize="none"
+                    textContentType="emailAddress"
+                    keyboardType="email-address"
+                />
+
+                <PasswordField
+                    placeholder="Password"
+                    value={password.value}
+                    onChangeText={(text: any) => setPassword({ value: text, error: '' })}
+                    onSubmitEditing={onLoginPressed}
+                    errorText={password.error}
+                />
+                <View style={styles.rememberMeContainer}>
+                    <Text>Remember Me</Text>
+                    <Switch
+                        value={rememberMe}
+                        onValueChange={setRememberMe}
+                        trackColor={{ true: colors.background, false: colors.background }}
+                        thumbColor={colors.icon}
+                    />
+                </View>
+                <View style={styles.forgotPassword}>
+                    <TouchableOpacity onPress={() => navigation.navigate(ROUTE_NAMES.AUTH.self, { screen: ROUTE_NAMES.AUTH.RESET_PASSWORD })}>
+                        <Text style={styles.forgot}>Forgot your password?</Text>
+                    </TouchableOpacity>
+                </View>
+                <Button style={styles.button} mode="contained" onPress={onLoginPressed} loading={isLoading}>
+                    Login
+                </Button>
+                <View style={styles.row}>
+                    <TouchableOpacity onPress={() => navigation.navigate(ROUTE_NAMES.AUTH.self, { screen: ROUTE_NAMES.AUTH.REGISTER })}>
+                        <Text style={{ color: theme.colors.primary }}>Don’t have an account?
+                            <Text style={styles.link}> Sign up</Text>
+                        </Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         </Background>
     );
 }
 
 const styles = StyleSheet.create({
+    container: {
+        width: '100%',
+        justifyContent: 'center',
+        //  backgroundColor: 'yellow'
+    },
     button: {
         width: '100%'
     },
@@ -97,5 +180,13 @@ const styles = StyleSheet.create({
     link: {
         fontWeight: 'bold',
         color: theme.colors.secondary,
+    },
+    rememberMeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 10,
+        marginBottom: 15,
+        marginHorizontal: 5,
     },
 });

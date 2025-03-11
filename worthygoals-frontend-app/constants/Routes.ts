@@ -2,16 +2,27 @@ export const ROUTE_NAMES = {
     TABS: {
         self: '(tabs)',
         HOME_SCREEN: 'home-screen',
-        CHAT_SCREEN: 'chat-screen',
         SETTINGS_SCREEN: 'settings-screen',
-        INSPIRATION_SCREEN: 'inspiration-screen'
+        CHAT_LIST_SCREEN: 'chat-list-screen',
+        INSPIRATION: {
+            self: 'inspiration',
+            DEFAULT_SCREEN: 'default-screen',
+            IMAGE_VIEWER: 'image-viewer-screen'
+        },
     },
     ENTRY_SCREEN: 'index',
+    PROFILE: {
+        self: 'profile',
+        REGISTER_PROFILE: 'register-profile-screen'
+    },
     AUTH: {
-        LOGIN: 'auth/login',
-        START_AUTH: 'auth/start-auth',
-        REGISTER: 'auth/register',
-        RESET_PASSWORD: 'auth/reset-password',
+        self: 'auth',
+        LOGIN: 'login',
+        START_AUTH: 'start-auth',
+        REGISTER: 'register',
+        RESET_PASSWORD: 'reset-password',
+        VERIFY_EMAIL_SCREEN: 'verify-email',
+        NEW_PASSWORD_SCREEN: 'new-password'
     },
     JOURNEY: {
         self: 'journey',
@@ -24,5 +35,12 @@ export const ROUTE_NAMES = {
         self: 'goal-selection',
         SELECTION_SCREEN: 'selection-screen'
     },
+    CHAT: {
+        self: 'chat',
+        CHAT_VIEW_SCREEN: 'chat-view-screen',
+        CHAT_SETTINGS_SCREEN: 'chat-settings-screen',
+        IMAGE_VIEWER: 'image-viewer-screen'
+    },
+
     ABOUT: 'about'
 }
