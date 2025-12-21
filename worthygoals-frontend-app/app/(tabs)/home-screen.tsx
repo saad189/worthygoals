@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  Platform,
 } from "react-native";
 import Header from "@/components/SubComponents/Header";
 import Background from "@/components/SubComponents/Background";
@@ -217,8 +218,10 @@ const styles = StyleSheet.create({
   },
 
   goalsPercentage: {
+    //backgroundColor: "red",
     position: "absolute",
-    left: "25%",
+    left: Platform.OS === "ios" ? "25%" : "28%",
+    bottom: "30%",
     fontSize: 28,
     color: "white",
   },

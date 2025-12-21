@@ -21,7 +21,7 @@ import TextInput from "@/components/SubComponents/TextInput";
 import Button from "@/components/SubComponents/Button";
 import { theme } from "@/core";
 import { ROUTE_NAMES } from "@/constants/Routes";
-import { useFocusEffect, useNavigation } from "expo-router";
+import { useNavigation } from "expo-router";
 import { ParamListBase } from "@react-navigation/native";
 import Header from "@/components/SubComponents/Header";
 
@@ -47,21 +47,10 @@ export default function LoginScreen() {
   });
   const [rememberMe, setRememberMe] = useState<boolean>(false);
 
-  const { isAuthenticated, login, checkAuth } = useAuth();
+  const { isAuthenticated, login } = useAuth();
   const { showErrorMessage, showInfoMessage } = useToast();
 
   const { isLoading, setLoading } = useLoader();
-
-  useFocusEffect(
-    React.useCallback(() => {
-      setLoading(true);
-      checkAuth()
-        .catch((error) => {
-          showErrorMessage((error as Error).message);
-        })
-        .finally(() => setLoading(false));
-    }, [])
-  );
 
   useEffect(() => {
     const updateLoginInfo = async ({ email, password }: LoginInfo) => {
