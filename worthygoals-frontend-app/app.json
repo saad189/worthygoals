@@ -13,7 +13,8 @@
       "backgroundColor": "#464546"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.saad189.worthygoalsfrontendapp"
     },
     "android": {
       "adaptiveIcon": {
@@ -33,7 +34,8 @@
       "favicon": "./assets/images/evolve-icon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
