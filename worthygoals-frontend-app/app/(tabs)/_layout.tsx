@@ -70,8 +70,30 @@ export default function TabLayout() {
         name={ROUTE_NAMES.TABS.CHAT_LIST_SCREEN}
         options={{
           headerShown: false,
+          title: "Chat",
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="comments" color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name={ROUTE_NAMES.TABS.MENTORS_LIST_SCREEN}
+        options={{
+          headerShown: false,
           title: "Mentors",
           tabBarIcon: ({ color }) => <TabBarIcon name="users" color={color} />,
+        }}
+      />
+
+      <Tabs.Screen
+        name={ROUTE_NAMES.TABS.TODO_LIST_SCREEN}
+        options={{
+          headerShown: false,
+          title: "To-do",
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="check-square" color={color} />
+          ),
         }}
       />
       <Tabs.Screen

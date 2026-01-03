@@ -97,6 +97,16 @@ function Routes() {
         name={ROUTE_NAMES.CHAT.self}
         options={{ animation: "slide_from_right", headerShown: false }}
       />
+
+      <Stack.Screen
+        name={ROUTE_NAMES.MENTORS.self}
+        options={{ animation: "slide_from_right", headerShown: false }}
+      />
+
+      <Stack.Screen
+        name={ROUTE_NAMES.TODO.self}
+        options={{ animation: "slide_from_right", headerShown: false }}
+      />
       <Stack.Screen
         name={`${ROUTE_NAMES.PROFILE.self}/${ROUTE_NAMES.PROFILE.REGISTER_PROFILE}`}
         options={{

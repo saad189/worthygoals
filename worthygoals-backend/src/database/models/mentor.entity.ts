@@ -19,8 +19,11 @@ import {
   UpdateDateColumn,
   ManyToMany,
   JoinTable,
+  OneToMany,
 } from 'typeorm';
 import { MentorTagEntity } from './mentor_tags.entity';
+import { Conversation } from './conversation.entity';
+import { Message } from './message.entity';
 
 @Entity('mentors')
 export class Mentor {
@@ -129,6 +132,12 @@ export class Mentor {
     inverseJoinColumn: { name: 'tagId', referencedColumnName: 'id' },
   })
   tags: MentorTagEntity[];
+
+  @OneToMany(() => Conversation, (c) => c.mentor)
+  conversations!: Conversation[];
+
+  @OneToMany(() => Message, (m) => m.mentor)
+  messages!: Message[];
 
   @CreateDateColumn()
   createdAt: Date;

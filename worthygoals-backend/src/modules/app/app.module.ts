@@ -9,8 +9,9 @@ import { CustomConfigModule, TypeOrmDatabaseModule } from 'src/config';
 import { UsersModule } from '../users/users.module';
 import { AuthModule } from '../auth/auth.module';
 import { MentorsModule } from '../mentors/mentors.module';
+import { ConversationsModule } from '../conversations/conversations.module';
 
-const modules = [UsersModule, AuthModule, MentorsModule];
+const modules = [UsersModule, AuthModule, MentorsModule, ConversationsModule];
 const entities = [
   __dirname + '/**/*.entity{.ts,.js}',
 ] as unknown as EntitySchema[];

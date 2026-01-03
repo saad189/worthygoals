@@ -189,8 +189,9 @@ function ChatViewScreen() {
 
         <TouchableOpacity
           onPress={() => {
-            navigation.navigate(ROUTE_NAMES.CHAT.CHAT_SETTINGS_SCREEN, {
-              mentorId: chatDetail.mentorId,
+            navigation.navigate(ROUTE_NAMES.MENTORS.self, {
+              screen: ROUTE_NAMES.MENTORS.MENTOR_DETAIL_SCREEN,
+              params: { mentorId: chatDetail.mentorId },
             });
           }}
           style={styles.profileImageWrapper}
