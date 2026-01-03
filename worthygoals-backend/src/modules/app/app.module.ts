@@ -8,21 +8,27 @@ import { CoreModule } from 'src/core';
 import { CustomConfigModule, TypeOrmDatabaseModule } from 'src/config';
 import { UsersModule } from '../users/users.module';
 import { AuthModule } from '../auth/auth.module';
+import { MentorsModule } from '../mentors/mentors.module';
 
-
-const modules = [UsersModule, AuthModule];
-const entities = [__dirname + '/**/*.entity{.ts,.js}'] as unknown as EntitySchema[];
+const modules = [UsersModule, AuthModule, MentorsModule];
+const entities = [
+  __dirname + '/**/*.entity{.ts,.js}',
+] as unknown as EntitySchema[];
 @Module({
   imports: [
-    CustomConfigModule, TypeOrmDatabaseModule,
+    CustomConfigModule,
+    TypeOrmDatabaseModule,
     ...modules,
     TypeOrmModule.forFeature(entities),
-    CoreModule
+    CoreModule,
   ],
   controllers: [AppController],
-  providers: [AppService, {
-    provide: APP_PIPE,
-    useClass: ValidationPipe
-  }],
+  providers: [
+    AppService,
+    {
+      provide: APP_PIPE,
+      useClass: ValidationPipe,
+    },
+  ],
 })
-export class AppModule { }
+export class AppModule {}

@@ -14,6 +14,16 @@ export default function AuthLayout() {
   return (
     <Stack>
       <Stack.Screen
+        name={ROUTE_NAMES.AUTH.START_AUTH}
+        options={{
+          headerShown: false,
+          presentation: "modal",
+          animationTypeForReplace: "push",
+          animation: "slide_from_bottom",
+        }}
+      />
+
+      <Stack.Screen
         name={ROUTE_NAMES.AUTH.LOGIN}
         options={{
           headerShown: false,

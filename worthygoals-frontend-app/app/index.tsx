@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { ScrollView, StyleSheet, Dimensions } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import IntroScreen from "./journey/1-intro-screen";
-import HomeScreen from "./(tabs)/home-screen";
-import TabLayout from "./(tabs)/_layout";
-import { LoginScreen, StartScreen } from "./auth";
+import { StyleSheet, Dimensions } from "react-native";
 import { useAuth } from "@/hooks";
 import Background from "@/components/SubComponents/Background";
+import { router, useNavigation } from "expo-router";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { ParamListBase } from "@react-navigation/native";
 
 export default function Index() {
   const { checkAuth } = useAuth();
-
+  const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
   const [_, setIsLandScapeMode] = useState(
     Dimensions.get("window").width >= Dimensions.get("window").height
   );
@@ -28,9 +26,15 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
-    checkAuth().catch((error) => {
-      console.log("Auth check failed:", (error as Error).message);
-    });
+    checkAuth()
+      .catch((error) => {
+        console.log("Auth check failed:", (error as Error).message);
+      })
+      .then((result) => {
+        if (!result) {
+          router.replace("/auth/start-auth");
+        }
+      });
   }, []);
 
   // Still needs fixing
@@ -40,11 +44,3 @@ export default function Index() {
     </Background>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "space-evenly",
-    backgroundColor: "#f7f9fa",
-  },
-});

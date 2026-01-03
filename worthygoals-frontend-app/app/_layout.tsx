@@ -136,13 +136,13 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <RootSiblingParent>
-        <AuthProvider>
-          <ToastProvider>
+        <ToastProvider>
+          <AuthProvider>
             <LoaderProvider>
               <Stacks />
             </LoaderProvider>
-          </ToastProvider>
-        </AuthProvider>
+          </AuthProvider>
+        </ToastProvider>
       </RootSiblingParent>
     </ThemeProvider>
   );

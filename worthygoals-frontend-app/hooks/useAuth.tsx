@@ -20,7 +20,7 @@ interface AuthContextProps {
   userProfile: Partial<UserModel> | null;
   userLocation?: LocationCoordinates;
   setUserProfile: (value: Partial<UserModel>) => void;
-  checkAuth: () => Promise<void>;
+  checkAuth: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -33,6 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [userProfile, setUserProfile] = useState<Partial<UserModel> | null>(
     null
   );
+  const { showInfoMessage } = useToast();
 
   // Create a custom Navigator that will be used throughout the app, so that it checks for routes and roles
   // On app start, check if tokens exist
@@ -49,12 +50,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const checkAuth = async () => {
     const token = await Storage.getItem(ID_TOKEN);
 
-    if (!token) return;
+    if (!token) return false;
 
     const { email } = decodeJwtToken(token);
     if (!email) throw new Error("Email is undefined in the token");
 
     await login(email);
+    return true;
   };
 
   useEffect(() => {
@@ -101,14 +103,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const logout = async () => {
     await clearTokens();
     setIsAuthenticated(false);
-    //     showInfoMessage('Logged out!');
-    // navigation.dispatch(
-    //     CommonActions.reset({
-    //         index: 0,
-    //         routes: [{ name: ROUTE_NAMES.AUTH.self }],
-    //     })
-    // );
-    // navigation.replace(ROUTE_NAMES.AUTH.LOGIN);
+    showInfoMessage("Logged out!");
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: ROUTE_NAMES.AUTH.self }],
+      })
+    );
+    navigation.replace(ROUTE_NAMES.AUTH.LOGIN);
   };
 
   return (
