@@ -10,3 +10,8 @@ export function getDayStartAndEnd(date: Date) {
 
   return { startOfDay: dayStart, endOfDay: dayEnd };
 }
+
+export function extractTimeFromDate(dateParam: string | Date): string {
+  const date = new Date(dateParam);
+  return date.toTimeString().split(' ')[0];
+}

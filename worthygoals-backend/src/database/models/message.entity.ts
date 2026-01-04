@@ -43,16 +43,15 @@ export class Message {
    * - role=mentor => mentorId not null
    * - system/tool => both null
    */
-  // Stores Cognito 'sub' (links to User.sub)
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'int', nullable: true })
   @Index('idx_messages_user_id')
-  userId!: string | null;
+  userId!: number | null;
 
   @ManyToOne(() => User, (u) => u.messages, {
     onDelete: 'SET NULL',
     nullable: true,
   })
-  @JoinColumn({ name: 'userId', referencedColumnName: 'sub' })
+  @JoinColumn({ name: 'userId', referencedColumnName: 'id' })
   user!: User | null;
 
   @Column({ type: 'int', nullable: true })

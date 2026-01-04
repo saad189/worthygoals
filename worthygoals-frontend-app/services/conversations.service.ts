@@ -1,5 +1,4 @@
 import ApiService from "@/services/api.service";
-import mentorService from "@/services/mentor.service";
 import config from "@/constants/Config";
 import { formatErrorMessage } from "@/helpers";
 import type {
@@ -9,7 +8,8 @@ import type {
 } from "@/models";
 
 type ApiConversation = {
-  id: string;
+  id?: string;
+  conversationId?: string;
   mentorId: number;
   createdAt: string;
   lastMessageAt: string | null;
@@ -20,6 +20,35 @@ type ApiConversation = {
     coverImageUrl?: string;
   };
 };
+
+function extractConversationId(conversation: any): string {
+  const id = conversation?.id ?? conversation?.conversationId;
+  if (!id) {
+    const keys =
+      conversation && typeof conversation === "object"
+        ? Object.keys(conversation).join(", ")
+        : typeof conversation;
+    const message =
+      conversation &&
+      typeof conversation === "object" &&
+      "message" in conversation
+        ? (conversation as any).message
+        : undefined;
+
+    const messageText = Array.isArray(message)
+      ? message.join(", ")
+      : typeof message === "string"
+      ? message
+      : undefined;
+
+    throw new Error(
+      messageText
+        ? `Couldn't start chat: ${messageText}`
+        : `Couldn't find conversationId in response (keys: ${keys})`
+    );
+  }
+  return String(id);
+}
 
 type ApiMessage = {
   id: string;
@@ -48,16 +77,59 @@ export class ConversationsService {
     try {
       this.assertApiConfigured();
 
-      // Current UX: conversation list == mentors list (conversation created on demand)
-      const mentors = await mentorService.getMentorList();
-      return mentors.map((m) => ({
-        id: String(m.id),
-        name: m.name,
-        avatar: m.avatarUrl || m.coverImageUrl || "",
-        lastMessage: "",
-        time: new Date().toISOString(),
-        isRead: true,
-      }));
+      // Only show conversations that exist.
+      const { data } = await this.api.get<ApiConversation[]>(
+        `/${this.endpoint}`,
+        {
+          include: "mentor",
+        }
+      );
+
+      return (data ?? []).map((c) => {
+        const conversationId = extractConversationId(c);
+        const name = c.mentor?.name ?? `Mentor ${c.mentorId}`;
+        const avatar = c.mentor?.avatarUrl || c.mentor?.coverImageUrl || "";
+        const time = c.lastMessageAt || c.createdAt;
+
+        return {
+          id: conversationId, // conversationId
+          name,
+          avatar,
+          lastMessage: "",
+          time,
+          isRead: true,
+        };
+      });
+    } catch (error: any) {
+      throw new Error(formatErrorMessage(error));
+    }
+  }
+
+  async getConversationShellByConversationId(
+    conversationId: string
+  ): Promise<ConversationDetail> {
+    try {
+      this.assertApiConfigured();
+      if (!conversationId) throw new Error("conversationId is required");
+
+      const { data: full } = await this.api.get<ApiConversation>(
+        `/${this.endpoint}/${conversationId}`,
+        { include: "mentor" }
+      );
+
+      const fullConversationId = extractConversationId(full);
+
+      const name = full.mentor?.name ?? `Mentor ${full.mentorId}`;
+      const avatar = full.mentor?.avatarUrl || full.mentor?.coverImageUrl || "";
+
+      return {
+        id: fullConversationId,
+        name,
+        avatar,
+        messages: [],
+        userId: 0,
+        mentorId: full.mentorId,
+      };
     } catch (error: any) {
       throw new Error(formatErrorMessage(error));
     }
@@ -66,22 +138,38 @@ export class ConversationsService {
   async getOrCreateConversationByMentorId(
     mentorId: number
   ): Promise<ApiConversation> {
-    const { data: existing } = await this.api.get<ApiConversation[]>(
-      `/${this.endpoint}`,
-      { mentorId, include: "mentor" }
-    );
+    try {
+      this.assertApiConfigured();
 
-    let conversation: ApiConversation | undefined = (existing ?? [])[0];
+      const { data: existing } = await this.api.get<any>(`/${this.endpoint}`, {
+        mentorId,
+        include: "mentor",
+      });
 
-    if (!conversation) {
-      const { data: created } = await this.api.post<ApiConversation>(
-        `/${this.endpoint}`,
-        { mentorId }
-      );
-      conversation = created;
+      let conversation: any;
+
+      if (Array.isArray(existing)) {
+        conversation = (existing ?? [])[0];
+      } else {
+        // If the API returns an error-like payload (e.g., { message: ... })
+        // treat it as invalid.
+        conversation = existing;
+      }
+
+      if (!conversation || !extractConversationId(conversation)) {
+        const { data: created } = await this.api.post<any>(
+          `/${this.endpoint}`,
+          { mentorId }
+        );
+        conversation = created;
+      }
+
+      // Ensure we always have an id to use for subsequent calls.
+      extractConversationId(conversation);
+      return conversation;
+    } catch (error: any) {
+      throw new Error(formatErrorMessage(error));
     }
-
-    return conversation;
   }
 
   async getConversationDetailByMentorId(
@@ -95,13 +183,15 @@ export class ConversationsService {
         mentorId
       );
 
+      const conversationId = extractConversationId(conversation);
+
       const { data: full } = await this.api.get<ApiConversation>(
-        `/${this.endpoint}/${conversation.id}`,
+        `/${this.endpoint}/${conversationId}`,
         { include: "mentor" }
       );
 
       const { data: messages } = await this.api.get<ApiMessage[]>("/messages", {
-        conversationId: conversation.id,
+        conversationId,
       });
 
       const name = full.mentor?.name ?? `Mentor ${full.mentorId}`;
@@ -118,7 +208,7 @@ export class ConversationsService {
       }));
 
       return {
-        id: conversation.id,
+        id: conversationId,
         name,
         avatar,
         messages: mapped,
@@ -128,6 +218,18 @@ export class ConversationsService {
     } catch (error: any) {
       throw new Error(formatErrorMessage(error));
     }
+  }
+
+  async getConversationShellByMentorId(
+    mentorId: number
+  ): Promise<ConversationDetail> {
+    this.assertApiConfigured();
+    if (!mentorId) throw new Error("Invalid mentor id for conversation");
+
+    const conversation = await this.getOrCreateConversationByMentorId(mentorId);
+
+    const conversationId = extractConversationId(conversation);
+    return this.getConversationShellByConversationId(conversationId);
   }
 
   async sendTextMessage(params: {

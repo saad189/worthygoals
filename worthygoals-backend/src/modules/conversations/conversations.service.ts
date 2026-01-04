@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { Conversation } from 'src/database/models/conversation.entity';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { UpdateConversationDto } from './dto/update-conversation.dto';
+import { UsersService } from 'src/modules/users/users.service';
 
 @Injectable()
 export class ConversationsService {
@@ -19,6 +20,7 @@ export class ConversationsService {
   constructor(
     @InjectRepository(Conversation)
     private readonly conversationRepository: Repository<Conversation>,
+    private readonly usersService: UsersService,
   ) {}
 
   private static readonly allowedIncludePaths = new Set([
@@ -82,25 +84,62 @@ export class ConversationsService {
     return relations;
   }
 
-  private ensureSelf(userIdFromToken: string, userId?: string): string {
-    if (!userId) return userIdFromToken;
-    if (userId !== userIdFromToken)
-      throw new ForbiddenException('Cannot access other users conversations');
-    return userId;
-  }
+  // private async resolveUserId(params: {
+  //   accountSub: string;
+  //   userClaims?: any;
+  // }): Promise<number> {
+  //   const existingUser = await this.usersService.findByAccountSub(
+  //     params.accountSub,
+  //   );
+  //   if (existingUser) return existingUser.id;
+
+  //   const email: string | undefined = params.userClaims?.email;
+  //   if (!email) {
+  //     throw new BadRequestException(
+  //       'User profile not found for this token. Create your user profile first.',
+  //     );
+  //   }
+
+  //   await this.usersService.createForAccount({
+  //     accountSub: params.accountSub,
+  //     dto: {
+  //       email,
+  //       firstName:
+  //         params.userClaims?.given_name ??
+  //         params.userClaims?.name ??
+  //         params.userClaims?.['cognito:username'] ??
+  //         undefined,
+  //       lastName: params.userClaims?.family_name ?? undefined,
+  //     },
+  //   });
+
+  //   const createdUser = await this.usersService.findByAccountSub(
+  //     params.accountSub,
+  //   );
+  //   if (!createdUser) {
+  //     throw new BadRequestException(
+  //       'Unable to provision user profile for this token.',
+  //     );
+  //   }
+  //   return createdUser.id;
+  // }
 
   async findAll(params: {
-    userIdFromToken: string;
-    userId?: string;
+    sub: string;
     mentorId?: number;
     include?: string | string[];
   }): Promise<Conversation[]> {
     try {
-      const userId = this.ensureSelf(params.userIdFromToken, params.userId);
+      const user = await this.usersService.findByAccountSub(params.sub);
+      if (!user) {
+        throw new BadRequestException(
+          'User profile not found for this token. Create your user profile first.',
+        );
+      }
 
       return await this.conversationRepository.find({
         where: {
-          userId,
+          userId: user.id,
           ...(params.mentorId ? { mentorId: params.mentorId } : {}),
         },
         relations: this.buildRelations(params.include),
@@ -119,12 +158,18 @@ export class ConversationsService {
 
   async findOne(params: {
     id: string;
-    userIdFromToken: string;
+    sub: string;
     include?: string | string[];
   }): Promise<Conversation> {
     try {
+      const user = await this.usersService.findByAccountSub(params.sub);
+      if (!user) {
+        throw new BadRequestException(
+          'User profile not found for this token. Create your user profile first.',
+        );
+      }
       const conversation = await this.conversationRepository.findOne({
-        where: { id: params.id, userId: params.userIdFromToken },
+        where: { id: params.id, userId: user.id },
         relations: this.buildRelations(params.include),
       });
 
@@ -143,22 +188,30 @@ export class ConversationsService {
   }
 
   async create(params: {
-    userIdFromToken: string;
+    sub: string;
     dto: CreateConversationDto;
   }): Promise<Conversation> {
     try {
       if (!params.dto.mentorId) {
         throw new BadRequestException('mentorId is required');
       }
-
+      const user = await this.usersService.findByAccountSub(params.sub);
+      if (!user) {
+        throw new BadRequestException(
+          'User profile not found for this token. Create your user profile first.',
+        );
+      }
       // Prevent duplicate conversations per user+mentor
       const existing = await this.conversationRepository.findOne({
-        where: { userId: params.userIdFromToken, mentorId: params.dto.mentorId },
+        where: {
+          userId: user.id,
+          mentorId: params.dto.mentorId,
+        },
       });
       if (existing) return existing;
 
       const conversation = this.conversationRepository.create({
-        userId: params.userIdFromToken,
+        userId: user.id,
         mentorId: params.dto.mentorId,
         title: params.dto.title ?? null,
         metadata: params.dto.metadata ?? null,
@@ -175,17 +228,23 @@ export class ConversationsService {
 
   async update(params: {
     id: string;
-    userIdFromToken: string;
+    sub: string;
     dto: UpdateConversationDto;
   }): Promise<Conversation> {
     try {
+      const user = await this.usersService.findByAccountSub(params.sub);
+      if (!user) {
+        throw new BadRequestException(
+          'User profile not found for this token. Create your user profile first.',
+        );
+      }
       // Disallow changing mentorId/userId via update
       if ((params.dto as any).mentorId !== undefined) {
         throw new BadRequestException('mentorId cannot be updated');
       }
 
       const conversation = await this.conversationRepository.findOne({
-        where: { id: params.id, userId: params.userIdFromToken },
+        where: { id: params.id, userId: user.id },
       });
 
       if (!conversation)
@@ -211,10 +270,16 @@ export class ConversationsService {
     }
   }
 
-  async remove(params: { id: string; userIdFromToken: string }): Promise<void> {
+  async remove(params: { id: string; sub: string }): Promise<void> {
     try {
+      const user = await this.usersService.findByAccountSub(params.sub);
+      if (!user) {
+        throw new BadRequestException(
+          'User profile not found for this token. Create your user profile first.',
+        );
+      }
       const conversation = await this.conversationRepository.findOne({
-        where: { id: params.id, userId: params.userIdFromToken },
+        where: { id: params.id, userId: user.id },
       });
 
       if (!conversation)

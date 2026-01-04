@@ -26,13 +26,11 @@ export class ConversationsController {
   @Get()
   async findAll(
     @Request() req,
-    @Query('userId') userId?: string,
     @Query('mentorId') mentorId?: string,
     @Query('include') include?: string | string[],
   ): Promise<Conversation[]> {
     return this.conversationsService.findAll({
-      userIdFromToken: req.user.sub,
-      userId,
+      sub: req.user.sub,
       mentorId: mentorId ? Number(mentorId) : undefined,
       include,
     });
@@ -46,7 +44,7 @@ export class ConversationsController {
   ): Promise<Conversation> {
     return this.conversationsService.findOne({
       id,
-      userIdFromToken: req.user.sub,
+      sub: req.user.sub,
       include,
     });
   }
@@ -57,7 +55,7 @@ export class ConversationsController {
     @Body() createConversationDto: CreateConversationDto,
   ): Promise<Conversation> {
     return this.conversationsService.create({
-      userIdFromToken: req.user.sub,
+      sub: req.user.sub,
       dto: createConversationDto,
     });
   }
@@ -70,7 +68,7 @@ export class ConversationsController {
   ): Promise<Conversation> {
     return this.conversationsService.update({
       id,
-      userIdFromToken: req.user.sub,
+      sub: req.user.sub,
       dto: updateConversationDto,
     });
   }
@@ -79,7 +77,7 @@ export class ConversationsController {
   async remove(@Request() req, @Param('id') id: string): Promise<void> {
     return this.conversationsService.remove({
       id,
-      userIdFromToken: req.user.sub,
+      sub: req.user.sub,
     });
   }
 }

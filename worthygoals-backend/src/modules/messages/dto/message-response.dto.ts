@@ -8,7 +8,7 @@ export class MessageResponseDto {
   text!: string | null;
   clientMessageId!: string | null;
   createdAt!: string;
-  userId!: string | null;
+  userId!: number | null;
   mentorId!: number | null;
 
   static fromEntity(entity: Message): MessageResponseDto {

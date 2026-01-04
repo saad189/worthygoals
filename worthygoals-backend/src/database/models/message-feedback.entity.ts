@@ -27,12 +27,11 @@ export class MessageFeedback {
   /**
    * who gave the feedback (usually the chatting user)
    */
-  // Stores Cognito 'sub' (links to User.sub)
-  @Column({ type: 'varchar', length: 255 })
-  userId!: string;
+  @Column({ type: 'int' })
+  userId!: number;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId', referencedColumnName: 'sub' })
+  @JoinColumn({ name: 'userId', referencedColumnName: 'id' })
   user!: User;
 
   @Column({ type: 'smallint' })

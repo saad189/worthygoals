@@ -13,6 +13,7 @@ import { Message } from 'src/database/models/message.entity';
 import { MessageContentType, MessageRole } from 'src/common/constants';
 import { SendTextMessageDto } from './dto/send-text-message.dto';
 import { MessagesGateway } from './messages.gateway';
+import { UsersService } from 'src/modules/users/users.service';
 
 @Injectable()
 export class MessagesService {
@@ -24,19 +25,29 @@ export class MessagesService {
     @InjectRepository(Conversation)
     private readonly conversationRepository: Repository<Conversation>,
     private readonly messagesGateway: MessagesGateway,
+    private readonly usersService: UsersService,
   ) {}
 
   async list(params: {
     conversationId: string;
-    userIdFromToken: string;
+    sub: string;
     limit?: number;
     before?: Date;
   }): Promise<Message[]> {
     try {
-      const conversation = await this.conversationRepository.findOne({
-        where: { id: params.conversationId },
-        select: { id: true, userId: true },
-      });
+      const [user, conversation] = await Promise.all([
+        this.usersService.findByAccountSub(params.sub),
+        this.conversationRepository.findOne({
+          where: { id: params.conversationId },
+          select: { id: true, userId: true },
+        }),
+      ]);
+
+      if (!user) {
+        throw new BadRequestException(
+          'User profile not found for this token. Create your user profile first.',
+        );
+      }
 
       if (!conversation) {
         throw new NotFoundException(
@@ -44,7 +55,7 @@ export class MessagesService {
         );
       }
 
-      if (conversation.userId !== params.userIdFromToken) {
+      if (conversation.userId !== user.id) {
         throw new ForbiddenException('Cannot access other users messages');
       }
 
@@ -77,14 +88,23 @@ export class MessagesService {
   }
 
   async sendUserTextMessage(params: {
-    userIdFromToken: string;
+    sub: string;
     dto: SendTextMessageDto;
   }): Promise<Message> {
     try {
-      const conversation = await this.conversationRepository.findOne({
-        where: { id: params.dto.conversationId },
-        select: { id: true, userId: true },
-      });
+      const [user, conversation] = await Promise.all([
+        this.usersService.findByAccountSub(params.sub),
+        this.conversationRepository.findOne({
+          where: { id: params.dto.conversationId },
+          select: { id: true, userId: true },
+        }),
+      ]);
+
+      if (!user) {
+        throw new BadRequestException(
+          'User profile not found for this token. Create your user profile first.',
+        );
+      }
 
       if (!conversation) {
         throw new NotFoundException(
@@ -92,7 +112,7 @@ export class MessagesService {
         );
       }
 
-      if (conversation.userId !== params.userIdFromToken) {
+      if (conversation.userId !== user.id) {
         throw new ForbiddenException(
           'Cannot send messages to this conversation',
         );
@@ -101,7 +121,7 @@ export class MessagesService {
       const message = this.messageRepository.create({
         conversationId: conversation.id,
         role: MessageRole.USER,
-        userId: params.userIdFromToken,
+        userId: user.id,
         mentorId: null,
         contentType: MessageContentType.TEXT,
         text: params.dto.text,

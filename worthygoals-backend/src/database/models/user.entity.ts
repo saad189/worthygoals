@@ -3,13 +3,17 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  OneToOne,
+  JoinColumn,
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Account } from './account.entity';
 import { Role } from './role.entity';
 import { Conversation } from './conversation.entity';
 import { Message } from './message.entity';
+import { MessageFeedback } from './message-feedback.entity';
 
 @Entity('users')
 export class User {
@@ -19,12 +23,13 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  /**
-   * We'll store the Cognito 'sub' (the unique UUID that Cognito assigns each user)
-   * as a unique column in our user table.
-   */
-  @Column({ type: 'varchar', length: 255, unique: true })
-  sub: string; // Cognito 'sub'
+  @OneToOne(() => Account, (account) => account.user, {
+    eager: true,
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'accountId' })
+  account: Account;
 
   @Column()
   email: string;
@@ -60,6 +65,9 @@ export class User {
 
   @OneToMany(() => Message, (m) => m.user)
   messages!: Message[];
+
+  @OneToMany(() => MessageFeedback, (f) => f.user)
+  feedback!: MessageFeedback[];
 
   @CreateDateColumn()
   dateAdded: Date;

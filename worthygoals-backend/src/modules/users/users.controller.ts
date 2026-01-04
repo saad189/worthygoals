@@ -44,10 +44,10 @@ export class UsersController {
 
   @Post()
   async create(@Request() req, @Body() createUserDto: Partial<CreateUserDto>) {
-    return this.usersService.create({
-      ...createUserDto,
-      sub: req.user.sub,
-    } as CreateUserDto);
+    return this.usersService.createForAccount({
+      accountSub: req.user.sub,
+      dto: createUserDto as CreateUserDto,
+    });
   }
 
   @Patch(':id')

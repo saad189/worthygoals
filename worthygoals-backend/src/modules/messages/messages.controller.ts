@@ -33,7 +33,7 @@ export class MessagesController {
 
     const messages = await this.messagesService.list({
       conversationId,
-      userIdFromToken: req.user.sub,
+      sub: req.user.sub,
       limit: limit ? Number(limit) : undefined,
       before: before ? new Date(before) : undefined,
     });
@@ -47,7 +47,7 @@ export class MessagesController {
     @Body() dto: SendTextMessageDto,
   ): Promise<MessageResponseDto> {
     const message = await this.messagesService.sendUserTextMessage({
-      userIdFromToken: req.user.sub,
+      sub: req.user.sub,
       dto,
     });
 

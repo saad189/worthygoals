@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { Role, User } from 'src/database/models';
+import { Account, Role, User } from 'src/database/models';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ResponseUserDto } from './dto/response-user.dto';
@@ -32,6 +32,8 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Account)
+    private readonly accountRepository: Repository<Account>,
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
   ) {}
@@ -71,9 +73,9 @@ export class UsersService {
     }
   }
 
-  async findBySub(sub: string): Promise<User | null> {
+  async findByAccountSub(sub: string): Promise<User | null> {
     if (!sub) return null;
-    return this.userRepository.findOne({ where: { sub } });
+    return this.userRepository.findOne({ where: { account: { sub } } });
   }
 
   private async findUserByEmail(email: string): Promise<User> {
@@ -100,7 +102,7 @@ export class UsersService {
         throw new BadRequestException('Identity must be provided.');
 
       const user = await this.userRepository.findOne({
-        where: { sub: identity },
+        where: { account: { sub: identity } },
       });
 
       if (!user)
@@ -127,16 +129,82 @@ export class UsersService {
     }
   }
 
-  async create(createUserDto: CreateUserDto): Promise<ResponseUserDto> {
-    try {
-      const { email, parentId } = createUserDto;
+  private async getOrCreateAccount(params: {
+    accountSub: string;
+    email: string;
+  }): Promise<Account> {
+    const { accountSub, email } = params;
 
-      const existingUser = await this.checkExistingUser(createUserDto);
-      if (existingUser)
+    if (!accountSub) {
+      throw new BadRequestException('accountSub must be provided.');
+    }
+    if (!email) {
+      throw new BadRequestException('email must be provided.');
+    }
+
+    // Try by sub first.
+    let account = await this.accountRepository.findOne({
+      where: { sub: accountSub },
+      relations: { user: true },
+    });
+
+    // If no account exists for this sub, ensure email isn't already taken.
+    if (!account) {
+      const existingByEmail = await this.accountRepository.findOne({
+        where: { email },
+      });
+      if (existingByEmail) {
+        throw new ConflictException(
+          `Account with email: ${email} already exists`,
+        );
+      }
+
+      account = this.accountRepository.create({
+        sub: accountSub,
+        email,
+        isSignUp: true,
+      });
+    } else {
+      // Keep email in sync if Cognito/claims provide it.
+      if (email && account.email !== email) {
+        account.email = email;
+      }
+    }
+
+    return this.accountRepository.save(account);
+  }
+
+  async createForAccount(params: {
+    accountSub: string;
+    dto: CreateUserDto;
+  }): Promise<ResponseUserDto> {
+    try {
+      const { accountSub, dto } = params;
+      const { email } = dto;
+
+      const account = await this.getOrCreateAccount({ accountSub, email });
+
+      // If a profile already exists for this account, block.
+      const existingProfile = await this.userRepository.findOne({
+        where: { account: { sub: accountSub } },
+      });
+      if (existingProfile) {
+        throw new ConflictException(
+          'User profile already exists for this account',
+        );
+      }
+
+      // Keep legacy behavior: avoid duplicate profiles by email.
+      const existingByEmail = await this.userRepository.findOne({
+        where: { email },
+      });
+      if (existingByEmail) {
         throw new ConflictException(`User with email: ${email} already exists`);
+      }
 
       // Create the user entity from DTO.
-      const user = this.userRepository.create(createUserDto);
+      const user = this.userRepository.create(dto);
+      user.account = account;
 
       // Set the user's role based on its properties.
       user.role = await this.getRole(user);
@@ -147,7 +215,7 @@ export class UsersService {
       return this.getResponseDto(newUser);
     } catch (error) {
       this.logger.log(
-        `${UsersService.name}:${this.create.name}: ${JSON.stringify(error.message)}`,
+        `${UsersService.name}:${this.createForAccount.name}: ${JSON.stringify(error.message)}`,
       );
       throw new HttpException(error.message, error.status);
     }
@@ -197,12 +265,7 @@ export class UsersService {
     }
   }
 
-  private async checkExistingUser(userDto: CreateUserDto): Promise<boolean> {
-    const existingUser = await this.userRepository.findOne({
-      where: [{ email: userDto.email }, { sub: userDto.sub }],
-    });
-    return !!existingUser;
-  }
+  // NOTE: legacy checkExistingUser removed (sub is now on Account)
 
   /**
    * Calculate the role based on the user's properties.

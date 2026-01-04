@@ -21,4 +21,23 @@ export class Security {
             throw new Error(error.message)
         }
     }
+
+    public static isHashedPasscode(value?: string | null): boolean {
+        return !!value && value.startsWith('$argon2');
+    }
+
+    public static async hashPasscode(passcode: string): Promise<string> {
+        return Security.securePassword(passcode);
+    }
+
+    public static async doesPasscodeMatch(
+        stored: string,
+        candidate: string,
+    ): Promise<boolean> {
+        if (!stored) return false;
+        if (Security.isHashedPasscode(stored)) {
+            return Security.verifyPassword(stored, candidate);
+        }
+        return stored === candidate;
+    }
 }

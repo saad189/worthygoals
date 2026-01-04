@@ -33,7 +33,9 @@ export class CognitoJwtStrategy extends PassportStrategy(Strategy, JWT) {
   }
 
   async validate(payload: any) {
-    if (!payload) throw new UnauthorizedException();
+    if (!payload || typeof payload.sub !== 'string' || !payload.sub) {
+      throw new UnauthorizedException();
+    }
 
     // Additional validation logic can be added here.
     return payload;

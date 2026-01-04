@@ -26,13 +26,12 @@ export class Conversation {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  // Stores Cognito 'sub' (links to User.sub)
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'int' })
   @Index('idx_conversations_user_id')
-  userId!: string;
+  userId!: number;
 
   @ManyToOne(() => User, (u) => u.conversations, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId', referencedColumnName: 'sub' })
+  @JoinColumn({ name: 'userId', referencedColumnName: 'id' })
   user!: User;
 
   @Column({ type: 'int' })

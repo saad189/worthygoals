@@ -17,7 +17,6 @@ export default function AuthLayout() {
         name={ROUTE_NAMES.AUTH.START_AUTH}
         options={{
           headerShown: false,
-          presentation: "modal",
           animationTypeForReplace: "push",
           animation: "slide_from_bottom",
         }}
@@ -27,7 +26,6 @@ export default function AuthLayout() {
         name={ROUTE_NAMES.AUTH.LOGIN}
         options={{
           headerShown: false,
-          presentation: "modal",
           animationTypeForReplace: "push",
           animation: "slide_from_left",
         }}
@@ -36,7 +34,6 @@ export default function AuthLayout() {
         name={ROUTE_NAMES.AUTH.REGISTER}
         options={{
           headerShown: false,
-          presentation: "modal",
           animationTypeForReplace: "push",
           animation: "slide_from_right",
         }}
@@ -46,7 +43,6 @@ export default function AuthLayout() {
         options={{
           headerShown: true,
           title: "Reset Password",
-          presentation: "modal",
           animationTypeForReplace: "push",
           animation: "slide_from_bottom",
         }}
@@ -57,7 +53,6 @@ export default function AuthLayout() {
         options={{
           title: "Verify Email",
           headerShown: true,
-          presentation: "modal",
           animationTypeForReplace: "push",
           animation: "slide_from_right",
         }}
@@ -68,7 +63,6 @@ export default function AuthLayout() {
         options={{
           title: "Create New Password",
           headerShown: true,
-          presentation: "modal",
           animationTypeForReplace: "push",
           animation: "slide_from_right",
         }}
