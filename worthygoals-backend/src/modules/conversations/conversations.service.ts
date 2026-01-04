@@ -84,46 +84,6 @@ export class ConversationsService {
     return relations;
   }
 
-  // private async resolveUserId(params: {
-  //   accountSub: string;
-  //   userClaims?: any;
-  // }): Promise<number> {
-  //   const existingUser = await this.usersService.findByAccountSub(
-  //     params.accountSub,
-  //   );
-  //   if (existingUser) return existingUser.id;
-
-  //   const email: string | undefined = params.userClaims?.email;
-  //   if (!email) {
-  //     throw new BadRequestException(
-  //       'User profile not found for this token. Create your user profile first.',
-  //     );
-  //   }
-
-  //   await this.usersService.createForAccount({
-  //     accountSub: params.accountSub,
-  //     dto: {
-  //       email,
-  //       firstName:
-  //         params.userClaims?.given_name ??
-  //         params.userClaims?.name ??
-  //         params.userClaims?.['cognito:username'] ??
-  //         undefined,
-  //       lastName: params.userClaims?.family_name ?? undefined,
-  //     },
-  //   });
-
-  //   const createdUser = await this.usersService.findByAccountSub(
-  //     params.accountSub,
-  //   );
-  //   if (!createdUser) {
-  //     throw new BadRequestException(
-  //       'Unable to provision user profile for this token.',
-  //     );
-  //   }
-  //   return createdUser.id;
-  // }
-
   async findAll(params: {
     sub: string;
     mentorId?: number;

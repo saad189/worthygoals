@@ -13,12 +13,20 @@ type ApiConversation = {
   mentorId: number;
   createdAt: string;
   lastMessageAt: string | null;
+  messages?: ApiConversationMessage[];
   mentor?: {
     id: number;
     name: string;
     avatarUrl?: string;
     coverImageUrl?: string;
   };
+};
+
+type ApiConversationMessage = {
+  id: string;
+  text?: string | null;
+  createdAt: string;
+  contentType?: string | null;
 };
 
 function extractConversationId(conversation: any): string {
@@ -81,7 +89,7 @@ export class ConversationsService {
       const { data } = await this.api.get<ApiConversation[]>(
         `/${this.endpoint}`,
         {
-          include: "mentor",
+          include: "mentor,messages",
         }
       );
 
@@ -89,13 +97,26 @@ export class ConversationsService {
         const conversationId = extractConversationId(c);
         const name = c.mentor?.name ?? `Mentor ${c.mentorId}`;
         const avatar = c.mentor?.avatarUrl || c.mentor?.coverImageUrl || "";
-        const time = c.lastMessageAt || c.createdAt;
+
+        const latestMessage = (
+          c.messages ?? []
+        ).reduce<ApiConversationMessage | null>((latest, current) => {
+          if (!current?.createdAt) return latest;
+          if (!latest?.createdAt) return current;
+          return new Date(current.createdAt).getTime() >
+            new Date(latest.createdAt).getTime()
+            ? current
+            : latest;
+        }, null);
+
+        const lastMessage = (latestMessage?.text ?? "").trim();
+        const time = latestMessage?.createdAt || c.lastMessageAt || c.createdAt;
 
         return {
           id: conversationId, // conversationId
           name,
           avatar,
-          lastMessage: "",
+          lastMessage,
           time,
           isRead: true,
         };

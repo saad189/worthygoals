@@ -32,6 +32,8 @@ const ChatItem = ({ chat }: { chat: ConversationListItem }) => {
   const { name, avatar, lastMessage, time, isRead, id } = chat;
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
 
+  const messagePreview = (lastMessage ?? "").trim() || "No messages yet";
+
   const openChatDetail = () => {
     conversationsService
       .getConversationShellByConversationId(id)
@@ -56,9 +58,9 @@ const ChatItem = ({ chat }: { chat: ConversationListItem }) => {
         <View style={styles.chatRow}>
           {/* Show the snippet in a lighter style, or bold if unread */}
           <Text style={[styles.chatMessageSnippet, !isRead && styles.unread]}>
-            {lastMessage.length > 50
-              ? lastMessage.slice(0, 50) + "..."
-              : lastMessage}
+            {messagePreview.length > 50
+              ? messagePreview.slice(0, 50) + "..."
+              : messagePreview}
           </Text>
           {/* You could show a read/unread indicator here */}
           {!isRead && <View style={styles.unreadDot} />}
