@@ -1,14 +1,24 @@
 import React, { useCallback, useState } from "react";
-import { FlatList, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import Background from "@/components/SubComponents/Background";
 import MentorCard from "@/components/Mentors/MentorCard";
 import mentorService from "@/services/mentor.service";
+import conversationsService from "@/services/conversations.service";
 import { Mentor } from "@/models";
 import { useFocusEffect, useNavigation } from "expo-router";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { ParamListBase } from "@react-navigation/native";
 import { ROUTE_NAMES } from "@/constants";
+import { formatErrorMessage } from "@/helpers";
 
 export default function MentorsListWithBackground() {
   return (
@@ -22,6 +32,9 @@ function MentorsListScreen() {
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [startingChatMentorId, setStartingChatMentorId] = useState<
+    number | null
+  >(null);
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
 
   useFocusEffect(
@@ -73,19 +86,37 @@ function MentorsListScreen() {
                 params: { mentorId: item.id },
               })
             }
+            chatLoading={startingChatMentorId === item.id}
+            onChatPress={async () => {
+              try {
+                setStartingChatMentorId(item.id);
+                const data =
+                  await conversationsService.getConversationShellByMentorId(
+                    item.id
+                  );
+                navigation.navigate(ROUTE_NAMES.CHAT.self, {
+                  screen: ROUTE_NAMES.CHAT.CHAT_VIEW_SCREEN,
+                  params: { chatData: data },
+                });
+              } catch (e: any) {
+                Alert.alert("Couldn't start chat", formatErrorMessage(e));
+              } finally {
+                setStartingChatMentorId(null);
+              }
+            }}
           />
         )}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              {loading
-                ? "Loading mentors..."
-                : error
-                ? ""
-                : "Mentors not available!"}
-            </Text>
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.emptyText}>
+                {error ? "" : "Mentors not available!"}
+              </Text>
+            )}
           </View>
         )}
       />

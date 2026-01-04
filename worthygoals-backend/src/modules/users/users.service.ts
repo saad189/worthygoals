@@ -34,7 +34,7 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
-  ) { }
+  ) {}
 
   async findAll(): Promise<User[]> {
     return this.userRepository.find();
@@ -42,7 +42,8 @@ export class UsersService {
 
   async findByUserIds(userIds: number[]): Promise<User[]> {
     try {
-      if (!userIds.length) throw new BadRequestException('User Ids must be provided.');
+      if (!userIds.length)
+        throw new BadRequestException('User Ids must be provided.');
 
       return this.userRepository.findBy({ id: In(userIds) });
     } catch (error) {
@@ -53,12 +54,10 @@ export class UsersService {
     }
   }
 
-  async findOne(
-    id: number,
-  ): Promise<User> {
+  async findOne(id: number): Promise<User> {
     try {
       const user = await this.userRepository.findOne({
-        where: { id }
+        where: { id },
       });
 
       if (!user) throw new NotFoundException(`User with id: ${id} not found.`);
@@ -70,6 +69,11 @@ export class UsersService {
       );
       throw new HttpException(error.message, error.status);
     }
+  }
+
+  async findBySub(sub: string): Promise<User | null> {
+    if (!sub) return null;
+    return this.userRepository.findOne({ where: { sub } });
   }
 
   private async findUserByEmail(email: string): Promise<User> {
@@ -173,7 +177,6 @@ export class UsersService {
       const user = await this.findOne(id);
       await this.userRepository.remove(user);
       // Add code for auth removal too.
-
     } catch (error) {
       this.logger.log(
         `${UsersService.name}:${this.remove.name}: ${JSON.stringify(error.message)}`,
@@ -186,7 +189,6 @@ export class UsersService {
     try {
       const user = await this.findUserByEmail(identity);
       await this.userRepository.remove(user);
-
     } catch (error) {
       this.logger.log(
         `${UsersService.name}:${this.removeWithIdentity.name}: ${JSON.stringify(error.message)}`,

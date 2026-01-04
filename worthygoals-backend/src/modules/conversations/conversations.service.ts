@@ -147,6 +147,16 @@ export class ConversationsService {
     dto: CreateConversationDto;
   }): Promise<Conversation> {
     try {
+      if (!params.dto.mentorId) {
+        throw new BadRequestException('mentorId is required');
+      }
+
+      // Prevent duplicate conversations per user+mentor
+      const existing = await this.conversationRepository.findOne({
+        where: { userId: params.userIdFromToken, mentorId: params.dto.mentorId },
+      });
+      if (existing) return existing;
+
       const conversation = this.conversationRepository.create({
         userId: params.userIdFromToken,
         mentorId: params.dto.mentorId,

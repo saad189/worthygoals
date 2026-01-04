@@ -96,7 +96,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name={ROUTE_NAMES.TABS.INSPIRATION.self}
         options={{
           headerShown: false,
@@ -105,7 +105,7 @@ export default function TabLayout() {
             <TabBarIcon name="hacker-news" color={color} />
           ),
         }}
-      />
+      /> */}
     </Tabs>
   );
 }

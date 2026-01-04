@@ -10,8 +10,15 @@ import { UsersModule } from '../users/users.module';
 import { AuthModule } from '../auth/auth.module';
 import { MentorsModule } from '../mentors/mentors.module';
 import { ConversationsModule } from '../conversations/conversations.module';
+import { MessagesModule } from '../messages/messages.module';
 
-const modules = [UsersModule, AuthModule, MentorsModule, ConversationsModule];
+const modules = [
+  UsersModule,
+  AuthModule,
+  MentorsModule,
+  ConversationsModule,
+  MessagesModule,
+];
 const entities = [
   __dirname + '/**/*.entity{.ts,.js}',
 ] as unknown as EntitySchema[];

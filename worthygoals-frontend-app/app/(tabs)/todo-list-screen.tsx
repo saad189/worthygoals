@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -23,6 +24,12 @@ export default function TodoListWithBackground() {
 
 function TodoListScreen() {
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 250);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -31,7 +38,11 @@ function TodoListScreen() {
       </View>
 
       <View style={styles.body}>
-        <Text style={styles.text}>Dummy for now.</Text>
+        {loading ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={styles.text}>Dummy for now.</Text>
+        )}
 
         <TouchableOpacity
           style={styles.button}

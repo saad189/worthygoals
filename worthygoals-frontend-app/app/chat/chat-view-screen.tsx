@@ -17,11 +17,11 @@ import { LinearGradient } from "expo-linear-gradient";
 // If you want icons for the back arrow or overflow menu
 import { Ionicons } from "@expo/vector-icons";
 
-import { ChatDetail, ChatMessage, MessageType } from "@/models";
+import { ConversationDetail, ConversationMessage } from "@/models";
 import { useNavigation } from "expo-router";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { ParamListBase, useRoute } from "@react-navigation/native";
-import chatService from "@/services/chats.service";
+import { useMessages } from "@/hooks/useMessages";
 import Background from "@/components/SubComponents/Background";
 import { mapTime } from "@/helpers/TimeMapper";
 import { ROUTE_NAMES } from "@/constants";
@@ -43,23 +43,30 @@ function ChatViewScreen() {
   } = useRoute() as any;
 
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
-  const [chatDetail, setChatDetail] = useState<ChatDetail>(chatData);
+  const [chatDetail, setChatDetail] = useState<ConversationDetail>(chatData);
   const [inputText, setInputText] = useState<string>("");
-  const chatListRef = useRef<FlatList<ChatMessage>>(null);
+  const chatListRef = useRef<FlatList<ConversationMessage>>(null);
   const shouldScrollToBottomRef = useRef(false);
+
+  const { messages: apiMessages, sendText } = useMessages(chatDetail?.id);
+
+  const messages: ConversationMessage[] = (apiMessages ?? []).map((m) => ({
+    id: m.id,
+    type: "text",
+    content: m.text ?? "",
+    time: m.createdAt,
+    isRead: true,
+    senderId: m.role === "user" ? "user" : "coach",
+    recepientType: m.role === "user" ? "mentor" : "user",
+  }));
 
   const scrollToBottom = (animated = true) => {
     chatListRef.current?.scrollToEnd({ animated });
   };
 
   const updateChat = () => {
-    const updatedMessages = chatDetail.messages.map((message) => ({
-      ...message,
-      isRead: true,
-    }));
-    const updatedChatDetail = { ...chatDetail, messages: updatedMessages };
-    setChatDetail(updatedChatDetail);
-    chatService.saveChat(updatedChatDetail);
+    // Messages are loaded from the backend via useMessages; keep this as a no-op.
+    setChatDetail((prev) => prev);
   };
   useEffect(() => {
     updateChat();
@@ -69,11 +76,10 @@ function ChatViewScreen() {
     item,
     index,
   }: {
-    item: ChatMessage;
+    item: ConversationMessage;
     index: number;
   }) => {
     const isCurrentUser = item.senderId === "user";
-    const messages = chatDetail.messages; // Our full message array
     const isLastMessage = index === messages.length - 1;
 
     // Check if the next message has a different sender
@@ -152,26 +158,18 @@ function ChatViewScreen() {
     );
   };
 
-  const handleSend = () => {
-    if (!inputText.trim()) return;
+  const handleSend = async () => {
+    const text = inputText.trim();
+    if (!text) return;
 
-    const newMessage: ChatMessage = {
-      id: `m-${Date.now()}`,
-      type: "text",
-      content: inputText.trim(),
-      time: new Date().toString(),
-      isRead: false,
-      senderId: "user",
-      recepientType: "mentor",
-    };
-
-    shouldScrollToBottomRef.current = true;
-    chatService.saveMessage(chatDetail.id, newMessage);
-    setChatDetail((prev) => ({
-      ...prev,
-      messages: [...prev.messages, newMessage],
-    }));
     setInputText("");
+    shouldScrollToBottomRef.current = true;
+
+    try {
+      await sendText(text);
+    } catch (e) {
+      // If send fails, existing patterns will surface errors.
+    }
   };
 
   const insets = useSafeAreaInsets();
@@ -215,7 +213,7 @@ function ChatViewScreen() {
 
       <FlatList
         ref={chatListRef}
-        data={chatDetail.messages}
+        data={messages}
         keyExtractor={(item) => item.id}
         renderItem={renderMessage}
         style={styles.chatList}
