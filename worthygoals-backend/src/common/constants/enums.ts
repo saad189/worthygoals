@@ -22,6 +22,11 @@ export enum MentorCommunicationStyle {
   ANALYTICAL = 'analytical',
   MOTIVATIONAL = 'motivational',
   DIRECT = 'direct',
+  STRAIGHTFORWARD = 'straightforward',
+  EMPATHETIC = 'empathetic',
+  CALM = 'calm',
+  ENERGETIC = 'energetic',
+  CLEAR = 'clear',
 }
 
 export enum MentorResponseLength {
@@ -39,6 +44,11 @@ export enum MentorVisibility {
 export enum MemoryScope {
   NONE = 'none',
   SESSION = 'session',
+  /**
+   * Use when you want to remember user preferences for a limited time window
+   * (e.g., 7–30 days) but not permanently.
+   */
+  SHORT_TERM = 'short_term',
   LONG_TERM = 'long_term',
 }
 

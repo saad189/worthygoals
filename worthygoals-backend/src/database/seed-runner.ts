@@ -3,8 +3,8 @@ import 'reflect-metadata';
 import { runSeeders } from 'typeorm-extension';
 import dataSource from './dataSource';
 import { DataSource } from 'typeorm';
-import RoleSeeder from './seeds/RoleSeeder';
-import MentorSeeder from './seeds/MentorSeeder';
+import RoleSeeder from './seeds/3. RoleSeeder';
+import MentorSeeder from './seeds/2. MentorSeeder';
 
 export async function seedDatabase() {
   try {

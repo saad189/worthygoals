@@ -19,6 +19,7 @@ import {
   useRoute,
 } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { ROUTE_NAMES } from "@/constants";
 
 import mentorService from "@/services/mentor.service";
 import { Mentor } from "@/models";
@@ -159,7 +160,16 @@ function MentorDetailScreen() {
             </TouchableOpacity>
 
             <View style={styles.profileImageWrapper}>
-              <TouchableOpacity style={{ minWidth: 150, minHeight: 150 }}>
+              <TouchableOpacity
+                style={{ minWidth: 150, minHeight: 150 }}
+                onPress={() => {
+                  if (!mentorImageUri) return;
+                  navigation.navigate(ROUTE_NAMES.MENTORS.IMAGE_VIEWER, {
+                    imageUri: mentorImageUri,
+                    tag: `${mentor.id}-tag`,
+                  });
+                }}
+              >
                 <Animated.Image
                   source={{ uri: mentorImageUri }}
                   sharedTransitionTag={`${mentor.id}-tag`}

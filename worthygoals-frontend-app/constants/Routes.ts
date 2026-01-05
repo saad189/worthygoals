@@ -47,6 +47,7 @@ export const ROUTE_NAMES = {
   MENTORS: {
     self: "mentors",
     MENTOR_DETAIL_SCREEN: "mentor-detail-screen",
+    IMAGE_VIEWER: "image-viewer-screen",
   },
 
   TODO: {

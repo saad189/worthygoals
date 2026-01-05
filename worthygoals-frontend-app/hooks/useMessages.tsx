@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { io, Socket } from "socket.io-client";
-import config from "@/constants/Config";
-import Storage from "@/helpers/SecureStorageUtil";
-import { ACCESS_TOKEN } from "@/constants";
+import type { Socket } from "socket.io-client";
 import type { ApiMessage } from "@/models";
 import { messagesService } from "@/services/messages.service";
+import {
+  connectMessagesSocket,
+  disconnectMessagesSocket,
+  emitSendMessage,
+} from "@/helpers/messagesSocket";
 
 function upsertById(items: ApiMessage[], next: ApiMessage): ApiMessage[] {
   const idx = items.findIndex((m) => m.id === next.id);
@@ -14,12 +16,26 @@ function upsertById(items: ApiMessage[], next: ApiMessage): ApiMessage[] {
   return copy;
 }
 
+function makeClientMessageId() {
+  return `cm_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
 export function useMessages(conversationId?: string) {
   const [messages, setMessages] = useState<ApiMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
+  const pendingSendRef = useRef(
+    new Map<
+      string,
+      {
+        resolve: (msg: ApiMessage) => void;
+        reject: (err: Error) => void;
+        timeoutId: any;
+      }
+    >()
+  );
 
   const canRun = useMemo(() => Boolean(conversationId), [conversationId]);
 
@@ -41,13 +57,44 @@ export function useMessages(conversationId?: string) {
   const sendText = useCallback(
     async (text: string, clientMessageId?: string) => {
       if (!conversationId) throw new Error("conversationId is required");
+
+      const socket = socketRef.current;
+      const cmid = clientMessageId ?? makeClientMessageId();
+
+      // Preferred path: WebSocket send + receive via messageCreated.
+      if (socket?.connected) {
+        return await new Promise<ApiMessage>((resolve, reject) => {
+          const timeoutId = setTimeout(() => {
+            pendingSendRef.current.delete(cmid);
+            reject(new Error("Timed out sending message"));
+          }, 15000);
+
+          pendingSendRef.current.set(cmid, { resolve, reject, timeoutId });
+
+          emitSendMessage(
+            socket,
+            { conversationId, text, clientMessageId: cmid },
+            (ack: any) => {
+              // We resolve on the messageCreated event (so UI stays consistent).
+              if (ack && ack.ok === false) {
+                const pending = pendingSendRef.current.get(cmid);
+                if (pending) {
+                  clearTimeout(pending.timeoutId);
+                  pendingSendRef.current.delete(cmid);
+                }
+                reject(new Error(ack?.error ?? "Failed to send message"));
+              }
+            }
+          );
+        });
+      }
+
+      // Fallback: REST still works if realtime is down.
       const saved = await messagesService.sendTextMessage({
         conversationId,
         text,
-        clientMessageId,
+        clientMessageId: cmid,
       });
-
-      // De-dupe with socket events by id.
       setMessages((prev) => upsertById(prev, saved));
       return saved;
     },
@@ -65,29 +112,42 @@ export function useMessages(conversationId?: string) {
     async function connect() {
       if (!conversationId) return;
 
-      const token = await Storage.getItem(ACCESS_TOKEN);
-      if (cancelled || !token) return;
+      try {
+        const socket = await connectMessagesSocket({
+          conversationId,
+          handlers: {
+            onMessageCreated: (msg) => {
+              if (cancelled) return;
+              if (!msg || msg.conversationId !== conversationId) return;
+              setMessages((prev) => upsertById(prev, msg));
 
-      const socket = io(`${config.apiUrl}/messages`, {
-        transports: ["websocket"],
-        auth: { token },
-      });
+              // Resolve pending send if this is the echoed user message.
+              if (msg.role === "user" && msg.clientMessageId) {
+                const pending = pendingSendRef.current.get(msg.clientMessageId);
+                if (pending) {
+                  clearTimeout(pending.timeoutId);
+                  pendingSendRef.current.delete(msg.clientMessageId);
+                  pending.resolve(msg);
+                }
+              }
+            },
+            onConnectError: (err) => {
+              if (cancelled) return;
+              // Don’t hard-fail the UI; REST still works.
+              setError(err?.message ?? "Realtime connection failed");
+            },
+          },
+        });
 
-      socketRef.current = socket;
-
-      socket.on("connect", () => {
-        socket.emit("joinConversation", { conversationId });
-      });
-
-      socket.on("messageCreated", (msg: ApiMessage) => {
-        if (!msg || msg.conversationId !== conversationId) return;
-        setMessages((prev) => upsertById(prev, msg));
-      });
-
-      socket.on("connect_error", (err: any) => {
-        // Don’t hard-fail the UI; REST still works.
+        if (cancelled) {
+          disconnectMessagesSocket(socket, conversationId);
+          return;
+        }
+        socketRef.current = socket;
+      } catch (err: any) {
+        if (cancelled) return;
         setError(err?.message ?? "Realtime connection failed");
-      });
+      }
     }
 
     if (conversationId) {
@@ -96,16 +156,19 @@ export function useMessages(conversationId?: string) {
 
     return () => {
       cancelled = true;
+
+      // Reject any pending sends for this conversation.
+      for (const [key, pending] of pendingSendRef.current.entries()) {
+        clearTimeout(pending.timeoutId);
+        pending.reject(new Error("Socket disconnected"));
+        pendingSendRef.current.delete(key);
+      }
+
       const socket = socketRef.current;
       socketRef.current = null;
 
       if (socket && conversationId) {
-        try {
-          socket.emit("leaveConversation", { conversationId });
-        } catch {
-          // ignore
-        }
-        socket.disconnect();
+        disconnectMessagesSocket(socket, conversationId);
       }
     };
   }, [conversationId]);

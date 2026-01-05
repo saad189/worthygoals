@@ -4,6 +4,7 @@ import {
   MentorVisibility,
 } from 'src/common/constants';
 import {
+  ModelConfig,
   MemoryPolicy,
   PersonalityTraits,
   PromptBlocks,
@@ -75,6 +76,10 @@ export class Mentor {
   })
   responseLength: MentorResponseLength;
 
+  @Index()
+  @Column({ type: 'int', default: 0 })
+  sortOrder: number;
+
   // ---- Your existing ones, upgraded as structured JSON ----
   @Column({ type: 'json', nullable: true })
   personalityTraits?: PersonalityTraits;
@@ -91,6 +96,9 @@ export class Mentor {
 
   @Column({ type: 'json', nullable: true })
   memoryPolicy?: MemoryPolicy;
+
+  @Column({ type: 'json', nullable: true })
+  modelConfig?: ModelConfig;
 
   // Feature flags / rollout control
   @Index()

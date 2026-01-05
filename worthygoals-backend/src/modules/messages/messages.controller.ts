@@ -13,12 +13,16 @@ import { JwtAuthGuard } from 'src/common/guards';
 import { MessagesService } from './messages.service';
 import { SendTextMessageDto } from './dto/send-text-message.dto';
 import { MessageResponseDto } from './dto/message-response.dto';
+import { MessagesGateway } from './messages.gateway';
 
 @Controller('messages')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 export class MessagesController {
-  constructor(private readonly messagesService: MessagesService) {}
+  constructor(
+    private readonly messagesService: MessagesService,
+    private readonly messagesGateway: MessagesGateway,
+  ) {}
 
   @Get()
   async list(
@@ -51,6 +55,8 @@ export class MessagesController {
       dto,
     });
 
-    return MessageResponseDto.fromEntity(message);
+    const response = MessageResponseDto.fromEntity(message);
+    this.messagesGateway.emitMessageCreated(dto.conversationId, response);
+    return response;
   }
 }
