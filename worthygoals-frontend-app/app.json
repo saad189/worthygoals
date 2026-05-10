@@ -1,37 +1,49 @@
 {
   "expo": {
-    "name": "worthygoals-frontend-app",
+    "name": "EvolveAI",
     "slug": "worthygoals-frontend-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/evolve-icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "resizeMode": "cover",
+      "backgroundColor": "#464546"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.saad189.worthygoalsfrontendapp"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/evolve-icon.png",
+        "backgroundColor": "#464546"
       },
       "package": "com.saad189.worthygoalsfrontendapp"
+    },
+    "androidStatusBar": {
+      "backgroundColor": "#464546",
+      "hidden": true,
+      "translucent": true
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/evolve-icon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "ad5aec6f-3fbe-41d0-8bde-6f4cb1b432c1"
+      }
     }
   }
 }

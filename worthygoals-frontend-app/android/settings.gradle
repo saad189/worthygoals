@@ -44,7 +44,7 @@ if (getRNMinorVersion() >= 75) {
   }
 }
 
-rootProject.name = 'worthygoals-frontend-app'
+rootProject.name = 'EvolveAI'
 
 dependencyResolutionManagement {
   versionCatalogs {
