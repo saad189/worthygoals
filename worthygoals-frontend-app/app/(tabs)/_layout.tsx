@@ -7,39 +7,50 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
 }) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+  return <FontAwesome size={26} style={{ marginBottom: -3 }} {...props} />;
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const scheme = useColorScheme() ?? 'light';
+  const c = Colors[scheme];
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
+        tabBarActiveTintColor: c.tint,
+        tabBarInactiveTintColor: c.tabIconDefault,
+        tabBarStyle: {
+          backgroundColor: c.surface,
+          borderTopColor: c.border,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '500',
+        },
         headerShown: useClientOnlyValue(false, true),
+        headerStyle: { backgroundColor: c.surface },
+        headerTitleStyle: { color: c.text, fontWeight: '600' },
+        headerShadowVisible: false,
       }}>
+      {/* ── Dashboard (placeholder until Phase 1 screen exists) ── */}
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: 'Dashboard',
+          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
           headerRight: () => (
             <Link href="/modal" asChild>
               <Pressable>
                 {({ pressed }) => (
                   <FontAwesome
                     name="info-circle"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
+                    size={24}
+                    color={c.textMuted}
+                    style={{ marginRight: 16, opacity: pressed ? 0.4 : 1 }}
                   />
                 )}
               </Pressable>
@@ -47,11 +58,12 @@ export default function TabLayout() {
           ),
         }}
       />
+      {/* ── Goals (placeholder until Phase 1 screen exists) ── */}
       <Tabs.Screen
         name="two"
         options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: 'Goals',
+          tabBarIcon: ({ color }) => <TabBarIcon name="flag" color={color} />,
         }}
       />
     </Tabs>
