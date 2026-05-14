@@ -1,21 +1,38 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
+import { Theme as NavTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Redirect, Stack, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
 import "react-native-reanimated";
-import { View } from "react-native";
+import { View, useColorScheme as useRNColorScheme } from "react-native";
 import { RootSiblingParent } from "react-native-root-siblings";
 import { useColorScheme } from "@/components/useColorScheme";
 import { ROUTE_NAMES } from "@/constants/Routes";
+import { Colors } from "@/constants";
 import CustomSplashScreen from "./custom-splash-screen";
 import { AuthProvider, LoaderProvider, ToastProvider, useAuth } from "@/hooks";
 import Background from "@/components/SubComponents/Background";
+
+/**
+ * Build a React Navigation theme that maps WG semantic tokens
+ * onto the navigator's colour slots.  Every Stack/Tabs navigator
+ * in the app inherits these colours automatically.
+ */
+function buildNavTheme(scheme: 'light' | 'dark'): NavTheme {
+  const c = Colors[scheme];
+  return {
+    dark: scheme === 'dark',
+    colors: {
+      primary:      c.tint,
+      background:   c.background,
+      card:         c.surface,
+      text:         c.text,
+      border:       c.border,
+      notification: c.tint,
+    },
+  };
+}
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -141,10 +158,11 @@ function Stacks() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  const scheme = (useColorScheme() ?? 'light') as 'light' | 'dark';
+  const navTheme = buildNavTheme(scheme);
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={navTheme}>
       <RootSiblingParent>
         <ToastProvider>
           <AuthProvider>

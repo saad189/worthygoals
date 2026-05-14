@@ -1,44 +1,115 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Worthy Goals — Semantic Colour Tokens
+ * ─────────────────────────────────────────────────────────────
+ * All values derive from `constants/tokens.ts` (primitives).
+ * Never import raw hex strings from here — use the semantic
+ * names so a single primitive change propagates everywhere.
+ *
+ * Scheme: light = canonical WG warm-paper palette
+ *         dark  = warm inverted palette (V1.5 target; wired now)
  */
 
-const tintColorLight = "#cdb956ff";
-const tintColorDark = "#333";
+import { Palette } from './tokens';
 
 export const Colors = {
   light: {
-    iconBackgroundColor: "#48D1CC",
-    buttonBackgroundColor: "#FF6F61",
-    text: "#11181C",
-    textWhite: "white",
-    textMiddle: "#95c9fc",
-    background: "#1F1F1F",
-    tint: tintColorLight,
-    icon: "#687076",
-    tabIconDefault: "#ccc",
-    tabIconSelected: tintColorLight,
-    notificationInfo: "#a09af5",
-    notificationSuccess: "#D4EDDA",
-    notificationError: "#f02e3f",
-    dangerColor: "#FF3B3B",
-    textInactive: "#A1A1A1",
+    // ── Surfaces ──────────────────────────────────────────────
+    background:   Palette.paper,          // primary screen background
+    surface:      Palette.paper,          // cards, sheets
+    canvas:       Palette.canvas,         // secondary surfaces, input bg
+
+    // ── Text ──────────────────────────────────────────────────
+    text:         Palette.ink,            // primary text
+    textMuted:    Palette.inkMuted,       // secondary / caption text
+    textFaint:    Palette.inkFaint,       // placeholders, disabled
+    textWhite:    Palette.white,          // text on dark/accent surfaces
+    textInactive: Palette.inkFaint,
+
+    // ── Interactive ────────────────────────────────────────────
+    tint:            Palette.accent,
+    primary:         Palette.accent,
+    primaryLight:    Palette.accentLight,
+    primarySubtle:   Palette.accentSubtle,
+    tabIconDefault:  Palette.inkMuted,
+    tabIconSelected: Palette.accent,
+
+    // ── Buttons ────────────────────────────────────────────────
+    buttonBackground: Palette.accent,
+    buttonText:       Palette.white,
+    buttonOutlineBg:  Palette.transparent,
+    buttonTheme:      Palette.accent,
+
+    // ── Icons ──────────────────────────────────────────────────
+    icon:               Palette.inkMuted,
+    iconBackgroundColor:Palette.accentSubtle,
+
+    // ── Borders & Dividers ─────────────────────────────────────
+    border:    'rgba(26, 23, 20, 0.12)',
+    divider:   'rgba(26, 23, 20, 0.08)',
+    overlay:   'rgba(26, 23, 20, 0.06)',
+
+    // ── Status ─────────────────────────────────────────────────
+    notificationInfo:    Palette.infoSubtle,
+    notificationSuccess: Palette.successSubtle,
+    notificationError:   Palette.errorSubtle,
+    dangerColor:         Palette.errorBase,
+
+    // ── Chat bubble colours ─────────────────────────────────────
+    bubbleSelf:    Palette.accent,
+    bubbleSelfText:Palette.white,
+    bubbleOther:   Palette.canvas,
+    bubbleOtherText: Palette.ink,
   },
+
   dark: {
-    iconBackgroundColor: "#48D1CC",
-    buttonBackgroundColor: "#FF6F61",
-    text: "#11181C",
-    textWhite: "white",
-    textMiddle: "#95c9fc",
-    background: "#b8b7b6",
-    tint: tintColorDark,
-    icon: "#9BA1A6",
-    tabIconDefault: "#ccc",
-    tabIconSelected: tintColorDark,
-    notificationInfo: "#253fcf",
-    notificationSuccess: "#155724",
-    notificationError: "#721C24",
-    dangerColor: "#FF3B3B",
-    textInactive: "#A1A1A1",
+    // ── Surfaces ──────────────────────────────────────────────
+    background:   Palette.paperDark,
+    surface:      Palette.paperDark,
+    canvas:       Palette.canvasDark,
+
+    // ── Text ──────────────────────────────────────────────────
+    text:         Palette.inkDark,
+    textMuted:    Palette.inkMutedDark,
+    textFaint:    Palette.inkFaintDark,
+    textWhite:    Palette.white,
+    textInactive: Palette.inkMutedDark,
+
+    // ── Interactive ────────────────────────────────────────────
+    tint:            Palette.accent,
+    primary:         Palette.accent,
+    primaryLight:    Palette.accentLight,
+    primarySubtle:   Palette.accentSubtleDark,
+    tabIconDefault:  Palette.inkMutedDark,
+    tabIconSelected: Palette.accent,
+
+    // ── Buttons ────────────────────────────────────────────────
+    buttonBackground: Palette.accent,
+    buttonText:       Palette.white,
+    buttonOutlineBg:  Palette.transparent,
+    buttonTheme:      Palette.accent,
+
+    // ── Icons ──────────────────────────────────────────────────
+    icon:               Palette.inkMutedDark,
+    iconBackgroundColor:Palette.accentSubtleDark,
+
+    // ── Borders & Dividers ─────────────────────────────────────
+    border:    'rgba(237, 232, 223, 0.12)',
+    divider:   'rgba(237, 232, 223, 0.08)',
+    overlay:   'rgba(237, 232, 223, 0.06)',
+
+    // ── Status ─────────────────────────────────────────────────
+    notificationInfo:    Palette.infoSubtle,
+    notificationSuccess: Palette.successSubtle,
+    notificationError:   Palette.errorSubtle,
+    dangerColor:         Palette.errorBase,
+
+    // ── Chat bubble colours ─────────────────────────────────────
+    bubbleSelf:    Palette.accent,
+    bubbleSelfText:Palette.white,
+    bubbleOther:   Palette.inkFaintDark,
+    bubbleOtherText: Palette.inkDark,
   },
-};
+} as const;
+
+export type ColorScheme = 'light' | 'dark';
+export type AppColors = typeof Colors.light;
