@@ -8,7 +8,7 @@ import {
   View,
   Text,
 } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker"; // or another datepicker
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "expo-router";
 import { ParamListBase } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -18,10 +18,10 @@ import Header from "@/components/SubComponents/Header";
 import TextInput from "@/components/SubComponents/TextInput";
 import Button from "@/components/SubComponents/Button";
 import { ROUTE_NAMES } from "@/constants/Routes";
-import { theme } from "@/core";
 import { calculateAge, getUserLocationAsync, nameValidator } from "@/helpers";
 import { useAuth, useLoader, useToast } from "@/hooks";
 import userService from "@/services/UserService";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 type FormState = {
   firstName: { value: string; error: string };
@@ -66,22 +66,10 @@ function formReducer(state: FormState, action: FormAction): FormState {
     case "SET_ERRORS":
       return {
         ...state,
-        firstName: {
-          ...state.firstName,
-          error: action.payload.firstNameError ?? "",
-        },
-        lastName: {
-          ...state.lastName,
-          error: action.payload.lastNameError ?? "",
-        },
-        gender: {
-          ...state.gender,
-          error: action.payload.genderError ?? "",
-        },
-        dateOfBirth: {
-          ...state.dateOfBirth,
-          error: action.payload.dateOfBirthError ?? "",
-        },
+        firstName: { ...state.firstName, error: action.payload.firstNameError ?? "" },
+        lastName: { ...state.lastName, error: action.payload.lastNameError ?? "" },
+        gender: { ...state.gender, error: action.payload.genderError ?? "" },
+        dateOfBirth: { ...state.dateOfBirth, error: action.payload.dateOfBirthError ?? "" },
       };
     default:
       return state;
@@ -90,6 +78,7 @@ function formReducer(state: FormState, action: FormAction): FormState {
 
 export default function RegisterProfileScreen() {
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
+  const { colors } = useAppTheme();
   const { isLoading, setLoading } = useLoader();
   const { showErrorMessage, showInfoMessage } = useToast();
   const { userProfile, setUserProfile } = useAuth();
@@ -100,7 +89,6 @@ export default function RegisterProfileScreen() {
     { label: "Female", value: "f" },
   ]);
 
-  // For the DatePicker visibility
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState<Date | null>(null);
 
@@ -150,12 +138,7 @@ export default function RegisterProfileScreen() {
     if (firstNameError || lastNameError || genderError || dateOfBirthError) {
       dispatch({
         type: "SET_ERRORS",
-        payload: {
-          firstNameError,
-          lastNameError,
-          genderError,
-          dateOfBirthError,
-        },
+        payload: { firstNameError, lastNameError, genderError, dateOfBirthError },
       });
       return false;
     }
@@ -199,10 +182,8 @@ export default function RegisterProfileScreen() {
 
   return (
     <Background>
-      {/* <Logo isWhite={true} /> */}
       <Header>Your Profile</Header>
 
-      {/* First Name */}
       <TextInput
         label="First Name"
         returnKeyType="next"
@@ -214,7 +195,6 @@ export default function RegisterProfileScreen() {
         errorText={formState.firstName.error}
       />
 
-      {/* Last Name */}
       <TextInput
         label="Last Name"
         returnKeyType="next"
@@ -226,7 +206,6 @@ export default function RegisterProfileScreen() {
         errorText={formState.lastName.error}
       />
 
-      {/* Email */}
       <TextInput
         label="Email"
         returnKeyType="next"
@@ -247,15 +226,15 @@ export default function RegisterProfileScreen() {
           dispatch({ type: "UPDATE_GENDER", payload: value });
         }}
         setItems={setItems}
-        labelStyle={{ color: theme.colors.textWhite }}
+        labelStyle={{ color: colors.textWhite }}
         theme="LIGHT"
         multiple={false}
         mode="BADGE"
         placeholder="Gender"
-        style={styles.input}
+        style={[staticStyles.input, { backgroundColor: colors.primary }]}
       />
 
-      <TouchableOpacity onPress={openDOBPicker} style={styles.datePickerButton}>
+      <TouchableOpacity onPress={openDOBPicker} style={staticStyles.datePickerButton}>
         <View pointerEvents="none">
           <TextInput
             disabled={true}
@@ -274,7 +253,6 @@ export default function RegisterProfileScreen() {
           />
         </View>
 
-        {/* Android inline picker */}
         {showDatePicker && Platform.OS === "android" && (
           <DateTimePicker
             value={formState.dateOfBirth.value || new Date(2000, 0, 1)}
@@ -286,28 +264,23 @@ export default function RegisterProfileScreen() {
         )}
       </TouchableOpacity>
 
-      {/* iOS modal picker with explicit actions */}
       {showDatePicker && Platform.OS === "ios" && (
         <Modal transparent animationType="fade">
-          <View style={styles.datePickerModalOverlay}>
-            <View style={styles.datePickerModalContent}>
+          <View style={[staticStyles.datePickerModalOverlay, { backgroundColor: colors.overlayBlack }]}>
+            <View style={[staticStyles.datePickerModalContent, { backgroundColor: colors.surface }]}>
               <DateTimePicker
-                value={
-                  tempDate ||
-                  formState.dateOfBirth.value ||
-                  new Date(2000, 0, 1)
-                }
+                value={tempDate || formState.dateOfBirth.value || new Date(2000, 0, 1)}
                 mode="date"
                 display="spinner"
                 onChange={onChangeDate}
                 maximumDate={new Date()}
               />
-              <View style={styles.datePickerActions}>
+              <View style={staticStyles.datePickerActions}>
                 <TouchableOpacity onPress={cancelDOBPicker}>
-                  <Text style={styles.datePickerActionText}>Cancel</Text>
+                  <Text style={[staticStyles.datePickerActionText, { color: colors.secondary }]}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={confirmDOBPicker}>
-                  <Text style={styles.datePickerActionText}>OK</Text>
+                  <Text style={[staticStyles.datePickerActionText, { color: colors.secondary }]}>OK</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -315,49 +288,19 @@ export default function RegisterProfileScreen() {
         </Modal>
       )}
 
-      <Button
-        mode="contained"
-        onPress={onSubmit}
-        style={styles.button}
-        loading={isLoading}
-      >
+      <Button mode="contained" onPress={onSubmit} style={staticStyles.button} loading={isLoading}>
         Submit
       </Button>
-      {/* <View style={styles.row}>
-                <TouchableOpacity onPress={() => navigation.replace(ROUTE_NAMES.HOME_SCREEN)}>
-                    <Text style={{ color: theme.colors.primary }}>
-                        <Text style={styles.link}>Skip</Text>
-                    </Text>
-                </TouchableOpacity>
-            </View> */}
     </Background>
   );
 }
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
   button: {
     width: "100%",
     marginTop: 24,
   },
-  link: {
-    fontWeight: "bold",
-    color: theme.colors.secondary,
-  },
-  separateLabel: {
-    alignSelf: "flex-start",
-    fontSize: 14,
-    color: "#666",
-    marginVertical: 10,
-    marginLeft: 5,
-  },
-  label: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 5,
-    marginLeft: 4,
-  },
   input: {
-    backgroundColor: theme.colors.primary,
     borderRadius: 25,
     marginVertical: 10,
     paddingHorizontal: 16,
@@ -367,39 +310,19 @@ const styles = StyleSheet.create({
   picker: {
     borderRadius: 5,
   },
-  row: {
-    justifyContent: "center",
-    flexDirection: "row",
-    marginTop: 5,
-  },
-  errorText: {
-    color: theme.colors.error,
-    fontSize: 12,
-    marginTop: 4,
-    marginLeft: 4,
-  },
-  datePickerContainer: {
-    width: "100%",
-    marginTop: 20,
-  },
   datePickerButton: {
     width: "100%",
-  },
-  datePickerButtonText: {
-    color: "#000",
   },
   datePickerModalOverlay: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: theme.colors.backdrop,
   },
   datePickerModalContent: {
     width: "90%",
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 12,
-    backgroundColor: theme.colors.surface,
   },
   datePickerActions: {
     flexDirection: "row",
@@ -408,7 +331,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   datePickerActionText: {
-    color: theme.colors.secondary,
     fontWeight: "600",
     fontSize: 16,
   },

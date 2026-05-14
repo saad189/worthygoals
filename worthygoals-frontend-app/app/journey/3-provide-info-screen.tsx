@@ -5,7 +5,6 @@ import Button from '@/components/SubComponents/Button';
 import Header from '@/components/SubComponents/Header';
 import Logo from '@/components/SubComponents/Logo';
 import TextInput from '@/components/SubComponents/TextInput';
-import { theme } from '@/core';
 import { useNavigation } from 'expo-router';
 import { ParamListBase } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';

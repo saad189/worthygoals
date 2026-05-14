@@ -1,29 +1,29 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import dayjs from 'dayjs';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 const WeeklyDatePicker = () => {
-    // Calculate the latest Monday
+    const { colors } = useAppTheme();
     const today = dayjs();
     const monday = today.day() === 0 ? today.subtract(6, 'day') : today.subtract(today.day() - 1, 'day');
-
-    // Generate the 7 days of the week starting from the latest Monday
     const daysOfWeek = Array.from({ length: 7 }, (_, idx) => monday.add(idx, 'day'));
 
     return (
-        <View style={styles.dateBarContainer}>
+        <View style={staticStyles.dateBarContainer}>
             {daysOfWeek.map((day, idx) => (
                 <Pressable
                     key={idx}
                     style={[
-                        styles.dateItem,
-                        day.isSame(today, 'day') && styles.selectedDateItem // Highlight the current day
+                        staticStyles.dateItem,
+                        day.isSame(today, 'day') && { borderColor: colors.white, borderWidth: 2 },
                     ]}
                 >
                     <Text
                         style={[
-                            styles.dateItemText,
-                            day.isSame(today, 'day') && styles.selectedDateText
+                            staticStyles.dateItemText,
+                            { color: colors.textMuted },
+                            day.isSame(today, 'day') && { color: colors.white },
                         ]}
                     >
                         {day.format('ddd')}
@@ -35,7 +35,7 @@ const WeeklyDatePicker = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
     dateBarContainer: {
         flexDirection: 'row',
         marginTop: 16,
@@ -45,22 +45,12 @@ const styles = StyleSheet.create({
     dateItem: {
         textAlign: 'center',
         paddingVertical: 2,
-
         width: '12%',
         borderRadius: 16,
     },
     dateItemText: {
         fontSize: 12,
         textAlign: 'center',
-        color: '#999',
-        fontWeight: '400',
-    },
-    selectedDateItem: {
-        borderColor: '#fff',
-        borderWidth: 2,
-    },
-    selectedDateText: {
-        color: 'white',
         fontWeight: '400',
     },
 });

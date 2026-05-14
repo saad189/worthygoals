@@ -1,19 +1,19 @@
-import { theme } from '@/core';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 export default function Header(props: any) {
-    return <Text style={styles.header} {...props} />;
+    const { colors } = useAppTheme();
+    return <Text style={[styles.header, { color: colors.primary }]} {...props} />;
 }
 
 const styles = StyleSheet.create({
     header: {
         fontFamily: 'Outfit',
         fontSize: 33,
-        color: theme.colors.primary,
         fontWeight: '400',
         paddingVertical: 12,
-        textAlign: 'center'
+        textAlign: 'center',
     },
 });

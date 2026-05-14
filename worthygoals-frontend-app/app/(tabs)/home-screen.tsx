@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -11,14 +11,16 @@ import {
 import Header from "@/components/SubComponents/Header";
 import Background from "@/components/SubComponents/Background";
 import { LinearGradient } from "expo-linear-gradient";
-import { theme } from "@/core";
 import WeeklyDatePicker from "@/components/CalenderView";
 import BorderGradient from "@/components/Common/BorderGradient";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
 const DashboardScreen = () => {
+  const { colors } = useAppTheme();
   const [selectedDate, setSelectedDate] = useState("2023-10-14");
+
   type CardInfo = {
     id: number;
     title: string;
@@ -28,6 +30,7 @@ const DashboardScreen = () => {
     progressUnit: string;
     borderColor: string;
   };
+
   const cardsData: CardInfo[] = [
     {
       id: 1,
@@ -36,7 +39,7 @@ const DashboardScreen = () => {
       progressCurrent: 3,
       progressTotal: 5,
       progressUnit: "pages",
-      borderColor: "#E0748F",
+      borderColor: colors.goalCategoryPink,
     },
     {
       id: 2,
@@ -45,7 +48,7 @@ const DashboardScreen = () => {
       progressCurrent: 8,
       progressTotal: 20,
       progressUnit: "min",
-      borderColor: "#4995E2",
+      borderColor: colors.goalCategoryBlue,
     },
     {
       id: 3,
@@ -54,7 +57,7 @@ const DashboardScreen = () => {
       progressCurrent: 12,
       progressTotal: 20,
       progressUnit: "min",
-      borderColor: "#D87EEC",
+      borderColor: colors.goalCategoryPurple,
     },
     {
       id: 4,
@@ -63,48 +66,135 @@ const DashboardScreen = () => {
       progressCurrent: 12,
       progressTotal: 20,
       progressUnit: "min",
-      borderColor: "#D87EEC",
+      borderColor: colors.goalCategoryPurple,
     },
   ];
 
-  // Example of how you might set a “goals completed” progress:
   const goalsCompleted = 3;
   const totalGoals = 8;
   const goalsPercentage = Math.round((goalsCompleted / totalGoals) * 100);
 
+  const dynamicStyles = useMemo(() => StyleSheet.create({
+    todayText: {
+      fontFamily: "Outfit",
+      fontSize: 20,
+      color: colors.primary,
+      fontWeight: "500",
+      paddingVertical: 12,
+      textAlign: "center",
+    },
+    goalsTitle: {
+      color: colors.textWhite,
+      fontSize: 14,
+      fontWeight: "500",
+    },
+    goalsSubtitle: {
+      color: colors.textWhite,
+      fontSize: 12,
+      marginTop: 4,
+    },
+    goalsPercentage: {
+      position: "absolute",
+      left: Platform.OS === "ios" ? "25%" : "28%",
+      bottom: "30%",
+      fontSize: 28,
+      color: colors.textWhite,
+    },
+    card: {
+      width: width / 2.3,
+      height: width / 2.3,
+      backgroundColor: colors.cardSurface,
+      borderRadius: 12,
+      padding: 16,
+      justifyContent: "space-around",
+    },
+    cardTitle: {
+      marginTop: 20,
+      color: colors.textWhite,
+      fontSize: 18,
+      fontWeight: "400",
+    },
+    cardDayStreak: {
+      width: "40%",
+      borderRadius: 12,
+      backgroundColor: colors.badgeSurface,
+      color: colors.textWhite,
+      fontSize: 12,
+      marginVertical: 4,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+      textAlign: "center",
+    },
+    cardProgress: {
+      color: colors.textWhite,
+      fontSize: 18,
+      marginBottom: 8,
+      fontWeight: "400",
+    },
+    cardProgressUnit: {
+      color: colors.textWhite,
+      fontSize: 11,
+      marginBottom: 10,
+      marginLeft: 10,
+      fontWeight: "400",
+      alignSelf: "flex-end",
+    },
+    addButton: {
+      position: "absolute",
+      right: "15%",
+      bottom: "15%",
+      width: "25%",
+      height: "25%",
+      borderRadius: 12,
+      backgroundColor: colors.cardSurface,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    addButtonText: {
+      color: colors.textWhite,
+      fontSize: 25,
+      paddingBottom: 4,
+    },
+    subHeading: {
+      fontSize: 16,
+      color: colors.textWhite,
+      fontWeight: "600",
+      marginVertical: 8,
+    },
+  }), [colors]);
+
   return (
-    <Background style={styles.container}>
+    <Background style={staticStyles.container}>
       <ScrollView
-        style={styles.scrollView}
+        style={staticStyles.scrollView}
         contentContainerStyle={{ paddingBottom: 80 }}
       >
-        {/* Header / Title */}
         <View style={{ alignSelf: "flex-start" }}>
           <Header>Welcome to Evolve</Header>
         </View>
 
         <WeeklyDatePicker />
 
-        <View style={styles.goalsContainer}>
+        <View style={staticStyles.goalsContainer}>
           <LinearGradient
-            colors={["#4796E4", "#E6738C"]}
-            style={styles.goalsCardGradient}
+            colors={[colors.gradientProgressStart, colors.gradientProgressEnd]}
+            style={staticStyles.goalsCardGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
           >
-            <View style={styles.goalsContent}>
-              <View style={styles.goalsPercentageContainer}>
-                <Text style={styles.goalsPercentage}>
+            <View style={staticStyles.goalsContent}>
+              <View style={staticStyles.goalsPercentageContainer}>
+                <Text style={dynamicStyles.goalsPercentage}>
                   {goalsPercentage}
-                  <Text style={{ color: "white", fontSize: 15 }}>%</Text>
+                  <Text style={{ color: colors.textWhite, fontSize: 15 }}>%</Text>
                 </Text>
               </View>
 
-              <View style={styles.goalsTextContainer}>
-                <Text style={styles.goalsTitle}>
+              <View style={staticStyles.goalsTextContainer}>
+                <Text style={dynamicStyles.goalsTitle}>
                   Great! Your daily Goals almost done.
                 </Text>
-                <Text style={styles.goalsSubtitle}>
+                <Text style={dynamicStyles.goalsSubtitle}>
                   {goalsCompleted}/{totalGoals} Completed
                 </Text>
               </View>
@@ -113,44 +203,38 @@ const DashboardScreen = () => {
         </View>
 
         <View style={{ alignSelf: "flex-start", marginBottom: 5 }}>
-          <Text style={styles.todayText}>TODAY</Text>
+          <Text style={dynamicStyles.todayText}>TODAY</Text>
         </View>
-        {/* Cards */}
-        <View style={styles.cardsContainer}>
+        <View style={staticStyles.cardsContainer}>
           {cardsData.map((card, i) => (
             <BorderGradient
               borderWidth={2}
-              colors={[card.borderColor, "#1F1F21"]}
+              colors={[card.borderColor, colors.gradientTerminal]}
               key={card.id}
               start={{ x: i % 2 == 0 ? 1 : 0, y: i % 2 == 0 ? 1 : 0 }}
               end={{ x: i % 2 == 1 ? 1 : 0, y: i % 2 == 0 ? 1 : 0 }}
               outerStyle={{ marginVertical: 5 }}
             >
-              <View style={styles.card}>
-                <Text style={styles.cardTitle}>{card.title}</Text>
-                <Text style={styles.cardDayStreak}>{card.dayStreak} days</Text>
+              <View style={dynamicStyles.card}>
+                <Text style={dynamicStyles.cardTitle}>{card.title}</Text>
+                <Text style={dynamicStyles.cardDayStreak}>{card.dayStreak} days</Text>
 
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Text style={styles.cardProgress}>
+                  <Text style={dynamicStyles.cardProgress}>
                     {card.progressCurrent} / {card.progressTotal}
                   </Text>
-                  <Text style={styles.cardProgressUnit}>
+                  <Text style={dynamicStyles.cardProgressUnit}>
                     {card.progressUnit}
                   </Text>
                 </View>
 
-                {/* + Button (Add progress) */}
-                <TouchableOpacity style={styles.addButton}>
-                  <Text style={styles.addButtonText}>+</Text>
+                <TouchableOpacity style={dynamicStyles.addButton}>
+                  <Text style={dynamicStyles.addButtonText}>+</Text>
                 </TouchableOpacity>
               </View>
             </BorderGradient>
           ))}
         </View>
-
-        {/* Challenges Section */}
-        {/* <Text style={styles.subHeading}>CHALLENGES</Text> */}
-        {/* Add your challenge section here */}
       </ScrollView>
     </Background>
   );
@@ -158,7 +242,7 @@ const DashboardScreen = () => {
 
 export default DashboardScreen;
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -166,21 +250,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 50,
-  },
-  title: {
-    marginTop: 20,
-    fontSize: 28,
-    fontWeight: "600",
-    color: "#fff",
-  },
-
-  todayText: {
-    fontFamily: "Outfit",
-    fontSize: 20,
-    color: theme.colors.primary,
-    fontWeight: "500",
-    paddingVertical: 12,
-    textAlign: "center",
   },
   goalsContainer: {
     marginBottom: 20,
@@ -197,16 +266,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-evenly",
     alignItems: "center",
   },
-
   goalsTextContainer: {
     marginLeft: 12,
   },
-  goalsTitle: {
-    color: theme.colors.textWhite,
-    fontSize: 14,
-    fontWeight: "500",
-  },
-
   goalsPercentageContainer: {
     flexDirection: "row",
     width: width * 0.22,
@@ -216,87 +278,9 @@ const styles = StyleSheet.create({
     borderColor: "white",
     alignItems: "center",
   },
-
-  goalsPercentage: {
-    //backgroundColor: "red",
-    position: "absolute",
-    left: Platform.OS === "ios" ? "25%" : "28%",
-    bottom: "30%",
-    fontSize: 28,
-    color: "white",
-  },
-
-  goalsSubtitle: {
-    color: theme.colors.textWhite,
-    fontSize: 12,
-    marginTop: 4,
-  },
-
   cardsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-  },
-  card: {
-    width: width / 2.3,
-    height: width / 2.3,
-    backgroundColor: "#1F2937",
-    borderRadius: 12,
-    padding: 16,
-    justifyContent: "space-around",
-  },
-  cardTitle: {
-    marginTop: 20,
-    color: theme.colors.textWhite,
-    fontSize: 18,
-    fontWeight: "400",
-  },
-  cardDayStreak: {
-    width: "40%",
-    borderRadius: 12,
-    backgroundColor: "#4E3139",
-
-    color: theme.colors.textWhite,
-    fontSize: 12,
-    marginVertical: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    textAlign: "center",
-  },
-  cardProgress: {
-    color: theme.colors.textWhite,
-    fontSize: 18,
-    marginBottom: 8,
-    fontWeight: "400",
-  },
-  cardProgressUnit: {
-    color: theme.colors.textWhite,
-    fontSize: 11,
-    marginBottom: 10,
-    marginLeft: 10,
-    fontWeight: "400",
-    alignSelf: "flex-end",
-  },
-  addButton: {
-    position: "absolute",
-    right: "15%",
-    bottom: "15%",
-    width: "25%",
-    height: "25%",
-    borderRadius: 12,
-    backgroundColor: "#333",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  addButtonText: {
-    color: theme.colors.textWhite,
-    fontSize: 25,
-    paddingBottom: 4,
-  },
-  subHeading: {
-    fontSize: 16,
-    color: theme.colors.textWhite,
-    fontWeight: "600",
-    marginVertical: 8,
   },
 });

@@ -1,8 +1,7 @@
-import { theme } from '@/core';
 import React from 'react';
 import { StyleSheet, ViewStyle } from 'react-native';
 import { Button as PaperButton, ButtonProps as PaperButtonProps } from 'react-native-paper';
-
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 type Props = {
     mode: 'text' | 'outlined' | 'contained';
@@ -10,26 +9,26 @@ type Props = {
 } & Omit<PaperButtonProps, 'mode'>;
 
 export default function Button({ mode, style, ...props }: Props) {
+    const { colors } = useAppTheme();
     return (
         <PaperButton
             style={[
-                styles.button,
-                mode === 'outlined' && { backgroundColor: theme.colors.surface },
+                staticStyles.button,
+                { backgroundColor: mode === 'outlined' ? colors.surface : colors.buttonTheme },
                 style,
             ]}
-            labelStyle={styles.text}
+            labelStyle={staticStyles.text}
             mode={mode}
             {...props}
         />
     );
 }
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
     button: {
         width: 'auto',
         borderRadius: 30,
         marginVertical: 10,
-        backgroundColor: theme.colors.buttonTheme
     },
     text: {
         fontWeight: '500',

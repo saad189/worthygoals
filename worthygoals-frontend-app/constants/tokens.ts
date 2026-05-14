@@ -49,6 +49,31 @@ export const Palette = {
   white:  '#FFFFFF',
   black:  '#000000',
   transparent: 'transparent',
+
+  // ── UI surface tones (used in dark-background screens) ──────
+  cardSurface:     '#1F2937',  // goal / activity card on dark bg
+  badgeSurface:    '#4E3139',  // streak / count badge on dark bg
+
+  // ── Goal category accent colours ───────────────────────────
+  goalCategoryPink:   '#E0748F',
+  goalCategoryBlue:   '#4995E2',
+  goalCategoryPurple: '#D87EEC',
+
+  // ── Progress / gradient pairs ───────────────────────────────
+  gradientProgressStart: '#4796E4',
+  gradientProgressEnd:   '#E6738C',
+  gradientTerminal:      '#1F1F21',  // dark terminal stop in gradients
+
+  // ── Overlay / glass ─────────────────────────────────────────
+  surfaceGlass:  'rgba(168,168,168,0.20)',  // glass panel on dark bg
+  overlayBlack:  'rgba(0,0,0,0.5)',         // fullscreen media overlay
+
+  // ── Warm gold / chat gradients ────────────────────────────
+  warmGold:      '#FFC371',  // mentor name, chat goals gradient end
+  goalsChatStart:'#FF5F6D',  // chat goals card gradient start
+
+  // ── Info / status specials ────────────────────────────────
+  cyanBlue:      '#00D3FF',  // goal duration badge text
 } as const;
 
 // ── Typography ────────────────────────────────────────────────

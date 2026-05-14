@@ -14,6 +14,7 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import { GoalCategory, GoalCategoryEnum, GoalItem } from '@/models';
 import { capitalizeFirstLetter, getEnumValues, getImageUri } from '@/helpers';
 import goalService from '@/services/goals.service';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 const categoryOptions = getEnumValues(GoalCategoryEnum);
 const emptyGoal: GoalItem = {
@@ -27,6 +28,7 @@ const emptyGoal: GoalItem = {
 };
 
 const NewGoalsComponent: React.FC = () => {
+    const { colors } = useAppTheme();
     const [goal, setGoal] = useState<GoalItem>(emptyGoal);
 
     const [value, setValue] = useState<any>([]);
@@ -40,14 +42,12 @@ const NewGoalsComponent: React.FC = () => {
     const [open, setOpen] = useState(false);
 
     const handleSaveGoal = () => {
-        if (!goal)
-            return;
+        if (!goal) return;
 
         if (!goal.title || !goal.description || !goal.durationInDays) {
             Alert.alert('Missing Fields', 'Please fill all fields to continue.');
             return;
         }
-        // Save logic goes here, e.g. POST to an API or local state
 
         goalService.saveGoal({ ...goal, imageUri: getImageUri(goal.category), category: value, id: `m-${Date.now()}`, });
         Alert.alert('Goal Saved!', `${goal.title} has been added.`);
@@ -60,17 +60,17 @@ const NewGoalsComponent: React.FC = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
         >
-            <View style={styles.container}>
-                <Text style={styles.label}>Goal Title</Text>
+            <View style={staticStyles.container}>
+                <Text style={[staticStyles.label, { color: colors.textWhite }]}>Goal Title</Text>
                 <TextInput
-                    style={styles.input}
+                    style={[staticStyles.input, { backgroundColor: colors.white, color: colors.black }]}
                     value={goal.title}
-                    placeholderTextColor="#aaa"
+                    placeholderTextColor={colors.textMuted}
                     placeholder="Enter Goal Title"
                     onChangeText={setGoalTitle}
                 />
 
-                <Text style={styles.label}>Category</Text>
+                <Text style={[staticStyles.label, { color: colors.textWhite }]}>Category</Text>
                 <DropDownPicker
                     open={open}
                     value={value}
@@ -82,31 +82,34 @@ const NewGoalsComponent: React.FC = () => {
                     multiple={false}
                     mode="BADGE"
                     placeholder='Choose a Category'
-                    style={[styles.input, { marginBottom: 20 }]}
+                    style={[staticStyles.input, { marginBottom: 20, backgroundColor: colors.white }]}
                 />
 
-                <Text style={styles.label}>Goal Description</Text>
+                <Text style={[staticStyles.label, { color: colors.textWhite }]}>Goal Description</Text>
                 <TextInput
-                    style={[styles.input, styles.multilineInput]}
+                    style={[staticStyles.input, staticStyles.multilineInput, { backgroundColor: colors.white, color: colors.black }]}
                     value={goal.description}
-                    placeholderTextColor="#aaa"
+                    placeholderTextColor={colors.textMuted}
                     placeholder="Enter Goal Description"
                     onChangeText={setGoalDescription}
                     multiline
                 />
 
-                <Text style={styles.label}>Goal Duration (in Days)</Text>
+                <Text style={[staticStyles.label, { color: colors.textWhite }]}>Goal Duration (in Days)</Text>
                 <TextInput
-                    style={styles.input}
+                    style={[staticStyles.input, { backgroundColor: colors.white, color: colors.black }]}
                     value={goal.durationInDays.toString()}
-                    placeholderTextColor="#aaa"
+                    placeholderTextColor={colors.textMuted}
                     placeholder="Enter Goal Duration"
                     inputMode='numeric'
                     onChangeText={setGoalDuration}
                 />
 
-                <TouchableOpacity style={styles.saveButton} onPress={handleSaveGoal}>
-                    <Text style={styles.saveButtonText}>Save Goal</Text>
+                <TouchableOpacity
+                    style={[staticStyles.saveButton, { backgroundColor: colors.primary }]}
+                    onPress={handleSaveGoal}
+                >
+                    <Text style={[staticStyles.saveButtonText, { color: colors.textWhite }]}>Save Goal</Text>
                 </TouchableOpacity>
             </View>
         </KeyboardAvoidingView>
@@ -115,7 +118,7 @@ const NewGoalsComponent: React.FC = () => {
 
 export default NewGoalsComponent;
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
     container: {
         flex: 1,
         paddingHorizontal: 16,
@@ -123,17 +126,14 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: 14,
-        color: '#fff',
         marginBottom: 8,
     },
     input: {
-        backgroundColor: '#fff',
         borderRadius: 8,
         marginBottom: 10,
         paddingHorizontal: 10,
         height: 40,
         fontSize: 14,
-        color: '#000',
     },
     multilineInput: {
         height: 60,
@@ -141,14 +141,12 @@ const styles = StyleSheet.create({
         textAlignVertical: 'top',
     },
     saveButton: {
-        backgroundColor: '#E65581',
         paddingVertical: 15,
         borderRadius: 8,
         alignItems: 'center',
         marginTop: 10,
     },
     saveButtonText: {
-        color: '#FFF',
         fontSize: 14,
         fontWeight: '600',
     },

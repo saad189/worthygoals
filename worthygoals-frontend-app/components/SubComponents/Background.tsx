@@ -1,18 +1,19 @@
-import { theme } from '@/core';
 import React, { ReactNode } from 'react';
 import { ImageBackground, StyleSheet, KeyboardAvoidingView, ViewStyle } from 'react-native';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 type Props = {
     children: ReactNode;
-    style?: ViewStyle
+    style?: ViewStyle;
 };
 
 export default function Background({ children, style }: Props) {
+    const { colors } = useAppTheme();
     return (
         <ImageBackground
             source={require('@/assets/images/app-background-black.png')}
             resizeMode="cover"
-            style={styles.background}
+            style={[styles.background, { backgroundColor: colors.surface }]}
         >
             <KeyboardAvoidingView style={[style ? style : styles.container]} behavior="padding">
                 {children}
@@ -25,7 +26,6 @@ const styles = StyleSheet.create({
     background: {
         flex: 1,
         width: '100%',
-        backgroundColor: theme.colors.surface,
     },
     container: {
         flex: 1,

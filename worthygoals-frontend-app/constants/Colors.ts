@@ -59,6 +59,38 @@ export const Colors = {
     bubbleSelfText:Palette.white,
     bubbleOther:   Palette.canvas,
     bubbleOtherText: Palette.ink,
+
+    // ── Semantic aliases ───────────────────────────────────────
+    secondary:             Palette.inkMuted,
+
+    // ── UI surface tones ───────────────────────────────────────
+    cardSurface:           Palette.cardSurface,
+    badgeSurface:          Palette.badgeSurface,
+
+    // ── Goal category accents ──────────────────────────────────
+    goalCategoryPink:      Palette.goalCategoryPink,
+    goalCategoryBlue:      Palette.goalCategoryBlue,
+    goalCategoryPurple:    Palette.goalCategoryPurple,
+
+    // ── Progress / gradient pairs ──────────────────────────────
+    gradientProgressStart: Palette.gradientProgressStart,
+    gradientProgressEnd:   Palette.gradientProgressEnd,
+    gradientTerminal:      Palette.gradientTerminal,
+
+    // ── Overlay / glass ────────────────────────────────────────
+    surfaceGlass:          Palette.surfaceGlass,
+    overlayBlack:          Palette.overlayBlack,
+
+    // ── Chat / mentor specials ─────────────────────────────────
+    goalsChatGradientStart: Palette.goalsChatStart,
+    goalsChatGradientEnd:   Palette.warmGold,
+    mentorNameColor:        Palette.warmGold,
+    unreadDot:              Palette.successBase,
+    durationBadgeText:      Palette.cyanBlue,
+
+    // ── Absolute ───────────────────────────────────────────────
+    black:                 Palette.black,
+    white:                 Palette.white,
   },
 
   dark: {
@@ -108,6 +140,38 @@ export const Colors = {
     bubbleSelfText:Palette.white,
     bubbleOther:   Palette.inkFaintDark,
     bubbleOtherText: Palette.inkDark,
+
+    // ── Semantic aliases ───────────────────────────────────────
+    secondary:             Palette.inkMutedDark,
+
+    // ── UI surface tones ───────────────────────────────────────
+    cardSurface:           Palette.cardSurface,
+    badgeSurface:          Palette.badgeSurface,
+
+    // ── Goal category accents ──────────────────────────────────
+    goalCategoryPink:      Palette.goalCategoryPink,
+    goalCategoryBlue:      Palette.goalCategoryBlue,
+    goalCategoryPurple:    Palette.goalCategoryPurple,
+
+    // ── Progress / gradient pairs ──────────────────────────────
+    gradientProgressStart: Palette.gradientProgressStart,
+    gradientProgressEnd:   Palette.gradientProgressEnd,
+    gradientTerminal:      Palette.gradientTerminal,
+
+    // ── Overlay / glass ────────────────────────────────────────
+    surfaceGlass:          Palette.surfaceGlass,
+    overlayBlack:          Palette.overlayBlack,
+
+    // ── Chat / mentor specials ─────────────────────────────────
+    goalsChatGradientStart: Palette.goalsChatStart,
+    goalsChatGradientEnd:   Palette.warmGold,
+    mentorNameColor:        Palette.warmGold,
+    unreadDot:              Palette.successBase,
+    durationBadgeText:      Palette.cyanBlue,
+
+    // ── Absolute ───────────────────────────────────────────────
+    black:                 Palette.black,
+    white:                 Palette.white,
   },
 } as const;
 

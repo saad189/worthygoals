@@ -17,11 +17,13 @@ import {
     Dimensions,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 const categories = ['All', 'Workout', 'Books', 'Reading', 'Outdoors', 'Visualization'];
 const { width } = Dimensions.get('window');
 
 const MotivationalBoardsScreen: React.FC = () => {
+    const { colors } = useAppTheme();
     const [selectedCategory, setSelectedCategory] = useState<string>(categories[0]);
     const [cardsData, setCardsData] = useState<BoardsCardItem[]>([]);
     const [filteredCards, setFilteredCards] = useState<BoardsCardItem[]>([]);
@@ -36,16 +38,16 @@ const MotivationalBoardsScreen: React.FC = () => {
     }, [cardsData, selectedCategory]);
 
     return (
-        <Background style={styles.container}>
-            <View style={styles.titleContainer}>
+        <Background style={staticStyles.container}>
+            <View style={staticStyles.titleContainer}>
                 <Header>Motivational Boards</Header>
             </View>
 
-            <View style={styles.categoryScrollWrapper}>
+            <View style={staticStyles.categoryScrollWrapper}>
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    style={styles.categoryScroll}
+                    style={staticStyles.categoryScroll}
                 >
                     {categories.map((cat) => {
                         const isActive = cat === selectedCategory;
@@ -54,11 +56,14 @@ const MotivationalBoardsScreen: React.FC = () => {
                                 key={cat}
                                 onPress={() => setSelectedCategory(cat)}
                                 style={[
-                                    styles.categoryButton,
-                                    isActive && styles.activeCategoryButton,
+                                    staticStyles.categoryButton,
+                                    isActive && { borderBottomColor: colors.white, borderBottomWidth: 2 },
                                 ]}
                             >
-                                <Text style={[styles.categoryText, isActive && styles.activeCategoryText]}>
+                                <Text style={[
+                                    staticStyles.categoryText,
+                                    { color: isActive ? colors.white : colors.textFaint },
+                                ]}>
                                     {cat}
                                 </Text>
                             </TouchableOpacity>
@@ -67,13 +72,13 @@ const MotivationalBoardsScreen: React.FC = () => {
                 </ScrollView>
             </View>
 
-            <View style={styles.cardsContainer}>
-                <ScrollView contentContainerStyle={styles.cardsContentContainer}>
+            <View style={staticStyles.cardsContainer}>
+                <ScrollView contentContainerStyle={staticStyles.cardsContentContainer}>
                     {filteredCards.map((card, i) => {
                         return (
                             <BorderGradient
                                 borderWidth={3}
-                                colors={[card.borderColor, '#1F1F21']}
+                                colors={[card.borderColor, colors.gradientTerminal]}
                                 key={card.id}
                                 start={{ x: i % 2 === 0 ? 1 : 0, y: i % 2 === 0 ? 1 : 0 }}
                                 end={{ x: i % 2 === 1 ? 1 : 0, y: i % 2 === 0 ? 1 : 0 }}
@@ -88,12 +93,12 @@ const MotivationalBoardsScreen: React.FC = () => {
                                             borderColor: card.borderColor,
                                         });
                                     }}
-                                    style={styles.cardButton}
+                                    style={staticStyles.cardButton}
                                 >
                                     <Animated.Image
                                         source={{ uri: card.uri }}
                                         sharedTransitionTag={`${card.id}-tag-board`}
-                                        style={styles.profileImage}
+                                        style={staticStyles.profileImage}
                                     />
                                 </TouchableOpacity>
                             </BorderGradient>
@@ -107,7 +112,7 @@ const MotivationalBoardsScreen: React.FC = () => {
 
 export default MotivationalBoardsScreen;
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
     container: {
         flex: 1,
         paddingTop: 50,
@@ -128,16 +133,8 @@ const styles = StyleSheet.create({
         marginRight: 16,
         paddingVertical: 6,
     },
-    activeCategoryButton: {
-        borderBottomColor: '#FFFFFF',
-        borderBottomWidth: 2,
-    },
     categoryText: {
         fontSize: 16,
-        color: '#AAAAAA',
-    },
-    activeCategoryText: {
-        color: '#FFFFFF',
     },
     cardsContainer: {
         flex: 0.9,

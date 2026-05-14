@@ -10,11 +10,11 @@ import Header from '@/components/SubComponents/Header';
 import Logo from '@/components/SubComponents/Logo';
 import TextInput from '@/components/SubComponents/TextInput';
 import PasswordField from '@/components/SubComponents/PasswordField';
-import { theme } from '@/core';
 import { passwordValidator, repeatPasswordValidator } from '@/helpers';
 import { useLoader, useToast } from '@/hooks';
 import authService from '@/services/AuthService';
 import { ROUTE_NAMES } from '@/constants';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 type FormState = {
     code: { value: string; error: string };
@@ -54,10 +54,7 @@ function formReducer(state: FormState, action: FormAction): FormState {
                 ...state,
                 code: { ...state.code, error: action.payload.codeError ?? '' },
                 newPassword: { ...state.newPassword, error: action.payload.passwordError ?? '' },
-                repeatedPassword: {
-                    ...state.repeatedPassword,
-                    error: action.payload.repeatedPasswordError ?? '',
-                },
+                repeatedPassword: { ...state.repeatedPassword, error: action.payload.repeatedPasswordError ?? '' },
             };
         default:
             return state;
@@ -68,6 +65,7 @@ export default function NewPasswordScreen() {
     const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
     const route = useRoute<RouteProp<{ params: { email: string } }, 'params'>>();
     const { email } = route.params;
+    const { colors } = useAppTheme();
 
     const { isLoading, setLoading } = useLoader();
     const { showSuccessMessage, showErrorMessage } = useToast();
@@ -75,7 +73,6 @@ export default function NewPasswordScreen() {
     const [formState, dispatch] = useReducer(formReducer, initialState);
 
     const onSubmitPressed = async () => {
-
         const codeError = !formState.code.value ? 'Code cannot be empty!' : '';
         const passwordError = passwordValidator(formState.newPassword.value);
         const repeatedPasswordError = repeatPasswordValidator(
@@ -86,11 +83,7 @@ export default function NewPasswordScreen() {
         if (codeError || passwordError || repeatedPasswordError) {
             dispatch({
                 type: 'SET_ERRORS',
-                payload: {
-                    codeError,
-                    passwordError,
-                    repeatedPasswordError,
-                },
+                payload: { codeError, passwordError, repeatedPasswordError },
             });
             return;
         }
@@ -143,36 +136,24 @@ export default function NewPasswordScreen() {
             <PasswordField
                 placeholder="Repeat New Password"
                 value={formState.repeatedPassword.value}
-                onChangeText={(text: string) =>
-                    dispatch({ type: 'UPDATE_REPEATED_PASSWORD', payload: text })
-                }
+                onChangeText={(text: string) => dispatch({ type: 'UPDATE_REPEATED_PASSWORD', payload: text })}
                 errorText={formState.repeatedPassword.error}
                 onSubmitEditing={onSubmitPressed}
             />
 
-            <Button
-                mode="contained"
-                onPress={onSubmitPressed}
-                style={styles.button}
-                loading={isLoading}
-            >
+            <Button mode="contained" onPress={onSubmitPressed} style={staticStyles.button} loading={isLoading}>
                 Submit
             </Button>
         </Background>
     );
 }
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
     button: {
         width: '100%',
         marginTop: 24,
     },
-    row: {
-        flexDirection: 'row',
-        marginTop: 4,
-    },
     link: {
         fontWeight: 'bold',
-        color: theme.colors.secondary,
     },
 });

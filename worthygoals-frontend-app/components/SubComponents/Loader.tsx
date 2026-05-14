@@ -1,29 +1,29 @@
-import { theme } from '@/core';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 interface LoaderProps {
-    progress: number; // Percentage value passed as prop
+    progress: number;
 }
+
 const size = 200;
 const strokeWidth = 2;
 const radius = (size - strokeWidth) / 2;
 const circumference = 2 * Math.PI * radius;
 
-
 const LoaderComponent: React.FC<LoaderProps> = ({ progress }) => {
+    const { colors } = useAppTheme();
     const spinValue = useRef(new Animated.Value(0)).current;
     let spinAnimation: Animated.CompositeAnimation;
     spinAnimation = Animated.loop(Animated.sequence([
         Animated.timing(spinValue, {
-            toValue: 1, // From 0 to 1 in a loop
-            duration: 1000, // Duration for one full rotation
+            toValue: 1,
+            duration: 1000,
             easing: Easing.elastic(0),
             useNativeDriver: true,
         })
-    ])
-    );
+    ]));
 
     useEffect(() => {
         if (progress == 0) {
@@ -34,9 +34,7 @@ const LoaderComponent: React.FC<LoaderProps> = ({ progress }) => {
         }
 
         return () => {
-            // if (spinAnimation) {
-            //     spinAnimation.stop();
-            // }
+            // spinAnimation.stop();
         };
     }, [progress]);
 
@@ -44,6 +42,28 @@ const LoaderComponent: React.FC<LoaderProps> = ({ progress }) => {
         inputRange: [0, 1],
         outputRange: ['0deg', '360deg'],
     });
+
+    const styles = useMemo(() => StyleSheet.create({
+        loaderContainer: {
+            width: size,
+            height: size,
+            justifyContent: 'center',
+            alignItems: 'center',
+            shadowColor: colors.primary,
+            shadowOffset: { width: 1, height: -2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 3,
+            elevation: 5,
+            backgroundColor: 'transparent',
+            borderRadius: radius,
+        },
+        progressText: {
+            position: 'absolute',
+            fontSize: 50,
+            color: colors.textWhite,
+            fontWeight: '500',
+        },
+    }), [colors]);
 
     return (
         <View style={styles.loaderContainer}>
@@ -53,7 +73,7 @@ const LoaderComponent: React.FC<LoaderProps> = ({ progress }) => {
                         cx={size / 2}
                         cy={size / 2}
                         r={radius}
-                        stroke="white"
+                        stroke={colors.textWhite}
                         strokeWidth={strokeWidth}
                         strokeDasharray={`${circumference * (progress < 100 ? 0.75 : 1)}, ${circumference}`}
                         strokeLinecap="round"
@@ -65,29 +85,5 @@ const LoaderComponent: React.FC<LoaderProps> = ({ progress }) => {
         </View>
     );
 };
-
-const styles = StyleSheet.create({
-    loaderContainer: {
-        width: size,
-        height: size,
-        justifyContent: 'center',
-        alignItems: 'center',
-
-        shadowColor: theme.colors.primary,
-        shadowOffset: { width: 1, height: -2 }, // Adjust for shadow direction
-        shadowOpacity: 0.3, // Shadow transparency
-        shadowRadius: 3, // Shadow blur
-        elevation: 5, // Adds shadow on Android
-        backgroundColor: 'transparent', // Keeps the container invisible
-        borderRadius: radius
-    },
-
-    progressText: {
-        position: 'absolute',
-        fontSize: 50,
-        color: 'white',
-        fontWeight: '500',
-    },
-});
 
 export default LoaderComponent;

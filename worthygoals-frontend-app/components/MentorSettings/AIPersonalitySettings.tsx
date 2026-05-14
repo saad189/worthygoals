@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 
 import Slider from '@react-native-community/slider';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 
 export interface AIPersonalitySettingsProps {
@@ -21,7 +22,7 @@ export interface AIPersonalitySettingsProps {
 export const AIPersonalitySettings: AIPersonalitySettingsProps[] = [
     {
         name: 'Intensity',
-        description: `Adjust the Intensity of your AI Coach. High Intensity means more messages, more push and more intensity.AI Coach may get angry if you don’t respond timely.`,
+        description: `Adjust the Intensity of your AI Coach. High Intensity means more messages, more push and more intensity.AI Coach may get angry if you don't respond timely.`,
         settingId: 0,
         value: 0.5,
         isBoolean: false
@@ -64,6 +65,7 @@ export const AIPersonalitySettings: AIPersonalitySettingsProps[] = [
 ]
 
 const AIPersonalitySettingsComponent: React.FC = () => {
+    const { colors } = useAppTheme();
     const [settings, setSettings] = useState<AIPersonalitySettingsProps[]>(AIPersonalitySettings);
     let value = 0;
     const updateSetting = (settingId: number, newValue: number) => {
@@ -75,26 +77,26 @@ const AIPersonalitySettingsComponent: React.FC = () => {
     };
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView style={staticStyles.container}>
             {settings.map(setting => (
 
                 <View key={setting.settingId}>
-                    <Text style={styles.label}>{setting.name}</Text>
+                    <Text style={[staticStyles.label, { color: colors.textWhite }]}>{setting.name}</Text>
 
                     {setting.isBoolean ? (
-                        <View style={styles.switchRow}>
-                            <Text style={styles.valueTextSwitch}>{setting.description}</Text>
+                        <View style={staticStyles.switchRow}>
+                            <Text style={[staticStyles.valueTextSwitch, { color: colors.textWhite }]}>{setting.description}</Text>
                             <Switch
                                 style={{ marginRight: 10 }}
-                                trackColor={{ false: '#767577', true: '#E65581' }}
-                                thumbColor={setting.value ? '#fff' : '#f4f3f4'}
+                                trackColor={{ false: colors.textInactive, true: colors.primary }}
+                                thumbColor={setting.value ? colors.white : colors.textFaint}
                                 onValueChange={() => updateSetting(setting.settingId, setting.value ? 0 : 1)}
                                 value={!!setting.value}
                             />
                         </View>
                     ) : (
-                        <View style={styles.sliderContainer}>
-                            <Text style={styles.valueText}>{setting.description}</Text>
+                        <View style={staticStyles.sliderContainer}>
+                            <Text style={[staticStyles.valueText, { color: colors.textWhite }]}>{setting.description}</Text>
                             <Slider
                                 style={{ flex: 1, marginHorizontal: 40, width: '90%' }}
                                 minimumValue={0}
@@ -102,13 +104,13 @@ const AIPersonalitySettingsComponent: React.FC = () => {
                                 step={0.5}
                                 value={setting.value}
                                 onValueChange={(val) => updateSetting(setting.settingId, val)}
-                                minimumTrackTintColor="#E65581"
-                                maximumTrackTintColor="#ccc"
-                                thumbTintColor={Platform.OS === 'ios' ? '#E65581' : '#E65581'}
+                                minimumTrackTintColor={colors.primary}
+                                maximumTrackTintColor={colors.textFaint}
+                                thumbTintColor={colors.primary}
                                 StepMarker={(val, i) =>
                                     <View>
                                         <Text numberOfLines={2}
-                                            style={styles.stepMarker}>
+                                            style={[staticStyles.stepMarker, { color: colors.textWhite }]}>
                                             {value++ == 0 ? `Low` : (value == 2 ? `Normal` : `High`)} {setting.name}
                                         </Text>
                                         <Text style={{ display: 'none' }}>{value > 2 ? value = 0 : null}</Text>
@@ -125,34 +127,29 @@ const AIPersonalitySettingsComponent: React.FC = () => {
 
 export default AIPersonalitySettingsComponent;
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
     container: {
         flex: 1,
         paddingHorizontal: 10
     },
     label: {
         fontSize: 20,
-        color: '#fff',
     },
     sliderContainer: {
         flexDirection: 'column',
-
         alignItems: 'center',
         marginBottom: 40,
     },
     sliderValue: {
-        color: '#fff',
         fontSize: 14,
     },
     valueText: {
-        color: '#fff',
         fontSize: 13,
         marginTop: 10,
         marginBottom: 20,
         textAlign: 'left',
     },
     valueTextSwitch: {
-        color: '#fff',
         fontSize: 13,
         marginTop: 10,
         marginBottom: 20,
@@ -167,7 +164,6 @@ const styles = StyleSheet.create({
     },
     stepMarker: {
         marginTop: 20,
-        color: 'white',
         fontSize: 9,
         width: 70,
         textAlign: 'center'

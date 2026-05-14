@@ -9,10 +9,13 @@ import {
     Image,
     Dimensions
 } from 'react-native';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function DefaultSettingsComponent() {
+    const { colors } = useAppTheme();
+
     const menuItems = [
         { title: 'General Settings', logo: require('@/assets/images/icons/settings_icon.png'), onPress: () => { } },
         { title: 'Notifications', logo: require('@/assets/images/icons/notification.png'), onPress: () => { } },
@@ -26,12 +29,12 @@ export default function DefaultSettingsComponent() {
     const renderMenuItem = ({ item }: { item: typeof menuItems[0] }) => {
         return (
             <>
-                <TouchableOpacity style={styles.menuItem} onPress={item.onPress}>
+                <TouchableOpacity style={staticStyles.menuItem} onPress={item.onPress}>
                     <Image source={item.logo} style={{ width: SCREEN_WIDTH * 0.07, height: SCREEN_WIDTH * 0.07 }} />
-                    <Text style={styles.menuItemText}>{item.title}</Text>
-                    <Ionicons name="chevron-forward" size={20} color="#AAA" />
+                    <Text style={[staticStyles.menuItemText, { color: colors.textWhite }]}>{item.title}</Text>
+                    <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
                 </TouchableOpacity>
-                <View style={styles.line} />
+                <View style={[staticStyles.line, { backgroundColor: colors.textFaint }]} />
             </>
         );
     };
@@ -41,18 +44,13 @@ export default function DefaultSettingsComponent() {
             data={menuItems}
             keyExtractor={(item) => item.title}
             renderItem={renderMenuItem}
-            style={styles.menuList}
-            contentContainerStyle={styles.menuListContainer}
+            style={staticStyles.menuList}
+            contentContainerStyle={staticStyles.menuListContainer}
         />
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+const staticStyles = StyleSheet.create({
     menuItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -63,18 +61,14 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 16,
         marginLeft: 20,
-        color: "white"
     },
     line: {
         height: 1,
         width: '85%',
-        backgroundColor: '#B3B3B3',
         alignSelf: 'center',
     },
     menuList: {
         flex: 1,
     },
-    menuListContainer: {
-
-    },
+    menuListContainer: {},
 });

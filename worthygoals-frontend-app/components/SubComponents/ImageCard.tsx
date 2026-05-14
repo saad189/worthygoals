@@ -1,9 +1,9 @@
-import { theme } from '@/core';
 import { ImageCard } from '@/models';
 import React from 'react';
 import { View, Text, Image, StyleSheet, Dimensions, ViewStyle, Pressable, StyleProp } from 'react-native';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface ImageCardProps {
     card: ImageCard;
@@ -20,6 +20,8 @@ const ImageCardComponent: React.FC<ImageCardProps> = ({
     isSelectable = false,
     onSelect
 }) => {
+    const { colors } = useAppTheme();
+
     const handlePress = () => {
         if (isSelectable && onSelect) {
             onSelect(card);
@@ -30,11 +32,11 @@ const ImageCardComponent: React.FC<ImageCardProps> = ({
         <Pressable
             onPress={handlePress}
             disabled={!isSelectable}
-            style={extraStyles ? extraStyles : styles.card}
+            style={extraStyles ? extraStyles : [styles.card, { backgroundColor: colors.black }]}
         >
             <Image source={card.imageUrl as any} style={styles.image} />
             <View style={styles.overlay} />
-            <Text style={[styles.title, { fontSize }]}>{card.title}</Text>
+            <Text style={[styles.title, { fontSize, color: colors.textWhite }]}>{card.title}</Text>
         </Pressable>
     );
 };
@@ -46,7 +48,6 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         overflow: 'hidden',
         position: 'relative',
-        backgroundColor: '#000',
     },
     image: {
         width: '100%',
@@ -55,12 +56,10 @@ const styles = StyleSheet.create({
     },
     overlay: {
         ...StyleSheet.absoluteFillObject,
-        // backgroundColor: 'rgba(0, 0, 0, 0.5)', // to darken the image
     },
     title: {
         alignSelf: 'center',
         top: '75%',
-        color: theme.colors.textWhite,
         textTransform: 'uppercase',
         fontWeight: '400',
     },

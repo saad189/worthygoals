@@ -8,10 +8,12 @@ import { BlurView } from "expo-blur";
 import BorderGradient from "@/components/Common/BorderGradient";
 import { useNavigation } from "expo-router";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 const { width, height } = Dimensions.get("window");
 
 const ImageViewerModal = () => {
+  const { colors } = useAppTheme();
   const {
     params: { imageUri, tag, borderColor },
   } = useRoute() as any;
@@ -30,13 +32,13 @@ const ImageViewerModal = () => {
   }, [goBack]);
 
   return (
-    <View style={styles.container}>
+    <View style={[staticStyles.container, { backgroundColor: colors.overlayBlack }]}>
       <BlurView intensity={15} style={StyleSheet.absoluteFill} />
       <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
 
       <BorderGradient
         borderWidth={borderWidth}
-        colors={[borderColor, borderColor, "#1F1F21"]}
+        colors={[borderColor, borderColor, colors.gradientTerminal]}
         start={{ x: 1, y: 1 }}
         end={{ x: 0, y: 0 }}
         outerStyle={{
@@ -63,13 +65,13 @@ const ImageViewerModal = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
   container: {
     flex: 1,
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
   },
 });
+
 export default ImageViewerModal;
