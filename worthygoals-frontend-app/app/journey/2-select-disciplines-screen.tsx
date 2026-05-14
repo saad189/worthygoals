@@ -10,27 +10,20 @@ import { ParamListBase } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useNavigation } from "expo-router";
 import { Alert, Dimensions, StyleSheet } from "react-native";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function DisciplinesScreen() {
+    const { colors } = useAppTheme();
     const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
 
     const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
 
     const cards: ImageCard[] = [
-        {
-            title: 'Knowledge',
-            imageUrl: require('@/assets/images/reading-books.png')
-        },
-        {
-            title: 'Power',
-            imageUrl: require('@/assets/images/excercise-running.png')
-        },
-        {
-            title: 'Spiritual',
-            imageUrl: require('@/assets/images/motivation-walking.png')
-        },
+        { title: 'Knowledge', imageUrl: require('@/assets/images/reading-books.png') },
+        { title: 'Power', imageUrl: require('@/assets/images/excercise-running.png') },
+        { title: 'Spiritual', imageUrl: require('@/assets/images/motivation-walking.png') },
     ];
 
     const handleCardSelect = (index: number) => {
@@ -57,35 +50,32 @@ export default function DisciplinesScreen() {
         <Background>
             <Logo isWhite={true} />
             <Header>Select the Disciplines to Evolve Yourself</Header>
-            {
-                cards.map((card, index) => (
-                    <ImageCardComponent
-                        fontSize={20}
-                        extraStyles={[styles.card, selectedIndices.includes(index) && styles.selectedCard]}
-                        card={card}
-                        key={index}
-                        isSelectable={true}
-                        onSelect={() => handleCardSelect(index)}
-                    />
-                ))
-            }
+            {cards.map((card, index) => (
+                <ImageCardComponent
+                    fontSize={20}
+                    extraStyles={[
+                        staticStyles.card,
+                        { backgroundColor: colors.black },
+                        selectedIndices.includes(index) && { borderColor: colors.primary, borderWidth: 2 },
+                    ]}
+                    card={card}
+                    key={index}
+                    isSelectable={true}
+                    onSelect={() => handleCardSelect(index)}
+                />
+            ))}
             <Button mode="contained" onPress={onNext}>Next</Button>
         </Background>
     );
 }
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
     card: {
         width: SCREEN_WIDTH * 0.8,
         borderRadius: 20,
         height: SCREEN_HEIGHT * 0.16,
         overflow: 'hidden',
         position: 'relative',
-        backgroundColor: '#000',
         marginVertical: 10,
-    },
-    selectedCard: {
-        borderColor: 'yellow',
-        borderWidth: 2,
     },
 });

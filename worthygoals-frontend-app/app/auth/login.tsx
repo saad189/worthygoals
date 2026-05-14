@@ -4,7 +4,6 @@ import {
   StyleSheet,
   View,
   Keyboard,
-  useColorScheme,
   Switch,
 } from "react-native";
 import { Text } from "react-native-paper";
@@ -19,7 +18,6 @@ import Logo from "@/components/SubComponents/Logo";
 
 import TextInput from "@/components/SubComponents/TextInput";
 import Button from "@/components/SubComponents/Button";
-import { theme } from "@/core";
 import { ROUTE_NAMES } from "@/constants/Routes";
 import { useNavigation } from "expo-router";
 import { ParamListBase } from "@react-navigation/native";
@@ -28,13 +26,12 @@ import Header from "@/components/SubComponents/Header";
 import { LoginInfo } from "@/models";
 import authService from "@/services/AuthService";
 import { useAuth, useLoader, useToast } from "@/hooks";
-import { Colors } from "@/constants";
 import PasswordField from "@/components/SubComponents/PasswordField";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 export default function LoginScreen() {
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { colors } = useAppTheme();
   const emptyLoginInfo = { email: "", password: "" };
 
   const [email, setEmail] = useState<{ value: string; error: string }>({
@@ -120,7 +117,7 @@ export default function LoginScreen() {
   return (
     <Background>
       <Logo isWhite={true} />
-      <View style={styles.container}>
+      <View style={staticStyles.container}>
         <Header>Welcome back!</Header>
         <TextInput
           label="Email"
@@ -141,8 +138,8 @@ export default function LoginScreen() {
           onSubmitEditing={onLoginPressed}
           errorText={password.error}
         />
-        <View style={styles.rememberMeContainer}>
-          <Text style={styles.rememberMeText}>Remember Me</Text>
+        <View style={staticStyles.rememberMeContainer}>
+          <Text style={[staticStyles.rememberMeText, { color: colors.secondary }]}>Remember Me</Text>
           <Switch
             value={rememberMe}
             onValueChange={setRememberMe}
@@ -150,7 +147,7 @@ export default function LoginScreen() {
             thumbColor={colors.icon}
           />
         </View>
-        <View style={styles.forgotPassword}>
+        <View style={staticStyles.forgotPassword}>
           <TouchableOpacity
             onPress={() =>
               navigation.navigate(ROUTE_NAMES.AUTH.self, {
@@ -158,18 +155,18 @@ export default function LoginScreen() {
               })
             }
           >
-            <Text style={styles.forgot}>Forgot your password?</Text>
+            <Text style={[staticStyles.forgot, { color: colors.secondary }]}>Forgot your password?</Text>
           </TouchableOpacity>
         </View>
         <Button
-          style={styles.button}
+          style={staticStyles.button}
           mode="contained"
           onPress={onLoginPressed}
           loading={isLoading}
         >
           Login
         </Button>
-        <View style={styles.row}>
+        <View style={staticStyles.row}>
           <TouchableOpacity
             onPress={() =>
               navigation.navigate(ROUTE_NAMES.AUTH.self, {
@@ -177,9 +174,9 @@ export default function LoginScreen() {
               })
             }
           >
-            <Text style={{ color: theme.colors.primary }}>
-              Don’t have an account?
-              <Text style={styles.link}> Sign up</Text>
+            <Text style={{ color: colors.primary }}>
+              Don't have an account?
+              <Text style={{ fontWeight: "bold", color: colors.secondary }}> Sign up</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -188,11 +185,10 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
   container: {
     width: "100%",
     justifyContent: "center",
-    //  backgroundColor: 'yellow'
   },
   button: {
     width: "100%",
@@ -208,11 +204,6 @@ const styles = StyleSheet.create({
   },
   forgot: {
     fontSize: 13,
-    color: theme.colors.secondary,
-  },
-  link: {
-    fontWeight: "bold",
-    color: theme.colors.secondary,
   },
   rememberMeContainer: {
     flexDirection: "row",
@@ -224,6 +215,5 @@ const styles = StyleSheet.create({
   },
   rememberMeText: {
     fontSize: 16,
-    color: theme.colors.secondary,
   },
 });

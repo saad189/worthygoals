@@ -24,8 +24,6 @@ import Logo from "@/components/SubComponents/Logo";
 import Header from "@/components/SubComponents/Header";
 import Button from "@/components/SubComponents/Button";
 import SlidingText from "@/components/SubComponents/SlidingText";
-import { theme } from "@/core";
-
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function CustomSplashScreen() {

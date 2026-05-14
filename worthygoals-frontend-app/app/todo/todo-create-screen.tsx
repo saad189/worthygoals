@@ -10,44 +10,47 @@ import { useNavigation } from "expo-router";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { ParamListBase } from "@react-navigation/native";
 import Background from "@/components/SubComponents/Background";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 export default function TodoCreateWithBackground() {
   return (
-    <Background style={styles.container}>
+    <Background style={staticStyles.container}>
       <TodoCreateScreen />
     </Background>
   );
 }
 
 function TodoCreateScreen() {
+  const { colors } = useAppTheme();
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Create To-do</Text>
+    <SafeAreaView style={staticStyles.container}>
+      <View style={[staticStyles.header, { borderBottomColor: colors.border }]}>
+        <Text style={[staticStyles.headerTitle, { color: colors.textWhite }]}>Create To-do</Text>
       </View>
 
-      <View style={styles.body}>
-        <Text style={styles.text}>Dummy screen for now.</Text>
+      <View style={staticStyles.body}>
+        <Text style={[staticStyles.text, { color: colors.textWhite }]}>Dummy screen for now.</Text>
 
-        <TouchableOpacity style={styles.button} onPress={navigation.goBack}>
-          <Text style={styles.buttonText}>Back</Text>
+        <TouchableOpacity
+          style={[staticStyles.button, { backgroundColor: colors.primary }]}
+          onPress={navigation.goBack}
+        >
+          <Text style={[staticStyles.buttonText, { color: colors.textWhite }]}>Back</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
   container: { flex: 1 },
   header: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
   },
   headerTitle: {
-    color: "#fff",
     fontSize: 24,
     fontWeight: "600",
   },
@@ -55,13 +58,12 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
   },
-  text: { color: "#fff" },
+  text: {},
   button: {
     paddingVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 10,
-    backgroundColor: "#E65581",
     alignSelf: "flex-start",
   },
-  buttonText: { color: "#fff", fontWeight: "700" },
+  buttonText: { fontWeight: "700" },
 });

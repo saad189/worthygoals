@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Chip } from '@/models';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 interface ChipsSelectorProps {
     chips: Chip[];
@@ -8,6 +9,7 @@ interface ChipsSelectorProps {
 }
 
 const ChipsList: React.FC<ChipsSelectorProps> = ({ chips, onSelectionChange }) => {
+    const { colors } = useAppTheme();
     const [selectedChips, setSelectedChips] = useState<number[]>([]);
 
     const toggleChipSelection = (id: number) => {
@@ -22,24 +24,24 @@ const ChipsList: React.FC<ChipsSelectorProps> = ({ chips, onSelectionChange }) =
     };
 
     return (
-        <View style={styles.container}>
+        <View style={staticStyles.container}>
             {chips.map(chip => (
                 <TouchableOpacity
                     key={chip.id}
                     style={[
-                        styles.chip,
-                        selectedChips.includes(chip.id) ? styles.selectedChip : {},
+                        staticStyles.chip,
+                        { backgroundColor: selectedChips.includes(chip.id) ? colors.textMuted : colors.textInactive },
                     ]}
                     onPress={() => toggleChipSelection(chip.id)}
                 >
-                    <Text style={styles.chipText}>{chip.title}</Text>
+                    <Text style={[staticStyles.chipText, { color: colors.textWhite }]}>{chip.title}</Text>
                 </TouchableOpacity>
             ))}
         </View>
     );
 };
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -49,13 +51,8 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         paddingHorizontal: 16,
         borderRadius: 20,
-        backgroundColor: '#555',
-    },
-    selectedChip: {
-        backgroundColor: '#999',
     },
     chipText: {
-        color: '#fff',
         fontSize: 16,
     },
 });

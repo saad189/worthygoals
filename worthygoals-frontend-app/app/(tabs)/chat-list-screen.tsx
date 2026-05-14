@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 
-import { ConversationDetail, ConversationListItem } from "@/models";
+import { ConversationListItem } from "@/models";
 import { useFocusEffect, useNavigation } from "expo-router";
 import conversationsService from "@/services/conversations.service";
 import { mapTime } from "@/helpers/TimeMapper";
@@ -18,17 +18,18 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { ParamListBase } from "@react-navigation/native";
 import { ROUTE_NAMES } from "@/constants";
 import Background from "@/components/SubComponents/Background";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 export default function ChatListWithBackground() {
   return (
-    <Background style={styles.container}>
+    <Background style={staticStyles.container}>
       <ChatListScreen />
     </Background>
   );
 }
 
-// Individual Chat Item
 const ChatItem = ({ chat }: { chat: ConversationListItem }) => {
+  const { colors } = useAppTheme();
   const { name, avatar, lastMessage, time, isRead, id } = chat;
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
 
@@ -46,24 +47,35 @@ const ChatItem = ({ chat }: { chat: ConversationListItem }) => {
   };
 
   return (
-    <TouchableOpacity style={styles.chatItem} onPress={openChatDetail}>
-      <Image source={{ uri: avatar }} style={styles.avatar} />
+    <TouchableOpacity
+      style={[staticStyles.chatItem, { borderBottomColor: colors.border }]}
+      onPress={openChatDetail}
+    >
+      <Image source={{ uri: avatar }} style={staticStyles.avatar} />
 
-      <View style={styles.chatTextContainer}>
-        <View style={styles.chatRow}>
-          <Text style={styles.chatName}>{name}</Text>
-          <Text style={styles.chatTime}>{mapTime(new Date(time))}</Text>
+      <View style={staticStyles.chatTextContainer}>
+        <View style={staticStyles.chatRow}>
+          <Text style={[staticStyles.chatName, { color: colors.textWhite }]}>{name}</Text>
+          <Text style={[staticStyles.chatTime, { color: colors.textMuted }]}>
+            {mapTime(new Date(time))}
+          </Text>
         </View>
 
-        <View style={styles.chatRow}>
-          {/* Show the snippet in a lighter style, or bold if unread */}
-          <Text style={[styles.chatMessageSnippet, !isRead && styles.unread]}>
+        <View style={staticStyles.chatRow}>
+          <Text
+            style={[
+              staticStyles.chatMessageSnippet,
+              { color: colors.textFaint },
+              !isRead && { fontWeight: "bold", color: colors.textWhite },
+            ]}
+          >
             {messagePreview.length > 50
               ? messagePreview.slice(0, 50) + "..."
               : messagePreview}
           </Text>
-          {/* You could show a read/unread indicator here */}
-          {!isRead && <View style={styles.unreadDot} />}
+          {!isRead && (
+            <View style={[staticStyles.unreadDot, { backgroundColor: colors.unreadDot }]} />
+          )}
         </View>
       </View>
     </TouchableOpacity>
@@ -71,6 +83,7 @@ const ChatItem = ({ chat }: { chat: ConversationListItem }) => {
 };
 
 function ChatListScreen() {
+  const { colors } = useAppTheme();
   const [chatData, setChatData] = React.useState<ConversationListItem[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -105,29 +118,30 @@ function ChatListScreen() {
       };
     }, [])
   );
+
   const renderItem = ({ item }: { item: ConversationListItem }) => (
     <ChatItem chat={item} />
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Chat with Specialists</Text>
+    <SafeAreaView style={staticStyles.container}>
+      <View style={[staticStyles.header, { borderBottomColor: colors.border }]}>
+        <Text style={[staticStyles.headerTitle, { color: colors.textWhite }]}>
+          Chat with Specialists
+        </Text>
       </View>
 
-      {/* FLATLIST of CHATS */}
       <FlatList
         data={chatData}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={staticStyles.listContent}
         ListEmptyComponent={() => (
-          <View style={styles.emptyContainer}>
+          <View style={staticStyles.emptyContainer}>
             {loading ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color={colors.textWhite} />
             ) : (
-              <Text style={styles.emptyText}>
+              <Text style={[staticStyles.emptyText, { color: colors.textFaint }]}>
                 {error
                   ? error
                   : "No conversations yet. Go to the Mentors tab to start a chat."}
@@ -140,8 +154,7 @@ function ChatListScreen() {
   );
 }
 
-// STYLES
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -149,13 +162,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
   },
-  logoText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
   headerTitle: {
-    color: "#fff",
     fontSize: 24,
     fontWeight: "600",
   },
@@ -166,15 +173,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 24,
   },
-  emptyText: {
-    color: "#ccc",
-  },
+  emptyText: {},
   chatItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomColor: "#333",
     borderBottomWidth: 1,
   },
   avatar: {
@@ -194,30 +198,18 @@ const styles = StyleSheet.create({
   chatName: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#fff",
   },
   chatTime: {
     fontSize: 12,
-    color: "#aaa",
   },
   chatMessageSnippet: {
     fontSize: 14,
-    color: "#ccc",
     flex: 1,
     marginRight: 8,
-  },
-  unread: {
-    fontWeight: "bold",
-    color: "#fff",
   },
   unreadDot: {
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: "#00ff00",
-  },
-  navItem: {
-    alignItems: "center",
-    justifyContent: "center",
   },
 });

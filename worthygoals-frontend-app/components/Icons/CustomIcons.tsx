@@ -11,7 +11,7 @@ const styles = (color: string, size: number) => StyleSheet.create({
     },
     focusedIconContainer: {
         elevation: 1,
-        shadowColor: '#000',
+        shadowColor: 'black',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.1,
         shadowRadius: 5,

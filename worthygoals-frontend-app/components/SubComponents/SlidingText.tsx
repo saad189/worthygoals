@@ -1,12 +1,13 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Text, StyleSheet } from "react-native";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 interface AnimatedTextProps {
   text: string;
   textSize?: number;
   startPosition: number;
   endPosition: number;
-  duration?: number; // Animation duration in ms
+  duration?: number;
 }
 
 const SlidingText: React.FC<AnimatedTextProps> = ({
@@ -16,6 +17,7 @@ const SlidingText: React.FC<AnimatedTextProps> = ({
   endPosition,
   duration = 10000,
 }) => {
+  const { colors } = useAppTheme();
   const translateX = useRef(new Animated.Value(startPosition)).current;
 
   useEffect(() => {
@@ -28,7 +30,7 @@ const SlidingText: React.FC<AnimatedTextProps> = ({
         }),
         Animated.timing(translateX, {
           toValue: startPosition,
-          duration: 0, // Reset to start immediately
+          duration: 0,
           useNativeDriver: true,
         }),
       ])
@@ -36,27 +38,21 @@ const SlidingText: React.FC<AnimatedTextProps> = ({
 
     animation.start();
 
-    return () => animation.stop(); // Cleanup on unmount
+    return () => animation.stop();
   }, [translateX, startPosition, endPosition, duration]);
 
   return (
     <Animated.View style={{ transform: [{ translateX }] }}>
-      <Text style={[styles.animatedText, { fontSize: textSize }]}>{text}</Text>
+      <Text style={[staticStyles.animatedText, { fontSize: textSize, color: colors.textInactive }]}>
+        {text}
+      </Text>
     </Animated.View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#1E1E1E", // Dark background
-    justifyContent: "center",
-    alignItems: "center",
-    overflow: "hidden", // Prevent text from going out of bounds visually
-  },
+const staticStyles = StyleSheet.create({
   animatedText: {
     fontFamily: "Poppins-ExtraBold",
-    color: "#555", // Faint text color
     fontWeight: "900",
     textAlign: "center",
   },

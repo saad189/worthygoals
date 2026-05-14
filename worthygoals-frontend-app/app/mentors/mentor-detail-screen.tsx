@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Dimensions,
   Image,
@@ -29,6 +29,7 @@ import NewGoalsComponent from "@/components/MentorSettings/NewGoals";
 import AIPersonalitySettingsComponent from "@/components/MentorSettings/AIPersonalitySettings";
 import DefaultSettingsComponent from "@/components/MentorSettings/DefaultSettings";
 import Animated from "react-native-reanimated";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -38,9 +39,6 @@ enum Tabs {
   SET_GOALS = "SetGoals",
   SETTINGS = "Settings",
 }
-
-const iconColor = "#FFF";
-const iconColorActive = "#E65581";
 
 type TabItem = {
   tabKey: Tabs;
@@ -58,9 +56,13 @@ const TabButton = ({
   logoActive,
   isActive,
 }: TabItem & { isActive: boolean }) => {
+  const { colors } = useAppTheme();
   return (
     <TouchableOpacity
-      style={[styles.tabButton, isActive && styles.tabButtonSelected]}
+      style={[
+        staticStyles.tabButton,
+        { backgroundColor: isActive ? colors.primary : colors.textFaint },
+      ]}
       onPress={onPress}
     >
       <Image
@@ -68,7 +70,10 @@ const TabButton = ({
         style={{ width: SCREEN_WIDTH * 0.1, height: SCREEN_WIDTH * 0.11 }}
       />
       <Text
-        style={[styles.tabButtonText, isActive && styles.tabButtonTextSelected]}
+        style={[
+          staticStyles.tabButtonText,
+          isActive && { color: colors.textWhite },
+        ]}
         numberOfLines={2}
         adjustsFontSizeToFit={true}
       >
@@ -79,6 +84,7 @@ const TabButton = ({
 };
 
 function MentorDetailScreen() {
+  const { colors } = useAppTheme();
   const route = useRoute() as any;
   const mentorId = Number(route?.params?.mentorId);
 
@@ -148,18 +154,18 @@ function MentorDetailScreen() {
     : settingsTab.component;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={staticStyles.container}>
       <ScrollView>
-        <View style={styles.profileContainer}>
-          <View style={styles.topRow}>
+        <View style={[staticStyles.profileContainer, { backgroundColor: colors.surfaceGlass }]}>
+          <View style={staticStyles.topRow}>
             <TouchableOpacity
               onPress={navigation.goBack}
               style={{ marginLeft: 5 }}
             >
-              <Ionicons name="arrow-back" size={24} color={iconColor} />
+              <Ionicons name="arrow-back" size={24} color={colors.textWhite} />
             </TouchableOpacity>
 
-            <View style={styles.profileImageWrapper}>
+            <View style={staticStyles.profileImageWrapper}>
               <TouchableOpacity
                 style={{ minWidth: 150, minHeight: 150 }}
                 onPress={() => {
@@ -173,7 +179,7 @@ function MentorDetailScreen() {
                 <Animated.Image
                   source={{ uri: mentorImageUri }}
                   sharedTransitionTag={`${mentor.id}-tag`}
-                  style={styles.profileImage}
+                  style={staticStyles.profileImage}
                 />
               </TouchableOpacity>
             </View>
@@ -187,19 +193,21 @@ function MentorDetailScreen() {
                 size={24}
                 color={
                   selectedTab == settingsTab.tabKey
-                    ? iconColorActive
-                    : iconColor
+                    ? colors.primary
+                    : colors.textWhite
                 }
               />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.nameContainer}>
-            <Text style={styles.nameText}>AI {mentor.name}</Text>
+          <View style={staticStyles.nameContainer}>
+            <Text style={[staticStyles.nameText, { color: colors.mentorNameColor }]}>
+              AI {mentor.name}
+            </Text>
           </View>
         </View>
 
-        <View style={styles.tabsContainer}>
+        <View style={[staticStyles.tabsContainer, { backgroundColor: colors.surfaceGlass }]}>
           {tabItems.map((tab) => (
             <TabButton
               key={tab.tabKey}
@@ -209,7 +217,7 @@ function MentorDetailScreen() {
           ))}
         </View>
 
-        <View style={styles.contentContainer}>
+        <View style={staticStyles.contentContainer}>
           {ActiveComponent ? <ActiveComponent /> : null}
         </View>
         <View style={{ marginBottom: 20 }} />
@@ -220,19 +228,18 @@ function MentorDetailScreen() {
 
 export default function MentorDetailWithBackground() {
   return (
-    <Background style={styles.container}>
+    <Background style={staticStyles.container}>
       <MentorDetailScreen />
     </Background>
   );
 }
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
   container: {
     flex: 1,
   },
   profileContainer: {
     paddingTop: 50,
-    backgroundColor: "rgba(168, 168, 168,0.3)",
   },
   topRow: {
     flexDirection: "row",
@@ -260,13 +267,11 @@ const styles = StyleSheet.create({
   },
   nameText: {
     fontSize: 26,
-    color: "#FFC371",
     fontWeight: "bold",
   },
   tabsContainer: {
     flexDirection: "row",
     justifyContent: "space-evenly",
-    backgroundColor: "rgba(168, 168, 168,0.3)",
     borderBottomEndRadius: 30,
     borderBottomLeftRadius: 30,
     paddingVertical: 20,
@@ -277,21 +282,14 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH / 3.3,
     height: 100,
     borderRadius: 20,
-    backgroundColor: "#D9D9D9",
     alignItems: "center",
     justifyContent: "space-evenly",
-  },
-  tabButtonSelected: {
-    backgroundColor: "#E65581",
   },
   tabButtonText: {
     fontWeight: "600",
     width: "75%",
     textAlign: "center",
     fontSize: 12,
-  },
-  tabButtonTextSelected: {
-    color: "#FFF",
   },
   contentContainer: {
     padding: 10,

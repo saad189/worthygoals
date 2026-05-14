@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,14 +7,12 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   Dimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-// If you want icons for the back arrow or overflow menu
 import { Ionicons } from "@expo/vector-icons";
 
 import { ConversationDetail, ConversationMessage } from "@/models";
@@ -27,17 +25,20 @@ import { mapTime } from "@/helpers/TimeMapper";
 import { ROUTE_NAMES } from "@/constants";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-const iconColor = "#FFF";
+import { useAppTheme } from "@/hooks/useAppTheme";
+
 const { height, width } = Dimensions.get("window");
+
 export default function ChatViewScreenWithBackground() {
   return (
-    <Background style={styles.container}>
+    <Background style={staticStyles.container}>
       <ChatViewScreen />
     </Background>
   );
 }
 
 function ChatViewScreen() {
+  const { colors } = useAppTheme();
   const {
     params: { chatData },
   } = useRoute() as any;
@@ -65,12 +66,104 @@ function ChatViewScreen() {
   };
 
   const updateChat = () => {
-    // Messages are loaded from the backend via useMessages; keep this as a no-op.
     setChatDetail((prev) => prev);
   };
   useEffect(() => {
     updateChat();
   }, []);
+
+  const dynamicStyles = useMemo(() => StyleSheet.create({
+    header: {
+      height: height * 0.08,
+      backgroundColor: colors.surfaceGlass,
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 15,
+    },
+    headerTitle: {
+      color: colors.textWhite,
+      fontSize: 17,
+      fontWeight: "500",
+    },
+    messageLeft: {
+      alignSelf: "flex-start",
+      backgroundColor: colors.bubbleOther,
+    },
+    messageRight: {
+      alignSelf: "flex-end",
+      backgroundColor: colors.bubbleSelf,
+    },
+    messageTextSelf: {
+      color: colors.bubbleSelfText,
+      fontSize: 14,
+      marginBottom: 4,
+    },
+    messageTextOther: {
+      color: colors.bubbleOtherText,
+      fontSize: 14,
+      marginBottom: 4,
+    },
+    messageTime: {
+      fontSize: 12,
+      alignSelf: "flex-end",
+      position: "relative",
+      paddingTop: 4,
+      right: -12,
+      color: colors.textMuted,
+    },
+    mediaTime: {
+      position: "absolute",
+      bottom: 8,
+      right: 8,
+      color: colors.textMuted,
+    },
+    goalsCardText: {
+      color: colors.textWhite,
+      fontSize: 15,
+      marginBottom: 4,
+    },
+    inputContainer: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: colors.surface,
+      flexDirection: "row",
+      alignItems: "center",
+      marginLeft: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 6,
+      paddingBottom: Platform.OS === "ios" ? height * 0.05 : 20,
+    },
+    input: {
+      flex: 1,
+      paddingHorizontal: 12,
+      paddingVertical: 3,
+      fontSize: 15,
+      backgroundColor: colors.cardSurface,
+      color: colors.textWhite,
+      borderRadius: 20,
+      marginRight: 8,
+    },
+    inputScrollView: {
+      flex: 1,
+      maxHeight: 100,
+      backgroundColor: colors.cardSurface,
+      borderRadius: 20,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      marginRight: 8,
+    },
+    sendButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 20,
+      width: 40,
+      height: 40,
+      alignItems: "center",
+      justifyContent: "center",
+      alignSelf: "flex-end",
+    },
+  }), [colors]);
 
   const renderMessage = ({
     item,
@@ -82,25 +175,23 @@ function ChatViewScreen() {
     const isCurrentUser = item.senderId === "user";
     const isLastMessage = index === messages.length - 1;
 
-    // Check if the next message has a different sender
     let shouldAddMargin =
       !isLastMessage && messages[index + 1].senderId !== item.senderId;
 
     const isMedia = ["image", "audio", "video"].includes(item.type);
 
-    // A special check for "GOALS" text to show as gradient card
     const isGoalsCard =
       item.type === "text" && item.content.toLowerCase().includes("goals #01");
 
     if (isGoalsCard) {
       return (
-        <View style={[styles.goalsCardContainer, styles.messageLeft]}>
+        <View style={[staticStyles.goalsCardContainer, staticStyles.messageLeft]}>
           <LinearGradient
-            colors={["#FF5F6D", "#FFC371"]}
-            style={styles.goalsCardGradient}
+            colors={[colors.goalsChatGradientStart, colors.goalsChatGradientEnd]}
+            style={staticStyles.goalsCardGradient}
           >
-            <Text style={styles.goalsCardText}>{item.content}</Text>
-            <Text style={[styles.messageTime, styles.mediaTime]}>
+            <Text style={dynamicStyles.goalsCardText}>{item.content}</Text>
+            <Text style={[dynamicStyles.mediaTime]}>
               {mapTime(new Date(item.time))}
             </Text>
           </LinearGradient>
@@ -111,15 +202,16 @@ function ChatViewScreen() {
     return (
       <View
         style={[
-          styles.messageContainer,
-          isCurrentUser ? styles.messageRight : styles.messageLeft,
-          isMedia && styles.mediaStyle,
-          shouldAddMargin && !isMedia && { marginBottom: 10 }, // Add margin if user changed
+          staticStyles.messageContainer,
+          isCurrentUser ? dynamicStyles.messageRight : dynamicStyles.messageLeft,
+          isMedia && staticStyles.mediaStyle,
+          shouldAddMargin && !isMedia && { marginBottom: 10 },
         ]}
       >
-        {/* text, image, or audio/video display */}
         {item.type === "text" && (
-          <Text style={styles.messageText}>{item.content}</Text>
+          <Text style={isCurrentUser ? dynamicStyles.messageTextSelf : dynamicStyles.messageTextOther}>
+            {item.content}
+          </Text>
         )}
 
         {item.type === "image" && (
@@ -136,22 +228,17 @@ function ChatViewScreen() {
               source={{ uri: item.content }}
               resizeMode="cover"
               sharedTransitionTag={`${item.id}-tag`}
-              style={styles.imageMessage}
+              style={staticStyles.imageMessage}
             />
           </TouchableOpacity>
         )}
 
         {(item.type === "audio" || item.type === "video") && (
-          <Text style={styles.messageText}>
+          <Text style={isCurrentUser ? dynamicStyles.messageTextSelf : dynamicStyles.messageTextOther}>
             {item.type.toUpperCase()} message: {item.content}
           </Text>
-          /*
-                In a real app, you might use:
-                - <Video source={{ uri: item.content }} ... />
-                - or an Audio player library for `audio`
-                */
         )}
-        <Text style={[styles.messageTime, isMedia ? styles.mediaTime : null]}>
+        <Text style={[dynamicStyles.messageTime, isMedia ? dynamicStyles.mediaTime : null]}>
           {mapTime(new Date(item.time))}
         </Text>
       </View>
@@ -168,21 +255,20 @@ function ChatViewScreen() {
     try {
       await sendText(text);
     } catch (e) {
-      // If send fails, existing patterns will surface errors.
+      // send failure is surfaced by existing error patterns
     }
   };
 
   const insets = useSafeAreaInsets();
   return (
     <KeyboardAvoidingView
-      style={[styles.keyboardAvoiding, { paddingTop: insets.top }]}
+      style={[staticStyles.keyboardAvoiding, { paddingTop: insets.top }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
     >
-      {/* Header row */}
-      <View style={styles.header}>
+      <View style={dynamicStyles.header}>
         <TouchableOpacity onPress={navigation.goBack} style={{ marginLeft: 5 }}>
-          <Ionicons name="arrow-back" size={24} color={iconColor} />
+          <Ionicons name="arrow-back" size={24} color={colors.textWhite} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -192,22 +278,18 @@ function ChatViewScreen() {
               params: { mentorId: chatDetail.mentorId },
             });
           }}
-          style={styles.profileImageWrapper}
+          style={staticStyles.profileImageWrapper}
         >
           <Image
             source={{ uri: chatDetail.avatar }}
-            style={styles.avatar}
+            style={staticStyles.avatar}
             resizeMode="cover"
           />
-          <Text style={styles.headerTitle}>{chatDetail.name}</Text>
+          <Text style={dynamicStyles.headerTitle}>{chatDetail.name}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => {
-            /* open overflow menu */
-          }}
-        >
-          <Ionicons name="ellipsis-vertical" size={20} color={iconColor} />
+        <TouchableOpacity onPress={() => {}}>
+          <Ionicons name="ellipsis-vertical" size={20} color={colors.textWhite} />
         </TouchableOpacity>
       </View>
 
@@ -216,38 +298,37 @@ function ChatViewScreen() {
         data={messages}
         keyExtractor={(item) => item.id}
         renderItem={renderMessage}
-        style={styles.chatList}
-        contentContainerStyle={styles.chatContentContainer}
+        style={staticStyles.chatList}
+        contentContainerStyle={staticStyles.chatContentContainer}
         onContentSizeChange={() => {
           if (!shouldScrollToBottomRef.current) return;
           shouldScrollToBottomRef.current = false;
           requestAnimationFrame(() => scrollToBottom(true));
         }}
       />
-      <View style={{ marginBottom: 30 }}></View>
-      {/* Input bar */}
-      <View style={styles.inputContainer}>
+      <View style={{ marginBottom: 30 }} />
+      <View style={dynamicStyles.inputContainer}>
         <ScrollView
-          style={styles.inputScrollView}
+          style={dynamicStyles.inputScrollView}
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={true}
         >
           <TextInput
-            style={styles.input}
+            style={dynamicStyles.input}
             value={inputText}
             onChangeText={setInputText}
             placeholder="Chat with your Coach..."
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.textFaint}
             multiline={true}
             returnKeyType="default"
           />
         </ScrollView>
-        <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
+        <TouchableOpacity style={dynamicStyles.sendButton} onPress={handleSend}>
           <Ionicons
             name="send"
             size={18}
-            color={iconColor}
+            color={colors.textWhite}
             style={{ marginLeft: 4 }}
           />
         </TouchableOpacity>
@@ -256,20 +337,15 @@ function ChatViewScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
   container: {
     flex: 1,
   },
   keyboardAvoiding: {
     flex: 1,
   },
-  header: {
-    height: height * 0.08,
-    backgroundColor: "rgba(168, 168, 168, 0.33)",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 15,
-    // justifyContent: "center",
+  messageLeft: {
+    alignSelf: "flex-start",
   },
   avatar: {
     width: width * 0.1,
@@ -277,18 +353,13 @@ const styles = StyleSheet.create({
     borderRadius: width * 0.05,
     marginHorizontal: 8,
   },
-  headerTitle: {
-    color: "#FFF",
-    fontSize: 17,
-    fontWeight: "500",
-  },
   chatList: {
     flex: 1,
   },
   chatContentContainer: {
     paddingHorizontal: 8,
     paddingVertical: 10,
-    paddingBottom: 60, // allow space for input bar
+    paddingBottom: 60,
     justifyContent: "flex-end",
     flexGrow: 1,
   },
@@ -300,33 +371,6 @@ const styles = StyleSheet.create({
     paddingLeft: 12,
     paddingRight: 20,
     borderRadius: 8,
-  },
-  messageLeft: {
-    alignSelf: "flex-start",
-    backgroundColor: "#F9F9F9",
-  },
-  messageRight: {
-    alignSelf: "flex-end",
-    backgroundColor: "#F0F34E",
-  },
-  messageText: {
-    color: "black",
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  messageTime: {
-    fontSize: 12,
-    alignSelf: "flex-end",
-    position: "relative",
-    paddingTop: 4,
-    right: -12,
-    color: `#9D9D9D`,
-  },
-  mediaTime: {
-    position: "absolute",
-    bottom: 8,
-    right: 8,
-    color: `#9D9D9D`,
   },
   imageMessage: {
     width: 250,
@@ -346,62 +390,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  // Goals card styling
   goalsCardContainer: {
     maxWidth: "80%",
     marginVertical: 4,
     margin: 10,
     borderRadius: 8,
-    overflow: "hidden", // so gradient corners are clipped
+    overflow: "hidden",
   },
   goalsCardGradient: {
     padding: 12,
-  },
-  goalsCardText: {
-    color: "#FFF",
-    fontSize: 15,
-    marginBottom: 4,
-  },
-  // Input bar
-  inputContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "#1F1F1F",
-    flexDirection: "row",
-    alignItems: "center",
-    marginLeft: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    paddingBottom: Platform.OS === "ios" ? height * 0.05 : 20,
-  },
-  input: {
-    flex: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 3,
-    fontSize: 15,
-    backgroundColor: "#2E2E2E",
-    color: "#FFF",
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  inputScrollView: {
-    flex: 1,
-    maxHeight: 100, // Adjust based on 5 lines and font size
-    backgroundColor: "#2E2E2E",
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginRight: 8,
-  },
-  sendButton: {
-    backgroundColor: "purple",
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "flex-end",
   },
 });

@@ -4,7 +4,6 @@ import Header from '@/components/SubComponents/Header';
 import Logo from '@/components/SubComponents/Logo';
 import TextInput from '@/components/SubComponents/TextInput';
 import { ROUTE_NAMES } from '@/constants/Routes';
-import { theme } from '@/core';
 import { emailValidator } from '@/helpers';
 import { useLoader, useToast } from '@/hooks';
 import authService from '@/services/AuthService';
@@ -37,8 +36,6 @@ export default function ResetPasswordScreen() {
             showInfoMessage(`Reset Password Code Sent to ${email.value}`);
 
             navigation.navigate(ROUTE_NAMES.AUTH.NEW_PASSWORD_SCREEN, { email: email.value });
-
-
         } catch (error: any) {
             showErrorMessage(error.message);
         } finally {
@@ -48,7 +45,6 @@ export default function ResetPasswordScreen() {
 
     return (
         <Background>
-            {/* <BackButton goBack={navigation.goBack} /> */}
             <Logo isWhite={true} />
             <Header>Restore Password</Header>
             <TextInput
@@ -63,23 +59,16 @@ export default function ResetPasswordScreen() {
                 keyboardType="email-address"
                 description="You will receive an email with a one-time code for resetting the password."
             />
-            <Button mode="contained" onPress={sendResetPasswordEmail} style={styles.button} loading={isLoading}>
+            <Button mode="contained" onPress={sendResetPasswordEmail} style={staticStyles.button} loading={isLoading}>
                 Send Instructions
             </Button>
         </Background>
     );
 }
-const styles = StyleSheet.create({
+
+const staticStyles = StyleSheet.create({
     button: {
         width: '100%',
-        marginTop: 16
-    },
-    row: {
-        flexDirection: 'row',
-        marginTop: 4,
-    },
-    link: {
-        fontWeight: 'bold',
-        color: theme.colors.secondary,
+        marginTop: 16,
     },
 });

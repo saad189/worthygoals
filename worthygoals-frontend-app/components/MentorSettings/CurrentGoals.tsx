@@ -4,9 +4,10 @@ import goalService from '@/services/goals.service';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 const CurrentGoalsComponent: React.FC = () => {
-
+    const { colors } = useAppTheme();
     const [goalData, setGoalData] = React.useState<GoalItem[]>([]);
 
     useFocusEffect(
@@ -19,36 +20,36 @@ const CurrentGoalsComponent: React.FC = () => {
     );
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView style={staticStyles.container}>
             {goalData.map((goal) => (
                 <TouchableOpacity key={goal.id}>
-                    <View style={styles.card} key={goal.id}>
-                        <View style={styles.imageContainer}>
-                            <Image source={{ uri: goal.imageUri }} style={styles.goalImage} />
+                    <View style={[staticStyles.card, { backgroundColor: colors.surfaceGlass }]} key={goal.id}>
+                        <View style={staticStyles.imageContainer}>
+                            <Image source={{ uri: goal.imageUri }} style={staticStyles.goalImage} />
                         </View>
                         <View style={{ flex: 1, marginLeft: 10 }}>
-                            <Text style={styles.durationText}>{mapDays(goal.durationInDays)} Challenge</Text>
+                            <Text style={[staticStyles.durationText, { color: colors.durationBadgeText }]}>
+                                {mapDays(goal.durationInDays)} Challenge
+                            </Text>
 
-                            <Text style={styles.title}>{goal.title}</Text>
-                            <Text style={styles.description}>{goal.description}</Text>
+                            <Text style={[staticStyles.title, { color: colors.textWhite }]}>{goal.title}</Text>
+                            <Text style={[staticStyles.description, { color: colors.textWhite }]}>{goal.description}</Text>
                         </View>
                     </View>
                 </TouchableOpacity>
-            ))
-            }
-        </ScrollView >
+            ))}
+        </ScrollView>
     );
 };
 
 export default CurrentGoalsComponent;
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
     container: {
         flex: 1,
         paddingHorizontal: 5,
     },
     card: {
-        backgroundColor: 'rgba(217, 217, 217,0.1)',
         borderRadius: 10,
         marginVertical: 8,
         padding: 10,
@@ -72,7 +73,6 @@ const styles = StyleSheet.create({
         padding: 4,
         borderRadius: 12,
         paddingHorizontal: 5,
-        color: '#00D3FF',
         backgroundColor: 'rgba(28, 155, 177,0.55)',
         fontWeight: '600',
         fontSize: 12,
@@ -80,10 +80,8 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 13,
         marginVertical: 5,
-        color: 'white',
     },
     description: {
         fontSize: 12,
-        color: 'white',
     },
 });

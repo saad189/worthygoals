@@ -19,16 +19,18 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { ParamListBase } from "@react-navigation/native";
 import { ROUTE_NAMES } from "@/constants";
 import { formatErrorMessage } from "@/helpers";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 export default function MentorsListWithBackground() {
   return (
-    <Background style={styles.container}>
+    <Background style={staticStyles.container}>
       <MentorsListScreen />
     </Background>
   );
 }
 
 function MentorsListScreen() {
+  const { colors } = useAppTheme();
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -64,14 +66,14 @@ function MentorsListScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mentors</Text>
+    <SafeAreaView style={staticStyles.container}>
+      <View style={[staticStyles.header, { borderBottomColor: colors.border }]}>
+        <Text style={[staticStyles.headerTitle, { color: colors.textWhite }]}>Mentors</Text>
       </View>
 
       {!!error && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
+        <View style={staticStyles.errorContainer}>
+          <Text style={[staticStyles.errorText, { color: colors.notificationError }]}>{error}</Text>
         </View>
       )}
 
@@ -107,13 +109,13 @@ function MentorsListScreen() {
           />
         )}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={staticStyles.listContent}
         ListEmptyComponent={() => (
-          <View style={styles.emptyContainer}>
+          <View style={staticStyles.emptyContainer}>
             {loading ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color={colors.textWhite} />
             ) : (
-              <Text style={styles.emptyText}>
+              <Text style={[staticStyles.emptyText, { color: colors.textFaint }]}>
                 {error ? "" : "Mentors not available!"}
               </Text>
             )}
@@ -124,17 +126,15 @@ function MentorsListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
   container: {
     flex: 1,
   },
   header: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
   },
   headerTitle: {
-    color: "#fff",
     fontSize: 24,
     fontWeight: "600",
   },
@@ -146,15 +146,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
-  errorText: {
-    color: "#ffb4b4",
-  },
+  errorText: {},
   emptyContainer: {
     flex: 1,
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
-  emptyText: {
-    color: "#ccc",
-  },
+  emptyText: {},
 });
