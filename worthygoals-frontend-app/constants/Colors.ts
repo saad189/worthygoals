@@ -1,71 +1,44 @@
 /**
- * Worthy Goals — Design Tokens
- *
- * Core palette:
- *   Paper  #F4EFE3  warm cream — primary surface
- *   Ink    #1A1714  dark charcoal — primary text
- *   Accent #C04124  burnt orange/rust — CTAs, highlights, personality branding
- *
- * Dark mode uses inverted-warm values that preserve the organic feel.
- * Light mode is the canonical design; dark is planned for V1.5.
+ * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
+ * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
  */
 
-// --- Primitives ---
-const Primitive = {
-  paper: '#F4EFE3',
-  paperDark: '#1A1714',
-  canvas: '#EFE9D8',
-  canvasDark: '#141210',
-  ink: '#1A1714',
-  inkDark: '#EDE8DF',
-  inkMuted: '#8B8174',
-  inkMutedDark: '#6B6560',
-  accent: '#C04124',
-  accentSubtle: 'rgba(192, 65, 36, 0.12)',
-  accentSubtleDark: 'rgba(192, 65, 36, 0.20)',
-  overlay: 'rgba(26, 23, 20, 0.06)',
-  overlayDark: 'rgba(237, 232, 223, 0.06)',
-};
+const tintColorLight = "#cdb956ff";
+const tintColorDark = "#333";
 
-// --- Semantic tokens (light + dark) ---
-const Colors = {
+export const Colors = {
   light: {
-    // Surfaces
-    background: Primitive.paper,
-    surface: Primitive.paper,
-    canvas: Primitive.canvas,
-    // Text
-    text: Primitive.ink,
-    textMuted: Primitive.inkMuted,
-    // Interactive
-    tint: Primitive.accent,
-    tabIconDefault: Primitive.inkMuted,
-    tabIconSelected: Primitive.accent,
-    // Accent helpers
-    accentSubtle: Primitive.accentSubtle,
-    overlay: Primitive.overlay,
-    // Border
-    border: 'rgba(26, 23, 20, 0.12)',
+    iconBackgroundColor: "#48D1CC",
+    buttonBackgroundColor: "#FF6F61",
+    text: "#11181C",
+    textWhite: "white",
+    textMiddle: "#95c9fc",
+    background: "#1F1F1F",
+    tint: tintColorLight,
+    icon: "#687076",
+    tabIconDefault: "#ccc",
+    tabIconSelected: tintColorLight,
+    notificationInfo: "#a09af5",
+    notificationSuccess: "#D4EDDA",
+    notificationError: "#f02e3f",
+    dangerColor: "#FF3B3B",
+    textInactive: "#A1A1A1",
   },
   dark: {
-    // Surfaces
-    background: Primitive.paperDark,
-    surface: Primitive.paperDark,
-    canvas: Primitive.canvasDark,
-    // Text
-    text: Primitive.inkDark,
-    textMuted: Primitive.inkMutedDark,
-    // Interactive
-    tint: Primitive.accent,
-    tabIconDefault: Primitive.inkMutedDark,
-    tabIconSelected: Primitive.accent,
-    // Accent helpers
-    accentSubtle: Primitive.accentSubtleDark,
-    overlay: Primitive.overlayDark,
-    // Border
-    border: 'rgba(237, 232, 223, 0.12)',
+    iconBackgroundColor: "#48D1CC",
+    buttonBackgroundColor: "#FF6F61",
+    text: "#11181C",
+    textWhite: "white",
+    textMiddle: "#95c9fc",
+    background: "#b8b7b6",
+    tint: tintColorDark,
+    icon: "#9BA1A6",
+    tabIconDefault: "#ccc",
+    tabIconSelected: tintColorDark,
+    notificationInfo: "#253fcf",
+    notificationSuccess: "#155724",
+    notificationError: "#721C24",
+    dangerColor: "#FF3B3B",
+    textInactive: "#A1A1A1",
   },
-} as const;
-
-export { Primitive };
-export default Colors;
+};

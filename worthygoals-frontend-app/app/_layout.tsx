@@ -1,74 +1,159 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Theme as NavTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/components/useColorScheme';
-import Colors from '@/constants/Colors';
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from "@react-navigation/native";
+import { useFonts } from "expo-font";
+import { Redirect, Stack, useSegments } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import React, { useEffect, useState } from "react";
+import "react-native-reanimated";
+import { View } from "react-native";
+import { RootSiblingParent } from "react-native-root-siblings";
+import { useColorScheme } from "@/components/useColorScheme";
+import { ROUTE_NAMES } from "@/constants/Routes";
+import CustomSplashScreen from "./custom-splash-screen";
+import { AuthProvider, LoaderProvider, ToastProvider, useAuth } from "@/hooks";
+import Background from "@/components/SubComponents/Background";
 
 export {
+  // Catch any errors thrown by the Layout component.
   ErrorBoundary,
-} from 'expo-router';
+} from "expo-router";
 
 export const unstable_settings = {
-  initialRouteName: '(tabs)',
+  // Ensure that reloading on `/modal` keeps a back button present.
+  initialRouteName: "(tabs)",
 };
-
-/**
- * Worthy Goals navigation theme — maps React Navigation's semantic
- * colour slots onto our design tokens so every navigator (Stack, Tabs,
- * Drawer) inherits the WG palette automatically.
- */
-function buildNavTheme(scheme: 'light' | 'dark'): NavTheme {
-  const c = Colors[scheme];
-  return {
-    dark: scheme === 'dark',
-    colors: {
-      primary: c.tint,           // active tint / links
-      background: c.background,  // screen background
-      card: c.surface,           // header / tab bar surface
-      text: c.text,              // header title + labels
-      border: c.border,          // separator lines
-      notification: c.tint,      // badge / notification dot
-    },
-  };
-}
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    // SpaceMono kept until Geist/JetBrains/Newsreader are added via expo-font in Phase 0
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+    Outfit: require("../assets/fonts/Outfit-VariableFont_wght.ttf"),
     ...FontAwesome.font,
   });
 
+  const [isSplashVisible, setIsSplashVisible] = useState(true);
+
+  // // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
   }, [error]);
 
   useEffect(() => {
-    if (loaded) SplashScreen.hideAsync();
+    // Simulate splash screen duration (e.g., 3 seconds)
+    const timer = setTimeout(() => {
+      setIsSplashVisible(false);
+    }, 320); // Adjust duration as needed
+
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+    return () => clearTimeout(timer); // Cleanup timer
   }, [loaded]);
 
-  if (!loaded) return null;
+  if (!loaded) {
+    return null;
+  }
 
-  return <RootLayoutNav />;
+  return (
+    <Background style={{ flex: 1 }}>
+      {isSplashVisible || !loaded ? <CustomSplashScreen /> : <RootLayoutNav />}
+    </Background>
+  );
+}
+
+function Routes() {
+  return (
+    <Stack>
+      <Stack.Screen
+        name={ROUTE_NAMES.AUTH.self}
+        options={{ headerShown: false }}
+      />
+
+      <Stack.Screen
+        name={ROUTE_NAMES.ENTRY_SCREEN}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name={ROUTE_NAMES.TABS.self}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name={ROUTE_NAMES.JOURNEY.self}
+        options={{ headerShown: false, animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name={ROUTE_NAMES.GOAL_SELECTION.self}
+        options={{ headerShown: false, animation: "slide_from_bottom" }}
+      />
+      <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+      <Stack.Screen
+        name={ROUTE_NAMES.CHAT.self}
+        options={{ animation: "slide_from_right", headerShown: false }}
+      />
+
+      <Stack.Screen
+        name={ROUTE_NAMES.MENTORS.self}
+        options={{ animation: "slide_from_right", headerShown: false }}
+      />
+
+      <Stack.Screen
+        name={ROUTE_NAMES.TODO.self}
+        options={{ animation: "slide_from_right", headerShown: false }}
+      />
+      <Stack.Screen
+        name={`${ROUTE_NAMES.PROFILE.self}/${ROUTE_NAMES.PROFILE.REGISTER_PROFILE}`}
+        options={{
+          headerLeft: () => <View />,
+          title: " Register Profile",
+        }}
+      />
+    </Stack>
+  );
+}
+
+function Stacks() {
+  const { isAuthenticated } = useAuth();
+  const segments = useSegments();
+  const allowedRoutes = [ROUTE_NAMES.AUTH.self];
+
+  return (
+    <>
+      {!isAuthenticated &&
+        segments.length > 0 &&
+        !allowedRoutes.includes(segments[0]) && (
+          <Redirect
+            href={{
+              pathname: ROUTE_NAMES.AUTH.self as any,
+              params: { screen: ROUTE_NAMES.AUTH.START_AUTH },
+            }}
+          />
+        )}
+      <Routes />
+    </>
+  );
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme() ?? 'light';
-  const navTheme = buildNavTheme(colorScheme);
+  const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider value={navTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
+    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <RootSiblingParent>
+        <ToastProvider>
+          <AuthProvider>
+            <LoaderProvider>
+              <Stacks />
+            </LoaderProvider>
+          </AuthProvider>
+        </ToastProvider>
+      </RootSiblingParent>
     </ThemeProvider>
   );
 }
