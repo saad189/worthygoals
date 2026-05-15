@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+
+jobs:
+  # ── Frontend ─────────────────────────────────────────────────────────────
+  frontend:
+    name: Frontend — typecheck · hex-lint · test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worthygoals-frontend-app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: worthygoals-frontend-app/yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Hex-lint (no raw colour literals)
+        run: bash scripts/hex-lint.sh
+
+      - name: Unit tests
+        run: yarn jest --ci --passWithNoTests
+
+  # ── Backend ──────────────────────────────────────────────────────────────
+  backend:
+    name: Backend — lint · typecheck · test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worthygoals-backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: worthygoals-backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit -p tsconfig.build.json
+
+      - name: Unit tests
+        run: npm test -- --passWithNoTests --testPathIgnorePatterns='.*\\.e2e-spec\\.ts$'

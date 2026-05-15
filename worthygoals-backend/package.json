@@ -38,6 +38,7 @@
     "typeorm:drop": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js schema:drop -d src/database/dataSource.ts"
   },
   "dependencies": {
+    "@sentry/node": "^8.0.0",
     "@aws-sdk/client-cognito-identity-provider": "^3.699.0",
     "@aws-sdk/client-ses": "^3.962.0",
     "@nestjs/cache-manager": "^2.3.0",
