@@ -18,6 +18,7 @@
   "dependencies": {
     "@aws-amplify/auth": "^6.7.0",
     "@expo/vector-icons": "^14.0.2",
+    "@gorhom/bottom-sheet": "^4",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-community/datetimepicker": "8.0.1",
     "@react-native-community/slider": "4.5.2",
