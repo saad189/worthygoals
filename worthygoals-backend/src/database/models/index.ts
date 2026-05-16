@@ -10,3 +10,6 @@ export * from './message.entity';
 export * from './message-attachment.entity';
 export * from './message-feedback.entity';
 export * from './goal.entity';
+export * from './task.entity';
+export * from './task-completion.entity';
+export * from './task-explanation.entity';
