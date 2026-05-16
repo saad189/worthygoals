@@ -74,9 +74,7 @@ pids/
 .snyk
 
 # Docker
-Dockerfile
 docker-compose.yml
-.dockerignore
 
 # Editor directories and files
 .vscode/
@@ -89,3 +87,4 @@ docker-compose.yml
 
 #environments
 .env*
+!.env*.example

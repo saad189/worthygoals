@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from '../users.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Role, User } from 'src/database/models';
+import { Account, Role, User } from 'src/database/models';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -11,6 +11,7 @@ describe('UsersService', () => {
       providers: [
         UsersService,
         { provide: getRepositoryToken(User), useValue: {} },
+        { provide: getRepositoryToken(Account), useValue: {} },
         { provide: getRepositoryToken(Role), useValue: {} },
       ],
     }).compile();

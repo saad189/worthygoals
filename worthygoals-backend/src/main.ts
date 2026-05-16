@@ -1,3 +1,12 @@
+// Sentry must be initialized before any other imports
+import * as Sentry from '@sentry/node';
+Sentry.init({
+  dsn: process.env.SENTRY_DSN, // TODO: set via `fly secrets set SENTRY_DSN=<dsn>`
+  environment: process.env.NODE_ENV ?? 'local',
+  tracesSampleRate: process.env.NODE_ENV === 'prod' ? 0.2 : 1.0,
+  enabled: !!process.env.SENTRY_DSN,
+});
+
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './modules/app/app.module';
@@ -7,13 +16,11 @@ async function bootstrap() {
   const PORT = process.env.PORT || 3000;
   const serverUrl = `${process.env.SERVER_URL}:${PORT}`;
 
-
   app.enableCors({
     origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
-
-  })
+  });
 
   const options = new DocumentBuilder()
     .setTitle('Worthy Goals API')

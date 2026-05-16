@@ -19,7 +19,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
 
     const [visible, setVisible] = useState(false);
     const [message, setMessage] = useState('');
-    const [backgroundColor, setBackgroundColor] = useState(colors.notificationInfo);
+    const [backgroundColor, setBackgroundColor] = useState<string>(colors.notificationInfo);
 
     const showToast = (msg: string, type: 'info' | 'success' | 'error' = 'info') => {
         setMessage(msg);

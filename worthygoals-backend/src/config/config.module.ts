@@ -1,15 +1,17 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MySQLConfiguration } from './mysql.config';
+import { envValidationSchema } from './env.validation';
 
 @Module({
-    imports: [
-        ConfigModule.forRoot({
-            isGlobal: true,
-            envFilePath: `.env.${process.env.NODE_ENV || 'local'}`,
-        }),
-    ],
-    providers: [ConfigService, MySQLConfiguration],
-    exports: [MySQLConfiguration],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: `.env.${process.env.NODE_ENV || 'local'}`,
+      validationSchema: envValidationSchema,
+    }),
+  ],
+  providers: [ConfigService, MySQLConfiguration],
+  exports: [MySQLConfiguration],
 })
-export class CustomConfigModule { }
+export class CustomConfigModule {}

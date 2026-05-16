@@ -5,14 +5,18 @@ import { Redirect, Stack, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
 import "react-native-reanimated";
-import { View, useColorScheme as useRNColorScheme } from "react-native";
+import { View } from "react-native";
 import { RootSiblingParent } from "react-native-root-siblings";
+import { PostHogProvider } from "posthog-react-native";
 import { useColorScheme } from "@/components/useColorScheme";
 import { ROUTE_NAMES } from "@/constants/Routes";
 import { Colors } from "@/constants";
 import CustomSplashScreen from "./custom-splash-screen";
 import { AuthProvider, LoaderProvider, ToastProvider, useAuth } from "@/hooks";
 import Background from "@/components/SubComponents/Background";
+import { initSentry, SentryWrap, POSTHOG_KEY } from "@/services/observability";
+
+initSentry();
 
 /**
  * Build a React Navigation theme that maps WG semantic tokens
@@ -46,7 +50,7 @@ export const unstable_settings = {
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     Outfit: require("../assets/fonts/Outfit-VariableFont_wght.ttf"),
@@ -162,16 +166,20 @@ function RootLayoutNav() {
   const navTheme = buildNavTheme(scheme);
 
   return (
-    <ThemeProvider value={navTheme}>
-      <RootSiblingParent>
-        <ToastProvider>
-          <AuthProvider>
-            <LoaderProvider>
-              <Stacks />
-            </LoaderProvider>
-          </AuthProvider>
-        </ToastProvider>
-      </RootSiblingParent>
-    </ThemeProvider>
+    <PostHogProvider apiKey={POSTHOG_KEY} options={{ host: 'https://us.i.posthog.com' }}>
+      <ThemeProvider value={navTheme}>
+        <RootSiblingParent>
+          <ToastProvider>
+            <AuthProvider>
+              <LoaderProvider>
+                <Stacks />
+              </LoaderProvider>
+            </AuthProvider>
+          </ToastProvider>
+        </RootSiblingParent>
+      </ThemeProvider>
+    </PostHogProvider>
   );
 }
+
+export default SentryWrap(RootLayout);

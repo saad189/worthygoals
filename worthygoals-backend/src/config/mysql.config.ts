@@ -5,17 +5,17 @@ import { DataSourceOptions } from 'typeorm';
 
 @Injectable()
 export class MySQLConfiguration {
-    constructor(private configService: ConfigService) { }
+  constructor(private configService: ConfigService) {}
 
-    get isDevelopment(): boolean {
-        return this.configService.get<string>('NODE_ENV') === 'dev';
-    }
+  get isDevelopment(): boolean {
+    return this.configService.get<string>('NODE_ENV') === 'dev';
+  }
 
-    get isLocal(): boolean {
-        return this.configService.get<string>('NODE_ENV') === 'local';
-    }
+  get isLocal(): boolean {
+    return this.configService.get<string>('NODE_ENV') === 'local';
+  }
 
-    get databaseConfig(): Partial<DataSourceOptions> {
-        return dataSource.options;
-    }
+  get databaseConfig(): Partial<DataSourceOptions> {
+    return dataSource.options;
+  }
 }

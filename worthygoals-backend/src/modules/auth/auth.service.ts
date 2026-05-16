@@ -19,7 +19,7 @@ export class AuthService {
   constructor(
     private readonly awsService: AWSCognitoService,
     private readonly userService: UsersService,
-  ) { }
+  ) {}
 
   async signUpUser(auth: SignUpAuthDto): Promise<any> {
     try {

@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+export PATH="/opt/homebrew/bin:$PATH"
+
+ROOT="$(git rev-parse --show-toplevel)"
+
+echo "── Frontend: tests ──────────────────────────────"
+(cd "$ROOT/worthygoals-frontend-app" && npx jest --ci --passWithNoTests)
+
+echo "── Backend: tests ───────────────────────────────"
+(cd "$ROOT/worthygoals-backend" && npm test -- --passWithNoTests --testPathIgnorePatterns='.*\.e2e-spec\.ts$')
+
+echo "✓ pre-push passed"
