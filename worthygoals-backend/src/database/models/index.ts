@@ -9,3 +9,4 @@ export * from './conversation-memory-item.entity';
 export * from './message.entity';
 export * from './message-attachment.entity';
 export * from './message-feedback.entity';
+export * from './goal.entity';
