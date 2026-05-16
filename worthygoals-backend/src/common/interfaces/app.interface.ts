@@ -1,6 +1,6 @@
 export interface PaginationOptions {
-    skip: number;
-    take: number;
+  skip: number;
+  take: number;
 }
 
 // export interface AppConfig {

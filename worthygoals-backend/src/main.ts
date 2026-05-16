@@ -16,13 +16,11 @@ async function bootstrap() {
   const PORT = process.env.PORT || 3000;
   const serverUrl = `${process.env.SERVER_URL}:${PORT}`;
 
-
   app.enableCors({
     origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
-
-  })
+  });
 
   const options = new DocumentBuilder()
     .setTitle('Worthy Goals API')

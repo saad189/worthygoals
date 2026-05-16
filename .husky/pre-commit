@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+
+ROOT="$(git rev-parse --show-toplevel)"
+
+echo "── Frontend: typecheck ──────────────────────────"
+(cd "$ROOT/worthygoals-frontend-app" && npx tsc --noEmit)
+
+echo "── Frontend: hex-lint ───────────────────────────"
+(cd "$ROOT/worthygoals-frontend-app" && bash scripts/hex-lint.sh)
+
+echo "── Backend: lint ────────────────────────────────"
+(cd "$ROOT/worthygoals-backend" && npm run lint --silent)
+
+echo "── Backend: typecheck ───────────────────────────"
+(cd "$ROOT/worthygoals-backend" && npx tsc --noEmit -p tsconfig.build.json)
+
+echo "✓ pre-commit passed"
