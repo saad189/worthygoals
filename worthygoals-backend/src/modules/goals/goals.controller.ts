@@ -40,11 +40,7 @@ export class GoalsController {
   }
 
   @Patch(':id')
-  update(
-    @Request() req,
-    @Param('id') id: string,
-    @Body() dto: UpdateGoalDto,
-  ) {
+  update(@Request() req, @Param('id') id: string, @Body() dto: UpdateGoalDto) {
     return this.goalsService.update(id, req.user.sub, dto);
   }
 

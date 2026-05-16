@@ -28,7 +28,7 @@ const makeGoal = (overrides: Partial<Goal> = {}): Goal =>
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),
     ...overrides,
-  } as Goal);
+  }) as Goal;
 
 describe('GoalsService', () => {
   let service: GoalsService;
@@ -51,7 +51,9 @@ describe('GoalsService', () => {
       merge: jest.fn(),
       remove: jest.fn(),
     };
-    usersService = { findByAccountSub: jest.fn().mockResolvedValue({ id: USER_ID }) };
+    usersService = {
+      findByAccountSub: jest.fn().mockResolvedValue({ id: USER_ID }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -84,9 +86,9 @@ describe('GoalsService', () => {
 
     it('throws NotFoundException when user not found', async () => {
       usersService.findByAccountSub.mockResolvedValue(null);
-      await expect(service.create(USER_SUB, { title: 'x' } as any)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.create(USER_SUB, { title: 'x' } as any),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -113,12 +115,16 @@ describe('GoalsService', () => {
 
     it('throws NotFoundException when goal not found', async () => {
       repo.findOne.mockResolvedValue(null);
-      await expect(service.findOne('missing', USER_SUB)).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('missing', USER_SUB)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('throws ForbiddenException when user does not own goal', async () => {
       repo.findOne.mockResolvedValue(makeGoal({ userId: 99 }));
-      await expect(service.findOne('goal-uuid-1', USER_SUB)).rejects.toThrow(ForbiddenException);
+      await expect(service.findOne('goal-uuid-1', USER_SUB)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -130,15 +136,17 @@ describe('GoalsService', () => {
       repo.merge.mockImplementation((g, dto) => Object.assign(g, dto));
       repo.save.mockResolvedValue(updated);
 
-      const result = await service.update('goal-uuid-1', USER_SUB, { title: 'Updated' });
+      const result = await service.update('goal-uuid-1', USER_SUB, {
+        title: 'Updated',
+      });
       expect(result.title).toBe('Updated');
     });
 
     it('throws ForbiddenException when user does not own goal', async () => {
       repo.findOne.mockResolvedValue(makeGoal({ userId: 99 }));
-      await expect(service.update('goal-uuid-1', USER_SUB, { title: 'X' })).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(
+        service.update('goal-uuid-1', USER_SUB, { title: 'X' }),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -148,13 +156,17 @@ describe('GoalsService', () => {
       repo.findOne.mockResolvedValue(goal);
       repo.remove.mockResolvedValue(undefined);
 
-      await expect(service.remove('goal-uuid-1', USER_SUB)).resolves.toBeUndefined();
+      await expect(
+        service.remove('goal-uuid-1', USER_SUB),
+      ).resolves.toBeUndefined();
       expect(repo.remove).toHaveBeenCalledWith(goal);
     });
 
     it('throws ForbiddenException when user does not own goal', async () => {
       repo.findOne.mockResolvedValue(makeGoal({ userId: 99 }));
-      await expect(service.remove('goal-uuid-1', USER_SUB)).rejects.toThrow(ForbiddenException);
+      await expect(service.remove('goal-uuid-1', USER_SUB)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 });
