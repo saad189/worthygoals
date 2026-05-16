@@ -11,6 +11,7 @@ import { AuthModule } from '../auth/auth.module';
 import { MentorsModule } from '../mentors/mentors.module';
 import { ConversationsModule } from '../conversations/conversations.module';
 import { MessagesModule } from '../messages/messages.module';
+import { GoalsModule } from '../goals/goals.module';
 
 const modules = [
   UsersModule,
@@ -18,6 +19,7 @@ const modules = [
   MentorsModule,
   ConversationsModule,
   MessagesModule,
+  GoalsModule,
 ];
 const entities = [
   __dirname + '/**/*.entity{.ts,.js}',
