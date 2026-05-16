@@ -105,3 +105,22 @@ export enum GoalStatus {
   COMPLETED = 'completed',
   ARCHIVED = 'archived',
 }
+
+export enum TaskStatus {
+  PENDING = 'pending',
+  COMPLETED = 'completed',
+  SKIPPED = 'skipped',
+}
+
+export enum ExplanationReason {
+  COULDNT = 'couldnt',
+  FORGOT = 'forgot',
+  CHOSE_NOT_TO = 'chose_not_to',
+}
+
+export enum TaskRepeatFrequency {
+  NONE = 'none',
+  DAILY = 'daily',
+  WEEKLY = 'weekly',
+  MONTHLY = 'monthly',
+}
