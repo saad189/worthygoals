@@ -12,6 +12,8 @@ export class TasksScheduler {
   @Cron(CronExpression.EVERY_DAY_AT_1AM)
   async materializeRecurringTasks() {
     const count = await this.tasksService.materializeRecurringTasks();
-    this.logger.log(`Recurring task materializer: created ${count} new task(s)`);
+    this.logger.log(
+      `Recurring task materializer: created ${count} new task(s)`,
+    );
   }
 }

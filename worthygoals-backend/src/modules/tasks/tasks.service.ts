@@ -7,7 +7,12 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Task, TaskCompletion, TaskExplanation, Goal } from 'src/database/models';
+import {
+  Task,
+  TaskCompletion,
+  TaskExplanation,
+  Goal,
+} from 'src/database/models';
 import { TaskRepeatFrequency, TaskStatus } from 'src/common/constants';
 import { UsersService } from '../users/users.service';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -168,7 +173,10 @@ export class TasksService {
 
       // Skip if a future occurrence already exists
       const exists = await this.taskRepo.findOne({
-        where: { parentTaskId: parent.id, occurrenceIndex: parent.occurrenceIndex + 1 },
+        where: {
+          parentTaskId: parent.id,
+          occurrenceIndex: parent.occurrenceIndex + 1,
+        },
       });
       if (exists) continue;
 
@@ -211,7 +219,10 @@ export class TasksService {
     return user;
   }
 
-  private async assertGoalOwnership(sub: string, goalId: string): Promise<void> {
+  private async assertGoalOwnership(
+    sub: string,
+    goalId: string,
+  ): Promise<void> {
     const user = await this.resolveUser(sub);
     const goal = await this.goalRepo.findOne({ where: { id: goalId } });
     if (!goal) throw new NotFoundException(`Goal ${goalId} not found`);

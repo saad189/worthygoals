@@ -10,7 +10,12 @@ import {
   TaskRepeatFrequency,
   TaskStatus,
 } from 'src/common/constants';
-import { Goal, Task, TaskCompletion, TaskExplanation } from 'src/database/models';
+import {
+  Goal,
+  Task,
+  TaskCompletion,
+  TaskExplanation,
+} from 'src/database/models';
 import { UsersService } from '../../users/users.service';
 import { TasksService } from '../tasks.service';
 
@@ -20,7 +25,7 @@ const TASK_ID = 'task-uuid';
 const SUB = 'cognito-sub';
 
 const makeGoal = (o: Partial<Goal> = {}) =>
-  ({ id: GOAL_ID, userId: USER_ID, ...o } as Goal);
+  ({ id: GOAL_ID, userId: USER_ID, ...o }) as Goal;
 
 const makeTask = (o: Partial<Task> = {}) =>
   ({
@@ -31,10 +36,10 @@ const makeTask = (o: Partial<Task> = {}) =>
     repeatFrequency: TaskRepeatFrequency.NONE,
     occurrenceIndex: 0,
     ...o,
-  } as Task);
+  }) as Task;
 
 const makeCompletion = (o: Partial<TaskCompletion> = {}) =>
-  ({ id: 'comp-uuid', taskId: TASK_ID, moodScore: 3, ...o } as TaskCompletion);
+  ({ id: 'comp-uuid', taskId: TASK_ID, moodScore: 3, ...o }) as TaskCompletion;
 
 const makeExplanation = (o: Partial<TaskExplanation> = {}) =>
   ({
@@ -42,7 +47,7 @@ const makeExplanation = (o: Partial<TaskExplanation> = {}) =>
     taskId: TASK_ID,
     reason: ExplanationReason.FORGOT,
     ...o,
-  } as TaskExplanation);
+  }) as TaskExplanation;
 
 describe('TasksService', () => {
   let service: TasksService;
@@ -53,7 +58,11 @@ describe('TasksService', () => {
   let usersService: { findByAccountSub: jest.Mock };
 
   beforeEach(async () => {
-    const qbMock = { where: jest.fn().mockReturnThis(), andWhere: jest.fn().mockReturnThis(), getOne: jest.fn() };
+    const qbMock = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getOne: jest.fn(),
+    };
     taskRepo = {
       create: jest.fn(),
       save: jest.fn(),
@@ -66,22 +75,36 @@ describe('TasksService', () => {
     completionRepo = {
       create: jest.fn(),
       save: jest.fn(),
-      createQueryBuilder: jest.fn().mockReturnValue({ ...qbMock, getOne: jest.fn().mockResolvedValue(null) }),
+      createQueryBuilder: jest.fn().mockReturnValue({
+        ...qbMock,
+        getOne: jest.fn().mockResolvedValue(null),
+      }),
     };
     explanationRepo = {
       create: jest.fn(),
       save: jest.fn(),
-      createQueryBuilder: jest.fn().mockReturnValue({ ...qbMock, getOne: jest.fn().mockResolvedValue(null) }),
+      createQueryBuilder: jest.fn().mockReturnValue({
+        ...qbMock,
+        getOne: jest.fn().mockResolvedValue(null),
+      }),
     };
     goalRepo = { findOne: jest.fn() };
-    usersService = { findByAccountSub: jest.fn().mockResolvedValue({ id: USER_ID }) };
+    usersService = {
+      findByAccountSub: jest.fn().mockResolvedValue({ id: USER_ID }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TasksService,
         { provide: getRepositoryToken(Task), useValue: taskRepo },
-        { provide: getRepositoryToken(TaskCompletion), useValue: completionRepo },
-        { provide: getRepositoryToken(TaskExplanation), useValue: explanationRepo },
+        {
+          provide: getRepositoryToken(TaskCompletion),
+          useValue: completionRepo,
+        },
+        {
+          provide: getRepositoryToken(TaskExplanation),
+          useValue: explanationRepo,
+        },
         { provide: getRepositoryToken(Goal), useValue: goalRepo },
         { provide: UsersService, useValue: usersService },
       ],
@@ -141,7 +164,10 @@ describe('TasksService', () => {
       const comp = makeCompletion();
       completionRepo.create.mockReturnValue(comp);
       completionRepo.save.mockResolvedValue(comp);
-      taskRepo.save.mockResolvedValue({ ...task, status: TaskStatus.COMPLETED });
+      taskRepo.save.mockResolvedValue({
+        ...task,
+        status: TaskStatus.COMPLETED,
+      });
 
       const result = await service.complete(SUB, TASK_ID, { moodScore: 3 });
       expect(result.moodScore).toBe(3);
