@@ -6,7 +6,7 @@ export PATH="/opt/homebrew/bin:$PATH"
 ROOT="$(git rev-parse --show-toplevel)"
 
 echo "── Frontend: tests ──────────────────────────────"
-(cd "$ROOT/worthygoals-frontend-app" && yarn jest --ci --passWithNoTests)
+(cd "$ROOT/worthygoals-frontend-app" && npx jest --ci --passWithNoTests)
 
 echo "── Backend: tests ───────────────────────────────"
 (cd "$ROOT/worthygoals-backend" && npm test -- --passWithNoTests --testPathIgnorePatterns='.*\.e2e-spec\.ts$')
