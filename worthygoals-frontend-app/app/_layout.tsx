@@ -14,12 +14,9 @@ import { Colors } from "@/constants";
 import CustomSplashScreen from "./custom-splash-screen";
 import { AuthProvider, LoaderProvider, ToastProvider, useAuth } from "@/hooks";
 import Background from "@/components/SubComponents/Background";
-import { initSentry, SentryWrap } from "@/services/observability";
+import { initSentry, SentryWrap, POSTHOG_KEY } from "@/services/observability";
 
 initSentry();
-
-// TODO: replace with your PostHog project API key (EXPO_PUBLIC_POSTHOG_KEY)
-const POSTHOG_KEY = process.env.EXPO_PUBLIC_POSTHOG_KEY ?? '';
 
 /**
  * Build a React Navigation theme that maps WG semantic tokens
