@@ -16,8 +16,6 @@
     "preset": "jest-expo"
   },
   "dependencies": {
-    "@sentry/react-native": "^6.0.0",
-    "posthog-react-native": "^3.0.0",
     "@aws-amplify/auth": "^6.7.0",
     "@expo/vector-icons": "^14.0.2",
     "@react-native-async-storage/async-storage": "1.23.1",
@@ -26,6 +24,8 @@
     "@react-native-picker/picker": "2.7.5",
     "@react-navigation/native": "^6.0.2",
     "@react-navigation/stack": "^6.3.29",
+    "@sentry/react-native": "^6.0.0",
+    "@types/node": "^25.8.0",
     "axios": "^1.7.9",
     "date-fns": "^4.1.0",
     "events": "^3.3.0",
@@ -43,6 +43,7 @@
     "expo-system-ui": "~3.0.7",
     "expo-web-browser": "~13.0.3",
     "oidc-client-ts": "^3.1.0",
+    "posthog-react-native": "^3.0.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-native": "0.74.5",

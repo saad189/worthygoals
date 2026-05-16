@@ -35,10 +35,10 @@ import {
 import { theme as lightPaperTheme, darkTheme as darkPaperTheme } from '@/core/theme';
 
 export type AppTheme = {
-  colors:     AppColors;
+  colors:     AppColors | typeof Colors.dark;
   scheme:     'light' | 'dark';
   isDark:     boolean;
-  paperTheme: typeof lightPaperTheme;
+  paperTheme: typeof lightPaperTheme | typeof darkPaperTheme;
   fonts:      typeof FontFamily;
   fontSizes:  typeof FontSize;
   fontWeights:typeof FontWeight;

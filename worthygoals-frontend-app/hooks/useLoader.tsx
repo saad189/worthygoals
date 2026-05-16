@@ -21,7 +21,7 @@ export const LoaderProvider: React.FC<{ children: ReactNode, loaderSize?: number
             {isLoading && (
                 <View style={styles.loaderContainer}>
                     <View style={[styles.loader, { width: 100, height: 100 }]}>
-                        <ActivityIndicator size="large" color={colors.buttonBackgroundColor} style={{ transform: [{ scale: loaderSize / 36 }] }} />
+                        <ActivityIndicator size="large" color={colors.buttonBackground} style={{ transform: [{ scale: loaderSize / 36 }] }} />
                     </View>
                 </View>
             )}
