@@ -13,6 +13,7 @@ import { ConversationsModule } from '../conversations/conversations.module';
 import { MessagesModule } from '../messages/messages.module';
 import { GoalsModule } from '../goals/goals.module';
 import { TasksModule } from '../tasks/tasks.module';
+import { DashboardModule } from '../dashboard/dashboard.module';
 import { MediaModule } from '../media/media.module';
 
 const modules = [
@@ -24,6 +25,7 @@ const modules = [
   GoalsModule,
   MediaModule,
   TasksModule,
+  DashboardModule,
   MediaModule,
 ];
 const entities = [

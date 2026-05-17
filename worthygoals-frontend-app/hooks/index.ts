@@ -5,3 +5,4 @@ export * from './useAppTheme';
 export * from './useTasks';
 export * from './useCompleteTask';
 export * from './useExplainTask';
+export { default as useDashboard } from './useDashboard';
