@@ -1,6 +1,8 @@
 import React, { forwardRef, useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
+  Image,
   StyleSheet,
   Text,
   TextInput,
@@ -12,8 +14,11 @@ import BottomSheet, {
   BottomSheetView,
   BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { CompleteTaskPayload } from '@/models';
+import { mediaService } from '@/services/media.service';
 
 const MOODS: { score: 1 | 2 | 3 | 4; emoji: string; label: string }[] = [
   { score: 1, emoji: '😣', label: 'Tough' },
@@ -21,6 +26,8 @@ const MOODS: { score: 1 | 2 | 3 | 4; emoji: string; label: string }[] = [
   { score: 3, emoji: '🙂', label: 'Good' },
   { score: 4, emoji: '🔥', label: 'Great' },
 ];
+
+const MAX_IMAGE_DIMENSION = 1024;
 
 interface Props {
   taskTitle?: string;
@@ -40,11 +47,20 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
     const sheetRef = useRef<BottomSheet>(null);
     const [mood, setMood] = useState<1 | 2 | 3 | 4 | null>(null);
     const [reflection, setReflection] = useState('');
+    const [photoUri, setPhotoUri] = useState<string | null>(null);
+    const [photoUploading, setPhotoUploading] = useState(false);
+    const [mediaId, setMediaId] = useState<string | null>(null);
 
-    const snapPoints = useMemo(() => ['55%'], []);
+    const snapPoints = useMemo(() => ['70%'], []);
 
     React.useImperativeHandle(ref, () => ({
-      open: () => sheetRef.current?.expand(),
+      open: () => {
+        setMood(null);
+        setReflection('');
+        setPhotoUri(null);
+        setMediaId(null);
+        sheetRef.current?.expand();
+      },
       close: () => sheetRef.current?.close(),
     }));
 
@@ -55,9 +71,61 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
       [],
     );
 
+    const pickAndUploadPhoto = useCallback(async () => {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Allow photo access to attach a memory picture.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.9,
+      });
+
+      if (result.canceled || !result.assets[0]) return;
+
+      const asset = result.assets[0];
+      setPhotoUploading(true);
+      try {
+        const resized = await ImageManipulator.manipulateAsync(
+          asset.uri,
+          [{ resize: { width: Math.min(asset.width ?? MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION) } }],
+          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG },
+        );
+
+        const fileName = `photo_${Date.now()}.jpg`;
+        const { uploadUrl, mediaId: newMediaId } = await mediaService.requestUploadUrl(
+          fileName,
+          'image/jpeg',
+          resized.width,
+          resized.height,
+        );
+
+        await mediaService.uploadToPresignedUrl(uploadUrl, resized.uri, 'image/jpeg');
+        setPhotoUri(resized.uri);
+        setMediaId(newMediaId);
+      } catch {
+        Alert.alert('Upload failed', 'Could not attach photo. Try again.');
+      } finally {
+        setPhotoUploading(false);
+      }
+    }, []);
+
+    const removePhoto = useCallback(() => {
+      setPhotoUri(null);
+      setMediaId(null);
+    }, []);
+
     const handleSubmit = () => {
       if (!mood) return;
-      onSubmit({ moodScore: mood, reflection: reflection.trim() || undefined });
+      onSubmit({
+        moodScore: mood,
+        reflection: reflection.trim() || undefined,
+        memoryPictureId: mediaId ?? undefined,
+      });
     };
 
     const s = StyleSheet.create({
@@ -99,7 +167,38 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
         minHeight: 72,
         textAlignVertical: 'top',
         fontSize: 14,
-        marginBottom: space['5'],
+        marginBottom: space['4'],
+      },
+      photoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: space['4'],
+        gap: 10,
+      },
+      photoThumb: {
+        width: 56,
+        height: 56,
+        borderRadius: radius.sm,
+      },
+      photoBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: space['2'],
+        paddingHorizontal: space['3'],
+        borderRadius: radius.md,
+        borderWidth: 1,
+        gap: 6,
+      },
+      photoBtnText: {
+        fontSize: 13,
+        fontWeight: '500',
+      },
+      removeBtn: {
+        paddingVertical: space['2'],
+        paddingHorizontal: space['2'],
+      },
+      removeBtnText: {
+        fontSize: 12,
       },
       submitBtn: {
         paddingVertical: space['4'],
@@ -163,10 +262,33 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
             maxLength={500}
           />
 
+          <View style={s.photoRow}>
+            {photoUri ? (
+              <>
+                <Image source={{ uri: photoUri }} style={s.photoThumb} />
+                <TouchableOpacity style={s.removeBtn} onPress={removePhoto}>
+                  <Text style={[s.removeBtnText, { color: colors.primary }]}>Remove</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <TouchableOpacity
+                style={[s.photoBtn, { borderColor: colors.border, backgroundColor: colors.canvas }]}
+                onPress={pickAndUploadPhoto}
+                disabled={photoUploading}
+              >
+                {photoUploading ? (
+                  <ActivityIndicator size="small" color={colors.textMuted} />
+                ) : (
+                  <Text style={[s.photoBtnText, { color: colors.textMuted }]}>+ Photo</Text>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+
           <TouchableOpacity
             style={[s.submitBtn, { backgroundColor: mood ? colors.primary : colors.border }]}
             onPress={handleSubmit}
-            disabled={!mood || submitting}
+            disabled={!mood || submitting || photoUploading}
           >
             {submitting ? (
               <ActivityIndicator color={colors.textWhite} />
