@@ -1,4 +1,4 @@
-import { HttpException, Injectable, Logger } from '@nestjs/common';
+import { HttpException, Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -10,10 +10,12 @@ import { OpenAiProvider } from './openai.provider';
 import { AnthropicProvider } from './anthropic.provider';
 import { CircuitBreaker } from './circuit-breaker';
 import {
+  ChatMessage,
   GatewayChatRequest,
   GatewayChatResponse,
   IChatProvider,
 } from './types';
+import { PersonalityService } from 'src/core/personalities/personality.service';
 
 const COST_PER_MILLION: Record<string, { in: number; out: number }> = {
   'gpt-4o-mini': { in: 0.15, out: 0.6 },
@@ -47,6 +49,7 @@ export class AiGatewayService {
     private readonly aiCallRepo: Repository<AiCall>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @Optional() private readonly personalityService?: PersonalityService,
   ) {}
 
   async chat(req: GatewayChatRequest): Promise<GatewayChatResponse> {
@@ -65,6 +68,7 @@ export class AiGatewayService {
       throw e;
     }
 
+    const messages = this.injectPersonality(req);
     const primary = this.resolveActiveProvider();
     const fallback = primary === this.openai ? this.anthropic : this.openai;
 
@@ -75,7 +79,7 @@ export class AiGatewayService {
     if (primary.available && this.breaker.isAvailable(primary.name)) {
       try {
         result = await primary.chat({
-          messages: req.messages,
+          messages,
           model: req.model,
           temperature: req.temperature,
           maxTokens: req.maxTokens,
@@ -96,7 +100,7 @@ export class AiGatewayService {
     ) {
       try {
         result = await fallback.chat({
-          messages: req.messages,
+          messages,
           temperature: req.temperature,
           maxTokens: req.maxTokens,
         });
@@ -148,5 +152,26 @@ export class AiGatewayService {
       this.config.get<string>('AI_ACTIVE_PROVIDER')?.toLowerCase() ?? 'openai';
     if (flag === 'anthropic' && this.anthropic.available) return this.anthropic;
     return this.openai;
+  }
+
+  private injectPersonality(req: GatewayChatRequest): ChatMessage[] {
+    if (!req.personalityId || !this.personalityService) {
+      return req.messages;
+    }
+
+    try {
+      const systemPrompt = this.personalityService.renderSystemPrompt(
+        req.personalityId,
+        req.event ?? 'default',
+        req.context ?? {},
+      );
+      const withoutSystem = req.messages.filter((m) => m.role !== 'system');
+      return [{ role: 'system', content: systemPrompt }, ...withoutSystem];
+    } catch (err: any) {
+      this.logger.warn(
+        `Personality injection failed for "${req.personalityId}": ${err?.message}. Proceeding without.`,
+      );
+      return req.messages;
+    }
   }
 }

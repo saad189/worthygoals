@@ -10,6 +10,9 @@ export interface GatewayChatRequest {
   model?: string;
   temperature?: number;
   maxTokens?: number;
+  personalityId?: string;
+  event?: string;
+  context?: Record<string, unknown>;
 }
 
 export interface GatewayChatResponse {
