@@ -124,3 +124,9 @@ export enum TaskRepeatFrequency {
   WEEKLY = 'weekly',
   MONTHLY = 'monthly',
 }
+
+export enum UserTier {
+  FREE = 'free',
+  STANDARD = 'standard',
+  PREMIUM = 'premium',
+}

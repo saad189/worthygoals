@@ -10,8 +10,8 @@ import { Conversation } from 'src/database/models/conversation.entity';
 import { Message } from 'src/database/models/message.entity';
 import { ConversationSummary } from 'src/database/models/conversation-summary.entity';
 import { MessageRole } from 'src/common/constants';
-import { AiService } from './ai.service';
-import OpenAI from 'openai';
+import { ChatMessage } from './gateway/types';
+import { AiGatewayService } from './gateway/ai-gateway.service';
 
 @Injectable()
 export class AgentService {
@@ -24,15 +24,13 @@ export class AgentService {
     private readonly messageRepository: Repository<Message>,
     @InjectRepository(ConversationSummary)
     private readonly conversationSummaryRepository: Repository<ConversationSummary>,
-    private readonly aiService: AiService,
+    private readonly gateway: AiGatewayService,
   ) {}
 
   async buildAgentInstructionsByMentorId(mentorId: number): Promise<string> {
     const mentor = await this.mentorRepository.findOne({
       where: { id: mentorId },
-      relations: {
-        tags: true,
-      },
+      relations: { tags: true },
     });
 
     if (!mentor) {
@@ -79,9 +77,7 @@ ${traitLine}
 `.trim();
   }
 
-  private messageToChatParam(
-    message: Message,
-  ): OpenAI.ChatCompletionMessageParam | null {
+  private messageToChatParam(message: Message): ChatMessage | null {
     const content =
       message.text ??
       (message.content ? JSON.stringify(message.content) : null) ??
@@ -89,19 +85,12 @@ ${traitLine}
 
     if (!content) return null;
 
-    if (message.role === MessageRole.USER) {
-      return { role: 'user', content };
-    }
-
-    if (message.role === MessageRole.MENTOR) {
+    if (message.role === MessageRole.USER) return { role: 'user', content };
+    if (message.role === MessageRole.MENTOR)
       return { role: 'assistant', content };
-    }
-
-    if (message.role === MessageRole.SYSTEM) {
+    if (message.role === MessageRole.SYSTEM)
       return { role: 'system', content };
-    }
 
-    // TOOL (or unknown) => keep as system to be safe
     return { role: 'system', content };
   }
 
@@ -112,9 +101,9 @@ ${traitLine}
   }): Promise<{
     replyText: string;
     model: string;
+    provider: string;
     tokensIn: number | null;
     tokensOut: number | null;
-    rawUsage: any;
   }> {
     const conversation = await this.conversationRepository.findOne({
       where: { id: params.conversationId },
@@ -153,42 +142,40 @@ ${traitLine}
     ]);
 
     const instructions = this.buildAgentInstructions(mentor);
-
-    const chatMessages: OpenAI.ChatCompletionMessageParam[] = [
-      { role: 'system', content: instructions },
-    ];
+    const messages: ChatMessage[] = [{ role: 'system', content: instructions }];
 
     if (latestSummary?.summaryText) {
-      chatMessages.push({
+      messages.push({
         role: 'system',
         content: `Conversation summary (may be partial/outdated):\n${latestSummary.summaryText}`,
       });
     }
 
-    // DB query returns DESC; OpenAI context should be chronological.
     const chronological = recentMessages.reverse();
     for (const m of chronological) {
       const param = this.messageToChatParam(m);
-      if (param) chatMessages.push(param);
+      if (param) messages.push(param);
     }
 
     const model = mentor.promptBlocks?.model;
     const temperature = mentor.promptBlocks?.temperature;
-    const maxOutputTokens = mentor.promptBlocks?.maxOutputTokens;
+    const maxTokens = mentor.promptBlocks?.maxOutputTokens;
 
-    const completion = await this.aiService.chatTextWithUsage({
-      messages: chatMessages,
+    const result = await this.gateway.chat({
+      userId: params.userId,
+      feature: 'chat',
+      messages,
       model,
       temperature,
-      maxOutputTokens,
+      maxTokens,
     });
 
     return {
-      replyText: completion.text,
-      model: completion.model,
-      tokensIn: completion.tokensIn,
-      tokensOut: completion.tokensOut,
-      rawUsage: completion.rawUsage,
+      replyText: result.text,
+      model: result.model,
+      provider: result.provider,
+      tokensIn: result.tokensIn,
+      tokensOut: result.tokensOut,
     };
   }
 }

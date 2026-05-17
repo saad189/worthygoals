@@ -13,3 +13,4 @@ export * from './goal.entity';
 export * from './task.entity';
 export * from './task-completion.entity';
 export * from './task-explanation.entity';
+export * from './ai-call.entity';
