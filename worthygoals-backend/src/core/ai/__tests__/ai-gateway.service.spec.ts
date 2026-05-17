@@ -11,7 +11,12 @@ import { AnthropicProvider } from '../gateway/anthropic.provider';
 import { QuotaExceededException, QuotaService } from '../quota/quota.service';
 
 const MESSAGES = [{ role: 'user' as const, content: 'hello' }];
-const fakeResponse = { text: 'hi', model: 'gpt-4o-mini', tokensIn: 10, tokensOut: 5 };
+const fakeResponse = {
+  text: 'hi',
+  model: 'gpt-4o-mini',
+  tokensIn: 10,
+  tokensOut: 5,
+};
 
 const makeMockProvider = (name: string, available = true, impl?: any) => ({
   name,
@@ -30,17 +35,31 @@ describe('AiGatewayService', () => {
 
   const build = async (activeProvider = 'openai') => {
     mockOpenai = makeMockProvider('openai');
-    mockAnthropic = makeMockProvider('anthropic', true, jest.fn().mockResolvedValue({
-      ...fakeResponse, model: 'claude-3-5-haiku-20241022', provider: 'anthropic',
-    }));
+    mockAnthropic = makeMockProvider(
+      'anthropic',
+      true,
+      jest.fn().mockResolvedValue({
+        ...fakeResponse,
+        model: 'claude-3-5-haiku-20241022',
+        provider: 'anthropic',
+      }),
+    );
     mockQuota = { checkAndEnforce: jest.fn().mockResolvedValue(undefined) };
-    mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: 1, tier: UserTier.FREE }) };
-    mockCallRepo = { create: jest.fn().mockReturnValue({}), save: jest.fn().mockResolvedValue({}) };
+    mockUserRepo = {
+      findOne: jest.fn().mockResolvedValue({ id: 1, tier: UserTier.FREE }),
+    };
+    mockCallRepo = {
+      create: jest.fn().mockReturnValue({}),
+      save: jest.fn().mockResolvedValue({}),
+    };
 
     const module = await Test.createTestingModule({
       providers: [
         AiGatewayService,
-        { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue(activeProvider) } },
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn().mockReturnValue(activeProvider) },
+        },
         { provide: OpenAiProvider, useValue: mockOpenai },
         { provide: AnthropicProvider, useValue: mockAnthropic },
         { provide: QuotaService, useValue: mockQuota },
@@ -54,7 +73,11 @@ describe('AiGatewayService', () => {
 
   it('routes to OpenAI by default', async () => {
     await build('openai');
-    const res = await service.chat({ userId: 1, feature: 'chat', messages: MESSAGES });
+    const res = await service.chat({
+      userId: 1,
+      feature: 'chat',
+      messages: MESSAGES,
+    });
     expect(mockOpenai.chat).toHaveBeenCalled();
     expect(res.text).toBe('hi');
     expect(res.provider).toBe('openai');
@@ -62,7 +85,11 @@ describe('AiGatewayService', () => {
 
   it('routes to Anthropic when AI_ACTIVE_PROVIDER=anthropic', async () => {
     await build('anthropic');
-    const res = await service.chat({ userId: 1, feature: 'chat', messages: MESSAGES });
+    const res = await service.chat({
+      userId: 1,
+      feature: 'chat',
+      messages: MESSAGES,
+    });
     expect(mockAnthropic.chat).toHaveBeenCalled();
     expect(res.provider).toBe('anthropic');
   });
@@ -71,7 +98,11 @@ describe('AiGatewayService', () => {
     await build();
     await service.chat({ userId: 1, feature: 'chat', messages: MESSAGES });
     expect(mockCallRepo.create).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 1, feature: 'chat', provider: 'openai' }),
+      expect.objectContaining({
+        userId: 1,
+        feature: 'chat',
+        provider: 'openai',
+      }),
     );
     expect(mockCallRepo.save).toHaveBeenCalled();
   });
@@ -92,15 +123,23 @@ describe('AiGatewayService', () => {
 
   it('fails over to Anthropic when OpenAI throws', async () => {
     await build('openai');
-    (mockOpenai.chat as jest.Mock).mockRejectedValue(new Error('OpenAI timeout'));
-    const res = await service.chat({ userId: 1, feature: 'chat', messages: MESSAGES });
+    (mockOpenai.chat as jest.Mock).mockRejectedValue(
+      new Error('OpenAI timeout'),
+    );
+    const res = await service.chat({
+      userId: 1,
+      feature: 'chat',
+      messages: MESSAGES,
+    });
     expect(res.provider).toBe('anthropic');
   });
 
   it('throws 503 when both providers fail', async () => {
     await build('openai');
     (mockOpenai.chat as jest.Mock).mockRejectedValue(new Error('OpenAI down'));
-    (mockAnthropic.chat as jest.Mock).mockRejectedValue(new Error('Anthropic down'));
+    (mockAnthropic.chat as jest.Mock).mockRejectedValue(
+      new Error('Anthropic down'),
+    );
     await expect(
       service.chat({ userId: 1, feature: 'chat', messages: MESSAGES }),
     ).rejects.toBeInstanceOf(HttpException);

@@ -25,7 +25,9 @@ export const envValidationSchema = Joi.object({
   OPENAI_API_KEY: Joi.string().required(),
   OPENAI_MODEL: Joi.string().default('gpt-4o-mini'),
   ANTHROPIC_API_KEY: Joi.string().optional(), // Tier 2: graceful no-op if absent
-  AI_ACTIVE_PROVIDER: Joi.string().valid('openai', 'anthropic').default('openai'),
+  AI_ACTIVE_PROVIDER: Joi.string()
+    .valid('openai', 'anthropic')
+    .default('openai'),
 
   // ── S3 / R2 media storage (optional — graceful no-op if absent) ──────────
   S3_ENDPOINT: Joi.string().optional(), // R2: https://<account_id>.r2.cloudflarestorage.com

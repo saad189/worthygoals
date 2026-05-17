@@ -3,10 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AiCall } from 'src/database/models/ai-call.entity';
 import { UserTier } from 'src/common/constants/enums';
-import {
-  QuotaExceededException,
-  QuotaService,
-} from '../quota/quota.service';
+import { QuotaExceededException, QuotaService } from '../quota/quota.service';
 
 const mockRepo = () => ({ count: jest.fn() });
 
@@ -35,9 +32,9 @@ describe('QuotaService', () => {
 
   it('throws QuotaExceededException at limit', async () => {
     repo.count = jest.fn().mockResolvedValue(20);
-    await expect(service.checkAndEnforce(1, UserTier.FREE)).rejects.toBeInstanceOf(
-      QuotaExceededException,
-    );
+    await expect(
+      service.checkAndEnforce(1, UserTier.FREE),
+    ).rejects.toBeInstanceOf(QuotaExceededException);
   });
 
   it('throws at standard limit (100)', async () => {

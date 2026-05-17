@@ -88,8 +88,7 @@ ${traitLine}
     if (message.role === MessageRole.USER) return { role: 'user', content };
     if (message.role === MessageRole.MENTOR)
       return { role: 'assistant', content };
-    if (message.role === MessageRole.SYSTEM)
-      return { role: 'system', content };
+    if (message.role === MessageRole.SYSTEM) return { role: 'system', content };
 
     return { role: 'system', content };
   }

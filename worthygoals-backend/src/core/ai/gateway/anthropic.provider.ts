@@ -41,7 +41,10 @@ export class AnthropicProvider implements IChatProvider {
 
     const chatMessages = params.messages
       .filter((m) => m.role !== 'system')
-      .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+      .map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      }));
 
     const response = await this.client.messages.create({
       model: params.model ?? this.defaultModel,

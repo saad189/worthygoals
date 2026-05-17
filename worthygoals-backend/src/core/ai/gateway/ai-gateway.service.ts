@@ -89,7 +89,11 @@ export class AiGatewayService {
       }
     }
 
-    if (!result && fallback.available && this.breaker.isAvailable(fallback.name)) {
+    if (
+      !result &&
+      fallback.available &&
+      this.breaker.isAvailable(fallback.name)
+    ) {
       try {
         result = await fallback.chat({
           messages: req.messages,
@@ -110,7 +114,11 @@ export class AiGatewayService {
     }
 
     const latencyMs = Date.now() - t0;
-    const costUsd = computeCostUsd(result.model, result.tokensIn, result.tokensOut);
+    const costUsd = computeCostUsd(
+      result.model,
+      result.tokensIn,
+      result.tokensOut,
+    );
 
     const call = this.aiCallRepo.create({
       userId: req.userId,
