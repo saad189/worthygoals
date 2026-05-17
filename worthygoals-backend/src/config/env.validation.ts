@@ -25,6 +25,13 @@ export const envValidationSchema = Joi.object({
   OPENAI_API_KEY: Joi.string().required(),
   OPENAI_MODEL: Joi.string().default('gpt-4o-mini'),
 
+  // ── S3 / R2 media storage (optional — graceful no-op if absent) ──────────
+  S3_ENDPOINT: Joi.string().optional(),        // R2: https://<account_id>.r2.cloudflarestorage.com
+  S3_BUCKET_NAME: Joi.string().optional(),
+  S3_ACCESS_KEY_ID: Joi.string().optional(),
+  S3_SECRET_ACCESS_KEY: Joi.string().optional(),
+  S3_REGION: Joi.string().default('auto'),
+
   // ── Observability (optional — graceful no-op if absent) ──────────────────
   SENTRY_DSN: Joi.string().optional(),
   SUPPORT_EMAIL_SENDER: Joi.string().email().optional(),
