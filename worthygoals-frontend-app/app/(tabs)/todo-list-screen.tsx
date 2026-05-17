@@ -36,16 +36,33 @@ function TodoListScreen() {
   const completionRef = useRef<CompletionSheetHandle>(null);
   const explanationRef = useRef<ExplanationSheetHandle>(null);
 
-  const { complete, submitting: completing } = useCompleteTask((taskId) => {
+  const {
+    complete,
+    submitting: completing,
+    mentorReaction: completionReaction,
+    safetyFlag: completionSafety,
+    clearReaction: clearCompletionReaction,
+  } = useCompleteTask((taskId, hasReaction) => {
     optimisticUpdateStatus(taskId, 'completed');
-    completionRef.current?.close();
-    setActiveTask(null);
+    if (!hasReaction) {
+      completionRef.current?.close();
+      setActiveTask(null);
+    }
+    // If hasReaction: sheet stays open to show reaction; user taps Done to close
   });
 
-  const { explain, submitting: explaining } = useExplainTask((taskId) => {
+  const {
+    explain,
+    submitting: explaining,
+    mentorReaction: explanationReaction,
+    safetyFlag: explanationSafety,
+    clearReaction: clearExplanationReaction,
+  } = useExplainTask((taskId, hasReaction) => {
     optimisticUpdateStatus(taskId, 'skipped');
-    explanationRef.current?.close();
-    setActiveTask(null);
+    if (!hasReaction) {
+      explanationRef.current?.close();
+      setActiveTask(null);
+    }
   });
 
   const openComplete = (task: TaskItem) => {
@@ -196,16 +213,28 @@ function TodoListScreen() {
         ref={completionRef}
         taskTitle={activeTask?.title}
         submitting={completing}
+        mentorReaction={completionReaction}
+        safetyFlag={completionSafety}
         onSubmit={(payload) => activeTask && complete(activeTask.id, payload)}
-        onClose={() => setActiveTask(null)}
+        onClose={() => {
+          clearCompletionReaction();
+          completionRef.current?.close();
+          setActiveTask(null);
+        }}
       />
 
       <ExplanationSheet
         ref={explanationRef}
         taskTitle={activeTask?.title}
         submitting={explaining}
+        mentorReaction={explanationReaction}
+        safetyFlag={explanationSafety}
         onSubmit={(payload) => activeTask && explain(activeTask.id, payload)}
-        onClose={() => setActiveTask(null)}
+        onClose={() => {
+          clearExplanationReaction();
+          explanationRef.current?.close();
+          setActiveTask(null);
+        }}
       />
     </SafeAreaView>
   );

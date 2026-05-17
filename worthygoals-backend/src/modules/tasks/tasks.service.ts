@@ -4,6 +4,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -19,6 +20,14 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { CompleteTaskDto } from './dto/complete-task.dto';
 import { ExplainTaskDto } from './dto/explain-task.dto';
+import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
+import { SafetyService } from 'src/core/safety/safety.service';
+
+export interface TaskReactionResult<T> {
+  data: T;
+  mentorReaction?: string;
+  safetyFlag?: boolean;
+}
 
 @Injectable()
 export class TasksService {
@@ -34,6 +43,8 @@ export class TasksService {
     @InjectRepository(Goal)
     private readonly goalRepo: Repository<Goal>,
     private readonly usersService: UsersService,
+    @Optional() private readonly aiGateway?: AiGatewayService,
+    @Optional() private readonly safetyService?: SafetyService,
   ) {}
 
   async create(sub: string, dto: CreateTaskDto): Promise<Task> {
@@ -84,10 +95,14 @@ export class TasksService {
     sub: string,
     taskId: string,
     dto: CompleteTaskDto,
-  ): Promise<TaskCompletion> {
+  ): Promise<TaskReactionResult<TaskCompletion>> {
     const task = await this.taskRepo.findOne({ where: { id: taskId } });
     if (!task) throw new NotFoundException(`Task ${taskId} not found`);
-    await this.assertGoalOwnership(sub, task.goalId);
+
+    const user = await this.resolveUser(sub);
+    const goal = await this.goalRepo.findOne({ where: { id: task.goalId } });
+    if (!goal) throw new NotFoundException(`Goal ${task.goalId} not found`);
+    if (goal.userId !== user.id) throw new ForbiddenException();
 
     // Idempotency: one completion per task per calendar day
     const today = new Date();
@@ -112,18 +127,33 @@ export class TasksService {
       await this.taskRepo.save(task);
     }
 
-    const completion = this.completionRepo.create({ taskId, ...dto });
-    return this.completionRepo.save(completion);
+    const completion = await this.completionRepo.save(
+      this.completionRepo.create({ taskId, ...dto }),
+    );
+
+    const result: TaskReactionResult<TaskCompletion> = { data: completion };
+    await this.attachReaction(result, user.id, dto.personalityId, {
+      safetyText: dto.reflection ?? '',
+      event: 'task.completed',
+      context: { goalName: goal.title, streak: '', reflection: dto.reflection ?? '' },
+      userMessage: dto.reflection || 'I completed the task.',
+    });
+
+    return result;
   }
 
   async explain(
     sub: string,
     taskId: string,
     dto: ExplainTaskDto,
-  ): Promise<TaskExplanation> {
+  ): Promise<TaskReactionResult<TaskExplanation>> {
     const task = await this.taskRepo.findOne({ where: { id: taskId } });
     if (!task) throw new NotFoundException(`Task ${taskId} not found`);
-    await this.assertGoalOwnership(sub, task.goalId);
+
+    const user = await this.resolveUser(sub);
+    const goal = await this.goalRepo.findOne({ where: { id: task.goalId } });
+    if (!goal) throw new NotFoundException(`Goal ${task.goalId} not found`);
+    if (goal.userId !== user.id) throw new ForbiddenException();
 
     // Idempotency: one explanation per task per day
     const today = new Date();
@@ -146,8 +176,19 @@ export class TasksService {
     task.status = TaskStatus.SKIPPED;
     await this.taskRepo.save(task);
 
-    const explanation = this.explanationRepo.create({ taskId, ...dto });
-    return this.explanationRepo.save(explanation);
+    const explanation = await this.explanationRepo.save(
+      this.explanationRepo.create({ taskId, ...dto }),
+    );
+
+    const result: TaskReactionResult<TaskExplanation> = { data: explanation };
+    await this.attachReaction(result, user.id, dto.personalityId, {
+      safetyText: dto.freeText ?? '',
+      event: `task.failed.${dto.reason}`,
+      context: { reason: dto.reason, freeText: dto.freeText ?? '' },
+      userMessage: dto.freeText || `I ${dto.reason.replace('_', ' ')} complete the task.`,
+    });
+
+    return result;
   }
 
   /**
@@ -195,6 +236,43 @@ export class TasksService {
     }
 
     return created;
+  }
+
+  private async attachReaction<T>(
+    result: TaskReactionResult<T>,
+    userId: number,
+    personalityId: string | undefined,
+    opts: {
+      safetyText: string;
+      event: string;
+      context: Record<string, unknown>;
+      userMessage: string;
+    },
+  ): Promise<void> {
+    if (!personalityId) return;
+
+    if (this.safetyService?.isCrisisSignal(opts.safetyText)) {
+      result.mentorReaction = this.safetyService.getCrisisResponse();
+      result.safetyFlag = true;
+      return;
+    }
+
+    if (!this.aiGateway) return;
+
+    try {
+      const aiResp = await this.aiGateway.chat({
+        userId,
+        feature: 'mentor_reaction',
+        personalityId,
+        event: opts.event,
+        context: opts.context,
+        messages: [{ role: 'user', content: opts.userMessage }],
+        maxTokens: 150,
+      });
+      result.mentorReaction = aiResp.text;
+    } catch (err: any) {
+      this.logger.warn(`Mentor reaction failed: ${err?.message}`);
+    }
   }
 
   private nextDueDate(from: Date, freq: TaskRepeatFrequency): Date {

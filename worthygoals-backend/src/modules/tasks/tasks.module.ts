@@ -8,6 +8,8 @@ import {
   TaskExplanation,
 } from 'src/database/models';
 import { UsersModule } from '../users/users.module';
+import { AiModule } from 'src/core/ai/ai.module';
+import { SafetyModule } from 'src/core/safety/safety.module';
 import { TasksController } from './tasks.controller';
 import { TasksScheduler } from './tasks.scheduler';
 import { TasksService } from './tasks.service';
@@ -16,6 +18,8 @@ import { TasksService } from './tasks.service';
   imports: [
     TypeOrmModule.forFeature([Task, TaskCompletion, TaskExplanation, Goal]),
     UsersModule,
+    AiModule,
+    SafetyModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [TasksController],

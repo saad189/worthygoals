@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -29,9 +30,19 @@ const MOODS: { score: 1 | 2 | 3 | 4; emoji: string; label: string }[] = [
 
 const MAX_IMAGE_DIMENSION = 1024;
 
+const CRISIS_RESOURCES =
+  "Your wellbeing matters far more than any goal. " +
+  "You don't have to be okay, and you're not alone.\n\n" +
+  "If you're in crisis:\n" +
+  "• Call or text 988 (Suicide & Crisis Lifeline)\n" +
+  "• Text HOME to 741741 (Crisis Text Line)\n" +
+  "• International: findahelpline.com";
+
 interface Props {
   taskTitle?: string;
   submitting: boolean;
+  mentorReaction?: string | null;
+  safetyFlag?: boolean;
   onSubmit: (payload: CompleteTaskPayload) => void;
   onClose: () => void;
 }
@@ -42,7 +53,7 @@ export interface CompletionSheetHandle {
 }
 
 const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
-  ({ taskTitle, submitting, onSubmit, onClose }, ref) => {
+  ({ taskTitle, submitting, mentorReaction, safetyFlag, onSubmit, onClose }, ref) => {
     const { colors, space, radius } = useAppTheme();
     const sheetRef = useRef<BottomSheet>(null);
     const [mood, setMood] = useState<1 | 2 | 3 | 4 | null>(null);
@@ -50,8 +61,12 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
     const [photoUri, setPhotoUri] = useState<string | null>(null);
     const [photoUploading, setPhotoUploading] = useState(false);
     const [mediaId, setMediaId] = useState<string | null>(null);
+    const [localCrisis, setLocalCrisis] = useState(false);
 
-    const snapPoints = useMemo(() => ['70%'], []);
+    const snapPoints = useMemo(() => ['75%'], []);
+
+    const showingReaction = !submitting && !!mentorReaction && !safetyFlag && !localCrisis;
+    const showingCrisis = safetyFlag || localCrisis;
 
     React.useImperativeHandle(ref, () => ({
       open: () => {
@@ -59,9 +74,13 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
         setReflection('');
         setPhotoUri(null);
         setMediaId(null);
+        setLocalCrisis(false);
         sheetRef.current?.expand();
       },
-      close: () => sheetRef.current?.close(),
+      close: () => {
+        setLocalCrisis(false);
+        sheetRef.current?.close();
+      },
     }));
 
     const renderBackdrop = useCallback(
@@ -131,8 +150,10 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
     const s = StyleSheet.create({
       content: {
         flex: 1,
-        padding: space['5'],
         backgroundColor: colors.surface,
+      },
+      scroll: {
+        padding: space['5'],
       },
       title: {
         fontSize: 18,
@@ -204,12 +225,79 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
         paddingVertical: space['4'],
         borderRadius: radius.md,
         alignItems: 'center',
+        marginBottom: space['3'],
       },
       submitText: {
         fontSize: 15,
         fontWeight: '700',
       },
+      notOkayBtn: {
+        alignItems: 'center',
+        paddingVertical: space['2'],
+        marginBottom: space['2'],
+      },
+      notOkayText: {
+        fontSize: 12,
+        color: colors.textMuted,
+        textDecorationLine: 'underline',
+      },
+      reactionCard: {
+        margin: space['5'],
+        padding: space['4'],
+        borderRadius: radius.lg,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.canvas,
+      },
+      reactionLabel: {
+        fontSize: 11,
+        fontWeight: '700',
+        letterSpacing: 1,
+        textTransform: 'uppercase',
+        color: colors.textMuted,
+        marginBottom: space['2'],
+      },
+      reactionText: {
+        fontSize: 15,
+        color: colors.text,
+        lineHeight: 22,
+        fontStyle: 'italic',
+        marginBottom: space['4'],
+      },
+      crisisText: {
+        fontSize: 14,
+        color: colors.text,
+        lineHeight: 22,
+        marginBottom: space['4'],
+      },
+      doneBtn: {
+        paddingVertical: space['3'],
+        borderRadius: radius.md,
+        alignItems: 'center',
+        backgroundColor: colors.primary,
+      },
+      doneBtnText: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: colors.textWhite,
+      },
     });
+
+    const renderReactionView = () => (
+      <View style={s.reactionCard}>
+        <Text style={s.reactionLabel}>
+          {showingCrisis ? 'Resources' : 'Your mentor says'}
+        </Text>
+        <Text style={showingCrisis ? s.crisisText : s.reactionText}>
+          {showingCrisis
+            ? CRISIS_RESOURCES
+            : mentorReaction}
+        </Text>
+        <TouchableOpacity style={s.doneBtn} onPress={onClose}>
+          <Text style={s.doneBtnText}>Done</Text>
+        </TouchableOpacity>
+      </View>
+    );
 
     return (
       <BottomSheet
@@ -223,79 +311,92 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
         backgroundStyle={{ backgroundColor: colors.surface }}
       >
         <BottomSheetView style={s.content}>
-          <Text style={s.title}>Mark as Done</Text>
-          <Text style={s.subtitle} numberOfLines={1}>
-            {taskTitle ?? 'Task'}
-          </Text>
+          {showingReaction || showingCrisis ? (
+            renderReactionView()
+          ) : (
+            <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+              <Text style={s.title}>Mark as Done</Text>
+              <Text style={s.subtitle} numberOfLines={1}>
+                {taskTitle ?? 'Task'}
+              </Text>
 
-          <View style={s.moodRow}>
-            {MOODS.map(({ score, emoji, label }) => {
-              const selected = mood === score;
-              return (
-                <TouchableOpacity
-                  key={score}
-                  style={[
-                    s.moodBtn,
-                    {
-                      borderColor: selected ? colors.primary : colors.border,
-                      backgroundColor: selected ? colors.primarySubtle : colors.canvas,
-                    },
-                  ]}
-                  onPress={() => setMood(score)}
-                >
-                  <Text style={s.moodEmoji}>{emoji}</Text>
-                  <Text style={[s.moodLabel, { color: selected ? colors.primary : colors.textMuted }]}>
-                    {label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+              <View style={s.moodRow}>
+                {MOODS.map(({ score, emoji, label }) => {
+                  const selected = mood === score;
+                  return (
+                    <TouchableOpacity
+                      key={score}
+                      style={[
+                        s.moodBtn,
+                        {
+                          borderColor: selected ? colors.primary : colors.border,
+                          backgroundColor: selected ? colors.primarySubtle : colors.canvas,
+                        },
+                      ]}
+                      onPress={() => setMood(score)}
+                    >
+                      <Text style={s.moodEmoji}>{emoji}</Text>
+                      <Text style={[s.moodLabel, { color: selected ? colors.primary : colors.textMuted }]}>
+                        {label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
 
-          <TextInput
-            style={[s.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.canvas }]}
-            placeholder="Reflection (optional)"
-            placeholderTextColor={colors.textFaint}
-            value={reflection}
-            onChangeText={setReflection}
-            multiline
-            maxLength={500}
-          />
+              <TextInput
+                style={[s.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.canvas }]}
+                placeholder="Reflection (optional)"
+                placeholderTextColor={colors.textFaint}
+                value={reflection}
+                onChangeText={setReflection}
+                multiline
+                maxLength={500}
+              />
 
-          <View style={s.photoRow}>
-            {photoUri ? (
-              <>
-                <Image source={{ uri: photoUri }} style={s.photoThumb} />
-                <TouchableOpacity style={s.removeBtn} onPress={removePhoto}>
-                  <Text style={[s.removeBtnText, { color: colors.primary }]}>Remove</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <TouchableOpacity
-                style={[s.photoBtn, { borderColor: colors.border, backgroundColor: colors.canvas }]}
-                onPress={pickAndUploadPhoto}
-                disabled={photoUploading}
-              >
-                {photoUploading ? (
-                  <ActivityIndicator size="small" color={colors.textMuted} />
+              <View style={s.photoRow}>
+                {photoUri ? (
+                  <>
+                    <Image source={{ uri: photoUri }} style={s.photoThumb} />
+                    <TouchableOpacity style={s.removeBtn} onPress={removePhoto}>
+                      <Text style={[s.removeBtnText, { color: colors.primary }]}>Remove</Text>
+                    </TouchableOpacity>
+                  </>
                 ) : (
-                  <Text style={[s.photoBtnText, { color: colors.textMuted }]}>+ Photo</Text>
+                  <TouchableOpacity
+                    style={[s.photoBtn, { borderColor: colors.border, backgroundColor: colors.canvas }]}
+                    onPress={pickAndUploadPhoto}
+                    disabled={photoUploading}
+                  >
+                    {photoUploading ? (
+                      <ActivityIndicator size="small" color={colors.textMuted} />
+                    ) : (
+                      <Text style={[s.photoBtnText, { color: colors.textMuted }]}>+ Photo</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <TouchableOpacity
+                style={[s.submitBtn, { backgroundColor: mood ? colors.primary : colors.border }]}
+                onPress={handleSubmit}
+                disabled={!mood || submitting || photoUploading}
+              >
+                {submitting ? (
+                  <ActivityIndicator color={colors.textWhite} />
+                ) : (
+                  <Text style={[s.submitText, { color: colors.textWhite }]}>Submit</Text>
                 )}
               </TouchableOpacity>
-            )}
-          </View>
 
-          <TouchableOpacity
-            style={[s.submitBtn, { backgroundColor: mood ? colors.primary : colors.border }]}
-            onPress={handleSubmit}
-            disabled={!mood || submitting || photoUploading}
-          >
-            {submitting ? (
-              <ActivityIndicator color={colors.textWhite} />
-            ) : (
-              <Text style={[s.submitText, { color: colors.textWhite }]}>Submit</Text>
-            )}
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={s.notOkayBtn}
+                onPress={() => setLocalCrisis(true)}
+              >
+                <Text style={s.notOkayText}>I'm not okay</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          )}
         </BottomSheetView>
       </BottomSheet>
     );
