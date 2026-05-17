@@ -13,6 +13,7 @@ import { ConversationsModule } from '../conversations/conversations.module';
 import { MessagesModule } from '../messages/messages.module';
 import { GoalsModule } from '../goals/goals.module';
 import { TasksModule } from '../tasks/tasks.module';
+import { DashboardModule } from '../dashboard/dashboard.module';
 
 const modules = [
   UsersModule,
@@ -22,6 +23,7 @@ const modules = [
   MessagesModule,
   GoalsModule,
   TasksModule,
+  DashboardModule,
 ];
 const entities = [
   __dirname + '/**/*.entity{.ts,.js}',

@@ -6,11 +6,13 @@ import {
   UpdateDateColumn,
   Index,
   ManyToOne,
+  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { GoalCategory, GoalStatus } from 'src/common/constants';
 import { User } from './user.entity';
 import { Mentor } from './mentor.entity';
+import { Task } from './task.entity';
 
 @Entity('goals')
 @Index('idx_goals_user_id', ['userId'])
@@ -57,6 +59,9 @@ export class Goal {
 
   @Column({ length: 512, nullable: true })
   imageUri?: string;
+
+  @OneToMany(() => Task, (t) => t.goal)
+  tasks!: Task[];
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
