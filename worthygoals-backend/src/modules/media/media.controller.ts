@@ -12,7 +12,9 @@ export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
   @Post('upload-url')
-  @ApiOperation({ summary: 'Get a presigned PUT URL to upload a media file to S3/R2' })
+  @ApiOperation({
+    summary: 'Get a presigned PUT URL to upload a media file to S3/R2',
+  })
   createUploadUrl(@Request() req, @Body() dto: CreateUploadUrlDto) {
     return this.mediaService.createUploadUrl(req.user.sub, dto);
   }

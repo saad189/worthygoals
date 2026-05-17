@@ -1,4 +1,8 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
@@ -79,6 +83,9 @@ export class MediaService {
   async markAttached(mediaId: string, sub: string): Promise<void> {
     const user = await this.usersService.findByAccountSub(sub);
     if (!user) return;
-    await this.mediaRepo.update({ id: mediaId, userId: user.id }, { isAttached: true });
+    await this.mediaRepo.update(
+      { id: mediaId, userId: user.id },
+      { isAttached: true },
+    );
   }
 }
