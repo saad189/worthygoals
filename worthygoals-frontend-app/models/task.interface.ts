@@ -28,11 +28,19 @@ export interface CompleteTaskPayload {
   moodScore: 1 | 2 | 3 | 4;
   reflection?: string;
   memoryPictureId?: string;
+  personalityId?: string;
 }
 
 export interface ExplainTaskPayload {
   reason: ExplanationReason;
   freeText?: string;
+  personalityId?: string;
+}
+
+export interface TaskActionResponse<T> {
+  data: T;
+  mentorReaction?: string;
+  safetyFlag?: boolean;
 }
 
 export interface TaskCompletion {

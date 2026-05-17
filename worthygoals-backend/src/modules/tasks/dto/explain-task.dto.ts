@@ -11,4 +11,9 @@ export class ExplainTaskDto {
   @IsOptional()
   @IsString()
   freeText?: string;
+
+  @ApiPropertyOptional({ description: 'Personality ID for mentor reaction generation' })
+  @IsOptional()
+  @IsString()
+  personalityId?: string;
 }

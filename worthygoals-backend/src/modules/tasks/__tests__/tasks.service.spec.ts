@@ -17,6 +17,8 @@ import {
   TaskExplanation,
 } from 'src/database/models';
 import { UsersService } from '../../users/users.service';
+import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
+import { SafetyService } from 'src/core/safety/safety.service';
 import { TasksService } from '../tasks.service';
 
 const USER_ID = 1;
@@ -25,7 +27,7 @@ const TASK_ID = 'task-uuid';
 const SUB = 'cognito-sub';
 
 const makeGoal = (o: Partial<Goal> = {}) =>
-  ({ id: GOAL_ID, userId: USER_ID, ...o }) as Goal;
+  ({ id: GOAL_ID, userId: USER_ID, title: 'My Goal', ...o }) as Goal;
 
 const makeTask = (o: Partial<Task> = {}) =>
   ({
@@ -56,6 +58,8 @@ describe('TasksService', () => {
   let explanationRepo: Record<string, jest.Mock>;
   let goalRepo: Record<string, jest.Mock>;
   let usersService: { findByAccountSub: jest.Mock };
+  let aiGateway: { chat: jest.Mock };
+  let safetyService: { isCrisisSignal: jest.Mock; getCrisisResponse: jest.Mock };
 
   beforeEach(async () => {
     const qbMock = {
@@ -92,21 +96,24 @@ describe('TasksService', () => {
     usersService = {
       findByAccountSub: jest.fn().mockResolvedValue({ id: USER_ID }),
     };
+    aiGateway = {
+      chat: jest.fn().mockResolvedValue({ text: 'Stoic reaction.', model: 'gpt-4o-mini', provider: 'openai', tokensIn: 10, tokensOut: 5 }),
+    };
+    safetyService = {
+      isCrisisSignal: jest.fn().mockReturnValue(false),
+      getCrisisResponse: jest.fn().mockReturnValue('Crisis resources here.'),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TasksService,
         { provide: getRepositoryToken(Task), useValue: taskRepo },
-        {
-          provide: getRepositoryToken(TaskCompletion),
-          useValue: completionRepo,
-        },
-        {
-          provide: getRepositoryToken(TaskExplanation),
-          useValue: explanationRepo,
-        },
+        { provide: getRepositoryToken(TaskCompletion), useValue: completionRepo },
+        { provide: getRepositoryToken(TaskExplanation), useValue: explanationRepo },
         { provide: getRepositoryToken(Goal), useValue: goalRepo },
         { provide: UsersService, useValue: usersService },
+        { provide: AiGatewayService, useValue: aiGateway },
+        { provide: SafetyService, useValue: safetyService },
       ],
     }).compile();
 
@@ -124,10 +131,7 @@ describe('TasksService', () => {
       taskRepo.create.mockReturnValue(task);
       taskRepo.save.mockResolvedValue(task);
 
-      const result = await service.create(SUB, {
-        title: 'Run',
-        goalId: GOAL_ID,
-      });
+      const result = await service.create(SUB, { title: 'Run', goalId: GOAL_ID });
       expect(result.title).toBe('Run');
     });
 
@@ -157,27 +161,47 @@ describe('TasksService', () => {
   });
 
   describe('complete', () => {
-    it('creates completion and marks non-repeating task completed', async () => {
-      const task = makeTask();
-      taskRepo.findOne.mockResolvedValue(task);
+    beforeEach(() => {
+      taskRepo.findOne.mockResolvedValue(makeTask());
       goalRepo.findOne.mockResolvedValue(makeGoal());
       const comp = makeCompletion();
       completionRepo.create.mockReturnValue(comp);
       completionRepo.save.mockResolvedValue(comp);
-      taskRepo.save.mockResolvedValue({
-        ...task,
-        status: TaskStatus.COMPLETED,
-      });
+      taskRepo.save.mockResolvedValue(makeTask({ status: TaskStatus.COMPLETED }));
+    });
 
+    it('creates completion and marks non-repeating task completed', async () => {
       const result = await service.complete(SUB, TASK_ID, { moodScore: 3 });
-      expect(result.moodScore).toBe(3);
+      expect(result.data.moodScore).toBe(3);
       expect(taskRepo.save).toHaveBeenCalled();
     });
 
+    it('returns no reaction when personalityId is absent', async () => {
+      const result = await service.complete(SUB, TASK_ID, { moodScore: 3 });
+      expect(result.mentorReaction).toBeUndefined();
+    });
+
+    it('returns mentor reaction when personalityId is provided', async () => {
+      const result = await service.complete(SUB, TASK_ID, { moodScore: 3, personalityId: 'marcus' });
+      expect(result.mentorReaction).toBe('Stoic reaction.');
+      expect(aiGateway.chat).toHaveBeenCalledWith(
+        expect.objectContaining({ event: 'task.completed', personalityId: 'marcus' }),
+      );
+    });
+
+    it('returns safety response when crisis signal detected in reflection', async () => {
+      safetyService.isCrisisSignal.mockReturnValue(true);
+      const result = await service.complete(SUB, TASK_ID, {
+        moodScore: 1,
+        reflection: 'I want to hurt myself',
+        personalityId: 'marcus',
+      });
+      expect(result.mentorReaction).toBe('Crisis resources here.');
+      expect(result.safetyFlag).toBe(true);
+      expect(aiGateway.chat).not.toHaveBeenCalled();
+    });
+
     it('throws ConflictException when already completed today', async () => {
-      taskRepo.findOne.mockResolvedValue(makeTask());
-      goalRepo.findOne.mockResolvedValue(makeGoal());
-      // Override completionRepo qb to return an existing completion
       const qbWithResult = {
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
@@ -192,25 +216,49 @@ describe('TasksService', () => {
   });
 
   describe('explain', () => {
-    it('creates explanation and marks task skipped', async () => {
-      const task = makeTask();
-      taskRepo.findOne.mockResolvedValue(task);
+    beforeEach(() => {
+      taskRepo.findOne.mockResolvedValue(makeTask());
       goalRepo.findOne.mockResolvedValue(makeGoal());
       const expl = makeExplanation();
       explanationRepo.create.mockReturnValue(expl);
       explanationRepo.save.mockResolvedValue(expl);
-      taskRepo.save.mockResolvedValue({ ...task, status: TaskStatus.SKIPPED });
+      taskRepo.save.mockResolvedValue(makeTask({ status: TaskStatus.SKIPPED }));
+    });
 
-      const result = await service.explain(SUB, TASK_ID, {
-        reason: ExplanationReason.FORGOT,
-      });
-      expect(result.reason).toBe(ExplanationReason.FORGOT);
+    it('creates explanation and marks task skipped', async () => {
+      const result = await service.explain(SUB, TASK_ID, { reason: ExplanationReason.FORGOT });
+      expect(result.data.reason).toBe(ExplanationReason.FORGOT);
       expect(taskRepo.save).toHaveBeenCalled();
     });
 
+    it('returns no reaction when personalityId is absent', async () => {
+      const result = await service.explain(SUB, TASK_ID, { reason: ExplanationReason.FORGOT });
+      expect(result.mentorReaction).toBeUndefined();
+    });
+
+    it('returns mentor reaction for explain event', async () => {
+      const result = await service.explain(SUB, TASK_ID, {
+        reason: ExplanationReason.CHOSE_NOT_TO,
+        personalityId: 'goggs',
+      });
+      expect(result.mentorReaction).toBe('Stoic reaction.');
+      expect(aiGateway.chat).toHaveBeenCalledWith(
+        expect.objectContaining({ event: 'task.failed.chose_not_to', personalityId: 'goggs' }),
+      );
+    });
+
+    it('returns safety response when crisis signal detected in freeText', async () => {
+      safetyService.isCrisisSignal.mockReturnValue(true);
+      const result = await service.explain(SUB, TASK_ID, {
+        reason: ExplanationReason.COULDNT,
+        freeText: 'cant go on',
+        personalityId: 'marcus',
+      });
+      expect(result.safetyFlag).toBe(true);
+      expect(aiGateway.chat).not.toHaveBeenCalled();
+    });
+
     it('throws ConflictException when already explained today', async () => {
-      taskRepo.findOne.mockResolvedValue(makeTask());
-      goalRepo.findOne.mockResolvedValue(makeGoal());
       const qbWithResult = {
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),

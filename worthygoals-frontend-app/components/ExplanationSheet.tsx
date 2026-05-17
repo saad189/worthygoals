@@ -1,6 +1,7 @@
 import React, { forwardRef, useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -23,6 +24,8 @@ const REASONS: { value: ExplanationReason; label: string; description: string }[
 interface Props {
   taskTitle?: string;
   submitting: boolean;
+  mentorReaction?: string | null;
+  safetyFlag?: boolean;
   onSubmit: (payload: ExplainTaskPayload) => void;
   onClose: () => void;
 }
@@ -33,12 +36,15 @@ export interface ExplanationSheetHandle {
 }
 
 const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
-  ({ taskTitle, submitting, onSubmit, onClose }, ref) => {
+  ({ taskTitle, submitting, mentorReaction, safetyFlag, onSubmit, onClose }, ref) => {
     const { colors, space, radius } = useAppTheme();
     const sheetRef = useRef<BottomSheet>(null);
     const [reason, setReason] = useState<ExplanationReason | null>(null);
 
-    const snapPoints = useMemo(() => ['45%'], []);
+    const snapPoints = useMemo(() => ['65%'], []);
+
+    const showingReaction = !submitting && !!mentorReaction && !safetyFlag;
+    const showingCrisis = !!safetyFlag;
 
     React.useImperativeHandle(ref, () => ({
       open: () => sheetRef.current?.expand(),
@@ -60,8 +66,10 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
     const s = StyleSheet.create({
       content: {
         flex: 1,
-        padding: space['5'],
         backgroundColor: colors.surface,
+      },
+      scroll: {
+        padding: space['5'],
       },
       title: {
         fontSize: 18,
@@ -100,7 +108,63 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
         fontSize: 15,
         fontWeight: '700',
       },
+      reactionCard: {
+        margin: space['5'],
+        padding: space['4'],
+        borderRadius: radius.lg,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.canvas,
+      },
+      reactionLabel: {
+        fontSize: 11,
+        fontWeight: '700',
+        letterSpacing: 1,
+        textTransform: 'uppercase',
+        color: colors.textMuted,
+        marginBottom: space['2'],
+      },
+      reactionText: {
+        fontSize: 15,
+        color: colors.text,
+        lineHeight: 22,
+        fontStyle: 'italic',
+        marginBottom: space['4'],
+      },
+      crisisText: {
+        fontSize: 14,
+        color: colors.text,
+        lineHeight: 22,
+        marginBottom: space['4'],
+      },
+      doneBtn: {
+        paddingVertical: space['3'],
+        borderRadius: radius.md,
+        alignItems: 'center',
+        backgroundColor: colors.primary,
+      },
+      doneBtnText: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: colors.textWhite,
+      },
     });
+
+    const renderReactionView = () => (
+      <View style={s.reactionCard}>
+        <Text style={s.reactionLabel}>
+          {showingCrisis ? 'Resources' : 'Your mentor says'}
+        </Text>
+        <Text style={showingCrisis ? s.crisisText : s.reactionText}>
+          {showingCrisis
+            ? "Your wellbeing matters far more than any goal.\n\nIf you're in crisis:\n• Call or text 988\n• Text HOME to 741741\n• findahelpline.com"
+            : mentorReaction}
+        </Text>
+        <TouchableOpacity style={s.doneBtn} onPress={onClose}>
+          <Text style={s.doneBtnText}>Done</Text>
+        </TouchableOpacity>
+      </View>
+    );
 
     return (
       <BottomSheet
@@ -114,46 +178,52 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
         backgroundStyle={{ backgroundColor: colors.surface }}
       >
         <BottomSheetView style={s.content}>
-          <Text style={s.title}>Why skipping?</Text>
-          <Text style={s.subtitle} numberOfLines={1}>
-            {taskTitle ?? 'Task'}
-          </Text>
+          {showingReaction || showingCrisis ? (
+            renderReactionView()
+          ) : (
+            <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+              <Text style={s.title}>Why skipping?</Text>
+              <Text style={s.subtitle} numberOfLines={1}>
+                {taskTitle ?? 'Task'}
+              </Text>
 
-          {REASONS.map(({ value, label, description }) => {
-            const selected = reason === value;
-            return (
+              {REASONS.map(({ value, label, description }) => {
+                const selected = reason === value;
+                return (
+                  <TouchableOpacity
+                    key={value}
+                    style={[
+                      s.option,
+                      {
+                        borderColor: selected ? colors.primary : colors.border,
+                        backgroundColor: selected ? colors.primarySubtle : colors.canvas,
+                      },
+                    ]}
+                    onPress={() => setReason(value)}
+                  >
+                    <View>
+                      <Text style={[s.optionLabel, { color: selected ? colors.primary : colors.text }]}>
+                        {label}
+                      </Text>
+                      <Text style={[s.optionDesc, { color: colors.textMuted }]}>{description}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+
               <TouchableOpacity
-                key={value}
-                style={[
-                  s.option,
-                  {
-                    borderColor: selected ? colors.primary : colors.border,
-                    backgroundColor: selected ? colors.primarySubtle : colors.canvas,
-                  },
-                ]}
-                onPress={() => setReason(value)}
+                style={[s.submitBtn, { backgroundColor: reason ? colors.primary : colors.border }]}
+                onPress={handleSubmit}
+                disabled={!reason || submitting}
               >
-                <View>
-                  <Text style={[s.optionLabel, { color: selected ? colors.primary : colors.text }]}>
-                    {label}
-                  </Text>
-                  <Text style={[s.optionDesc, { color: colors.textMuted }]}>{description}</Text>
-                </View>
+                {submitting ? (
+                  <ActivityIndicator color={colors.textWhite} />
+                ) : (
+                  <Text style={[s.submitText, { color: colors.textWhite }]}>Submit</Text>
+                )}
               </TouchableOpacity>
-            );
-          })}
-
-          <TouchableOpacity
-            style={[s.submitBtn, { backgroundColor: reason ? colors.primary : colors.border }]}
-            onPress={handleSubmit}
-            disabled={!reason || submitting}
-          >
-            {submitting ? (
-              <ActivityIndicator color={colors.textWhite} />
-            ) : (
-              <Text style={[s.submitText, { color: colors.textWhite }]}>Submit</Text>
-            )}
-          </TouchableOpacity>
+            </ScrollView>
+          )}
         </BottomSheetView>
       </BottomSheet>
     );

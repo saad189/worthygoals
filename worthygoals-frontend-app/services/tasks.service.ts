@@ -6,6 +6,7 @@ import {
   ExplainTaskPayload,
   TaskCompletion,
   TaskExplanation,
+  TaskActionResponse,
 } from '@/models';
 
 const TASKS_BASE = '/tasks';
@@ -29,8 +30,8 @@ export const tasksService = {
   complete: async (
     taskId: string,
     payload: CompleteTaskPayload,
-  ): Promise<TaskCompletion> => {
-    const { data } = await ApiService.post<TaskCompletion>(
+  ): Promise<TaskActionResponse<TaskCompletion>> => {
+    const { data } = await ApiService.post<TaskActionResponse<TaskCompletion>>(
       `${TASKS_BASE}/${taskId}/complete`,
       payload,
     );
@@ -40,8 +41,8 @@ export const tasksService = {
   explain: async (
     taskId: string,
     payload: ExplainTaskPayload,
-  ): Promise<TaskExplanation> => {
-    const { data } = await ApiService.post<TaskExplanation>(
+  ): Promise<TaskActionResponse<TaskExplanation>> => {
+    const { data } = await ApiService.post<TaskActionResponse<TaskExplanation>>(
       `${TASKS_BASE}/${taskId}/explain`,
       payload,
     );
