@@ -12,6 +12,7 @@ import { OpenAiProvider } from './gateway/openai.provider';
 import { AnthropicProvider } from './gateway/anthropic.provider';
 import { AiGatewayService } from './gateway/ai-gateway.service';
 import { QuotaService } from './quota/quota.service';
+import { PersonalityModule } from 'src/core/personalities/personality.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { QuotaService } from './quota/quota.service';
       AiCall,
       User,
     ]),
+    PersonalityModule,
   ],
   providers: [
     AiService,
