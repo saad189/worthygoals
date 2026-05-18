@@ -35,7 +35,10 @@
     "typeorm:generate:xplat": "node ./scripts/typeorm-generate.js",
     "typeorm:generate:legacy": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate src/database/migrations/%npm_config_name% -d src/database/dataSource.ts",
     "typeorm:revert": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d src/database/dataSource.ts",
-    "typeorm:drop": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js schema:drop -d src/database/dataSource.ts"
+    "typeorm:drop": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js schema:drop -d src/database/dataSource.ts",
+    "eval": "ts-node -r tsconfig-paths/register eval/run.ts",
+    "eval:dry": "ts-node -r tsconfig-paths/register eval/run.ts --dry-run",
+    "eval:verbose": "ts-node -r tsconfig-paths/register eval/run.ts --verbose"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0",

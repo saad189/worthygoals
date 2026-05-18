@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { HttpException, Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -138,6 +140,8 @@ export class AiGatewayService {
       this.logger.error(`Failed to log ai_call: ${err.message}`);
     });
 
+    this.maybeSampleDrift(req, result.text);
+
     return {
       text: result.text,
       model: result.model,
@@ -152,6 +156,31 @@ export class AiGatewayService {
       this.config.get<string>('AI_ACTIVE_PROVIDER')?.toLowerCase() ?? 'openai';
     if (flag === 'anthropic' && this.anthropic.available) return this.anthropic;
     return this.openai;
+  }
+
+  private maybeSampleDrift(req: GatewayChatRequest, output: string): void {
+    if (Math.random() >= 0.001) return;
+    try {
+      const driftDir =
+        this.config.get<string>('EVAL_DRIFT_DIR') ??
+        path.join(process.cwd(), 'eval', 'drift');
+      if (!fs.existsSync(driftDir)) return;
+      const date = new Date().toISOString().slice(0, 10);
+      const file = path.join(driftDir, `${date}.jsonl`);
+      const entry = JSON.stringify({
+        ts: new Date().toISOString(),
+        personality: req.personalityId ?? null,
+        event: req.event ?? null,
+        userMessage:
+          [...req.messages].reverse().find((m) => m.role === 'user')?.content ??
+          null,
+        output,
+        model: req.model ?? null,
+      });
+      fs.appendFileSync(file, entry + '\n');
+    } catch {
+      // drift sampling is best-effort; never throw
+    }
   }
 
   private injectPersonality(req: GatewayChatRequest): ChatMessage[] {
