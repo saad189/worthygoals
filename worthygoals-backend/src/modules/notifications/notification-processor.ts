@@ -1,9 +1,11 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Logger, Optional } from '@nestjs/common';
 import { Job } from 'bullmq';
 import Expo from 'expo-server-sdk';
 import { ConfigService } from '@nestjs/config';
 import { NotificationsService } from './notifications.service';
+import { NotificationVoicingService } from './notification-voicing.service';
+import { PersonalityService } from 'src/core/personalities/personality.service';
 import {
   NOTIFICATION_QUEUE,
   NotificationJobData,
@@ -17,6 +19,8 @@ export class NotificationProcessor extends WorkerHost {
   constructor(
     private readonly notifService: NotificationsService,
     private readonly config: ConfigService,
+    @Optional() private readonly voicingService?: NotificationVoicingService,
+    @Optional() private readonly personalityService?: PersonalityService,
   ) {
     super();
     this.expo = new Expo({
@@ -37,12 +41,14 @@ export class NotificationProcessor extends WorkerHost {
       return;
     }
 
+    const body = await this.resolveBody(userId, kind, job.data.payload);
+
     const messages = tokens
       .filter((t) => Expo.isExpoPushToken(t.token))
       .map((t) => ({
         to: t.token,
         title: 'Evolve',
-        body: this.placeholderBody(kind),
+        body,
         data: { kind, scheduledFor },
       }));
 
@@ -59,7 +65,9 @@ export class NotificationProcessor extends WorkerHost {
           await this.notifService.recordSent(userId, kind, tz, token, status);
         }
       } catch (err) {
-        this.logger.error(`Push send failed for user ${userId}: ${err.message}`);
+        this.logger.error(
+          `Push send failed for user ${userId}: ${err.message}`,
+        );
         for (const msg of chunk) {
           await this.notifService.recordSent(
             userId,
@@ -73,14 +81,43 @@ export class NotificationProcessor extends WorkerHost {
     }
   }
 
-  private placeholderBody(kind: NotificationJobData['kind']): string {
+  private async resolveBody(
+    userId: number,
+    kind: NotificationJobData['kind'],
+    payload?: Record<string, unknown>,
+  ): Promise<string> {
+    if (!this.voicingService || !this.personalityService) {
+      return this.fallbackBody(kind);
+    }
+
+    try {
+      const userPersonality =
+        await this.personalityService.getUserPersonality(userId);
+      if (!userPersonality?.personalityId) return this.fallbackBody(kind);
+
+      const context: Record<string, unknown> = payload ?? {};
+      const { body } = await this.voicingService.getOrGenerateCopy(
+        userPersonality.personalityId,
+        kind,
+        context,
+      );
+      return body;
+    } catch (err: any) {
+      this.logger.warn(
+        `Voicing failed for user ${userId}/${kind}: ${err?.message}. Using fallback.`,
+      );
+      return this.fallbackBody(kind);
+    }
+  }
+
+  private fallbackBody(kind: NotificationJobData['kind']): string {
     const bodies: Record<NotificationJobData['kind'], string> = {
-      morning_setup: "Good morning — your mentor is ready.",
-      evening_check_in: "How did today go?",
-      task_due: "A task is waiting for you.",
-      weekly_review: "Time for your weekly reflection.",
+      morning_setup: 'Good morning — your mentor is ready.',
+      evening_check_in: 'How did today go?',
+      task_due: 'A task is waiting for you.',
+      weekly_review: 'Time for your weekly reflection.',
       re_engage: "Your mentor hasn't heard from you in a while.",
     };
-    return bodies[kind] ?? "You have a new message.";
+    return bodies[kind] ?? 'You have a new message.';
   }
 }
