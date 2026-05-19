@@ -21,7 +21,7 @@ cases:
   - id: mc-ct-04
     memory_seed: "User completed their first half-marathon in October. Goal set in March."
     user: Started thinking about a full marathon next year.
-    reference: Seven months to build from zero to half — you know what consistency delivers. A full marathon is twice the distance, not twice the difficulty. The real question: what does the training plan look like, and does the first week start this week?
+    reference: "Seven months to build from zero to half — you know what consistency delivers. A full marathon is twice the distance, not twice the difficulty. The real question: what does the training plan look like, and does the first week start this week?"
 
   - id: mc-ct-05
     memory_seed: "User told Marcus about a difficult conversation with their father two weeks ago."
