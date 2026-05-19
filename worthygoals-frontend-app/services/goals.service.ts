@@ -1,4 +1,4 @@
-import { GoalItem } from "@/models";
+import { GoalItem, GoalProposal } from "@/models";
 import ApiService from "./api.service";
 import { formatErrorMessage } from "@/helpers";
 import Storage from "@/helpers/StorageUtilAsync";
@@ -116,3 +116,27 @@ export class GoalService {
 const goalService = new GoalService(ApiService);
 
 export default goalService;
+
+const GOALS_BASE = '/goals';
+
+export const goalsApiService = {
+  propose: async (raw: string): Promise<GoalProposal> => {
+    const { data } = await ApiService.post<GoalProposal>(`${GOALS_BASE}/propose`, { raw });
+    return data;
+  },
+
+  create: async (payload: {
+    title: string;
+    description?: string;
+    costText?: string;
+    benefitText?: string;
+    failureText?: string;
+    deadline?: string;
+    repeatRule?: Record<string, unknown>;
+    category?: string;
+    mentorId?: number;
+  }): Promise<{ id: string }> => {
+    const { data } = await ApiService.post<{ id: string }>(GOALS_BASE, payload);
+    return data;
+  },
+};
