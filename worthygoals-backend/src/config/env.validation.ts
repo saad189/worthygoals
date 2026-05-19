@@ -37,6 +37,10 @@ export const envValidationSchema = Joi.object({
   S3_SECRET_ACCESS_KEY: Joi.string().optional(),
   S3_REGION: Joi.string().default('auto'),
 
+  // ── Push Notifications ───────────────────────────────────────────────────
+  REDIS_URL: Joi.string().default('redis://localhost:6379'), // Tier 3: defaults to local Redis
+  EXPO_ACCESS_TOKEN: Joi.string().optional(), // Tier 2: graceful no-op if absent
+
   // ── Observability (optional — graceful no-op if absent) ──────────────────
   SENTRY_DSN: Joi.string().optional(),
   SUPPORT_EMAIL_SENDER: Joi.string().email().optional(),
