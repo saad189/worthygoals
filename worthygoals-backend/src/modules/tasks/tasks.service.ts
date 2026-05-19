@@ -280,6 +280,13 @@ export class TasksService {
         maxTokens: 150,
       });
       result.mentorReaction = aiResp.text;
+      // Persist reaction on completions so the board can display it later
+      if (result.data instanceof TaskCompletion && aiResp.text) {
+        await this.completionRepo.update(
+          { id: (result.data as TaskCompletion).id },
+          { mentorReaction: aiResp.text },
+        );
+      }
     } catch (err: any) {
       this.logger.warn(`Mentor reaction failed: ${err?.message}`);
     }

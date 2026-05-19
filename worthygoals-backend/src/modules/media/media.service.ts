@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
@@ -78,6 +78,17 @@ export class MediaService {
     });
 
     return { uploadUrl, mediaId: saved.id, s3Key };
+  }
+
+  async getPresignedGetUrl(mediaId: string): Promise<string | null> {
+    if (!this.s3) return null;
+    const media = await this.mediaRepo.findOne({ where: { id: mediaId } });
+    if (!media) return null;
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: media.s3Key,
+    });
+    return getSignedUrl(this.s3, command, { expiresIn: 3600 });
   }
 
   async markAttached(mediaId: string, sub: string): Promise<void> {
