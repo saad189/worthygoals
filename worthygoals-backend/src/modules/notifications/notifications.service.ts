@@ -2,7 +2,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Queue } from 'bullmq';
-import { format, addHours, parseISO } from 'date-fns';
+import { format, addHours } from 'date-fns';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { NotificationLog } from 'src/database/models/notification-log.entity';
 import { PushToken } from 'src/database/models/push-token.entity';
