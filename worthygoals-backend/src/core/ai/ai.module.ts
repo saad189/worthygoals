@@ -13,6 +13,7 @@ import { AnthropicProvider } from './gateway/anthropic.provider';
 import { AiGatewayService } from './gateway/ai-gateway.service';
 import { QuotaService } from './quota/quota.service';
 import { PersonalityModule } from 'src/core/personalities/personality.module';
+import { MemoryModule } from 'src/core/memory/memory.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { PersonalityModule } from 'src/core/personalities/personality.module';
       User,
     ]),
     PersonalityModule,
+    MemoryModule,
   ],
   providers: [
     AiService,

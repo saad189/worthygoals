@@ -5,6 +5,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThan, Repository } from 'typeorm';
@@ -13,6 +14,7 @@ import { Message } from 'src/database/models/message.entity';
 import { MessageContentType, MessageRole } from 'src/common/constants';
 import { SendTextMessageDto } from './dto/send-text-message.dto';
 import { UsersService } from 'src/modules/users/users.service';
+import { MemoryService } from 'src/core/memory/memory.service';
 
 @Injectable()
 export class MessagesService {
@@ -24,6 +26,7 @@ export class MessagesService {
     @InjectRepository(Conversation)
     private readonly conversationRepository: Repository<Conversation>,
     private readonly usersService: UsersService,
+    @Optional() private readonly memoryService?: MemoryService,
   ) {}
 
   async list(params: {
@@ -138,6 +141,10 @@ export class MessagesService {
         lastMessageAt: saved.createdAt,
         lastMessageId: saved.id,
       });
+
+      if (params.dto.text) {
+        this.memoryService?.indexMessage(user.id, saved.id, params.dto.text);
+      }
 
       return saved;
     } catch (error) {
