@@ -16,6 +16,7 @@ import { TasksModule } from '../tasks/tasks.module';
 import { DashboardModule } from '../dashboard/dashboard.module';
 import { MediaModule } from '../media/media.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { BoardModule } from '../board/board.module';
 
 const modules = [
   UsersModule,
@@ -28,6 +29,7 @@ const modules = [
   TasksModule,
   DashboardModule,
   NotificationsModule,
+  BoardModule,
 ];
 const entities = [
   __dirname + '/**/*.entity{.ts,.js}',
