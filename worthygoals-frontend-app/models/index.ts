@@ -11,3 +11,4 @@ export * from "./location.interface";
 export * from "./user.interface";
 export * from "./messages.interface";
 export * from "./task.interface";
+export * from "./board.interface";
