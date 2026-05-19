@@ -21,3 +21,14 @@ export interface GoalItem {
     category: GoalCategory;
     creationDate: Date;
 }
+
+export interface GoalProposal {
+    title: string;
+    description?: string;
+    costText?: string;
+    benefitText?: string;
+    failureText?: string;
+    deadline?: string;
+    repeatRule?: Record<string, unknown>;
+    category?: string;
+}

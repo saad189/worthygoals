@@ -53,6 +53,8 @@ export const ROUTE_NAMES = {
   TODO: {
     self: "todo",
     TODO_CREATE_SCREEN: "todo-create-screen",
+    TODO_PROPOSE_SCREEN: "todo-propose-screen",
+    TODO_PERSONALITY_SCREEN: "todo-personality-screen",
     TODO_EDIT_SCREEN: "todo-edit-screen",
     TODO_DETAIL_SCREEN: "todo-detail-screen",
   },
