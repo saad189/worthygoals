@@ -24,6 +24,7 @@ export const envValidationSchema = Joi.object({
   // ── AI ───────────────────────────────────────────────────────────────────
   OPENAI_API_KEY: Joi.string().required(),
   OPENAI_MODEL: Joi.string().default('gpt-4o-mini'),
+  EMBEDDING_MODEL: Joi.string().default('text-embedding-3-small'),
   ANTHROPIC_API_KEY: Joi.string().optional(), // Tier 2: graceful no-op if absent
   AI_ACTIVE_PROVIDER: Joi.string()
     .valid('openai', 'anthropic')

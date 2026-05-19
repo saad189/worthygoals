@@ -10,6 +10,7 @@ import {
 import { UsersModule } from '../users/users.module';
 import { AiModule } from 'src/core/ai/ai.module';
 import { SafetyModule } from 'src/core/safety/safety.module';
+import { MemoryModule } from 'src/core/memory/memory.module';
 import { TasksController } from './tasks.controller';
 import { TasksScheduler } from './tasks.scheduler';
 import { TasksService } from './tasks.service';
@@ -20,6 +21,7 @@ import { TasksService } from './tasks.service';
     UsersModule,
     AiModule,
     SafetyModule,
+    MemoryModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [TasksController],

@@ -17,4 +17,7 @@ echo "── Backend: lint ─────────────────�
 echo "── Backend: typecheck ───────────────────────────"
 (cd "$ROOT/worthygoals-backend" && npx tsc --noEmit -p tsconfig.build.json)
 
+echo "── Eval: golden file validation ─────────────────"
+(cd "$ROOT/worthygoals-backend" && npm run eval:dry --silent)
+
 echo "✓ pre-commit passed"

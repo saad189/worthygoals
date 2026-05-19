@@ -18,6 +18,7 @@ import {
   IChatProvider,
 } from './types';
 import { PersonalityService } from 'src/core/personalities/personality.service';
+import { MemoryService } from 'src/core/memory/memory.service';
 
 const COST_PER_MILLION: Record<string, { in: number; out: number }> = {
   'gpt-4o-mini': { in: 0.15, out: 0.6 },
@@ -52,6 +53,7 @@ export class AiGatewayService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     @Optional() private readonly personalityService?: PersonalityService,
+  @Optional() private readonly memoryService?: MemoryService,
   ) {}
 
   async chat(req: GatewayChatRequest): Promise<GatewayChatResponse> {
@@ -70,7 +72,7 @@ export class AiGatewayService {
       throw e;
     }
 
-    const messages = this.injectPersonality(req);
+    const messages = await this.injectPersonality(req);
     const primary = this.resolveActiveProvider();
     const fallback = primary === this.openai ? this.anthropic : this.openai;
 
@@ -183,17 +185,31 @@ export class AiGatewayService {
     }
   }
 
-  private injectPersonality(req: GatewayChatRequest): ChatMessage[] {
+  private async injectPersonality(req: GatewayChatRequest): Promise<ChatMessage[]> {
     if (!req.personalityId || !this.personalityService) {
       return req.messages;
     }
 
     try {
-      const systemPrompt = this.personalityService.renderSystemPrompt(
+      let systemPrompt = this.personalityService.renderSystemPrompt(
         req.personalityId,
         req.event ?? 'default',
         req.context ?? {},
       );
+
+      if (this.memoryService && req.userId > 0) {
+        const lastUserMsg =
+          [...req.messages].reverse().find((m) => m.role === 'user')?.content ?? '';
+        const memCtx = await this.memoryService.buildContext(
+          req.userId,
+          req.personalityId,
+          lastUserMsg,
+        );
+        if (memCtx) {
+          systemPrompt = `${memCtx}\n\n${systemPrompt}`;
+        }
+      }
+
       const withoutSystem = req.messages.filter((m) => m.role !== 'system');
       return [{ role: 'system', content: systemPrompt }, ...withoutSystem];
     } catch (err: any) {

@@ -7,12 +7,14 @@ import { MessagesGateway } from './messages.gateway';
 import { MessagesService } from './messages.service';
 import { UsersModule } from 'src/modules/users/users.module';
 import { AiModule } from 'src/core/ai';
+import { MemoryModule } from 'src/core/memory/memory.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Message, Conversation]),
     UsersModule,
     AiModule,
+    MemoryModule,
   ],
   controllers: [MessagesController],
   providers: [MessagesService, MessagesGateway],

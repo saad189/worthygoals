@@ -22,6 +22,7 @@ import { CompleteTaskDto } from './dto/complete-task.dto';
 import { ExplainTaskDto } from './dto/explain-task.dto';
 import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
 import { SafetyService } from 'src/core/safety/safety.service';
+import { MemoryService } from 'src/core/memory/memory.service';
 
 export interface TaskReactionResult<T> {
   data: T;
@@ -45,6 +46,7 @@ export class TasksService {
     private readonly usersService: UsersService,
     @Optional() private readonly aiGateway?: AiGatewayService,
     @Optional() private readonly safetyService?: SafetyService,
+    @Optional() private readonly memoryService?: MemoryService,
   ) {}
 
   async create(sub: string, dto: CreateTaskDto): Promise<Task> {
@@ -139,6 +141,10 @@ export class TasksService {
       userMessage: dto.reflection || 'I completed the task.',
     });
 
+    if (dto.reflection) {
+      this.memoryService?.indexCompletion(user.id, taskId, dto.reflection, dto.personalityId);
+    }
+
     return result;
   }
 
@@ -187,6 +193,10 @@ export class TasksService {
       context: { reason: dto.reason, freeText: dto.freeText ?? '' },
       userMessage: dto.freeText || `I ${dto.reason.replace('_', ' ')} complete the task.`,
     });
+
+    if (dto.freeText) {
+      this.memoryService?.indexExplanation(user.id, taskId, dto.freeText, dto.personalityId);
+    }
 
     return result;
   }
