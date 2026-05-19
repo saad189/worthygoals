@@ -15,6 +15,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/common/guards';
 import { CreateGoalDto } from './dto/create-goal.dto';
 import { UpdateGoalDto } from './dto/update-goal.dto';
+import { ProposeGoalDto } from './dto/propose-goal.dto';
 import { GoalsService } from './goals.service';
 
 @ApiTags('Goals')
@@ -23,6 +24,11 @@ import { GoalsService } from './goals.service';
 @Controller('goals')
 export class GoalsController {
   constructor(private readonly goalsService: GoalsService) {}
+
+  @Post('propose')
+  propose(@Request() req, @Body() dto: ProposeGoalDto) {
+    return this.goalsService.propose(req.user.sub, dto);
+  }
 
   @Post()
   create(@Request() req, @Body() dto: CreateGoalDto) {
