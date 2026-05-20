@@ -61,6 +61,12 @@ export class MessagesGateway {
       .emit('messageCreated', message);
   }
 
+  emitMentorTyping(conversationId: string) {
+    this.server
+      .to(this.roomForConversation(conversationId))
+      .emit('mentorTyping', { conversationId });
+  }
+
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('send_message')
   async handleSendMessage(
@@ -90,7 +96,10 @@ export class MessagesGateway {
     const userPayload = MessageResponseDto.fromEntity(userMessage);
     this.emitMessageCreated(conversationId, userPayload);
 
-    // 2) Generate agent reply (DB is the memory)
+    // 2) Signal mentor is composing before the AI call
+    this.emitMentorTyping(conversationId);
+
+    // 3) Generate agent reply
     if (!userMessage.userId) {
       throw new WsException('User message missing userId');
     }
@@ -100,7 +109,7 @@ export class MessagesGateway {
       userId: userMessage.userId,
     });
 
-    // 3) Save mentor message
+    // 4) Save mentor message
     const mentorMessage = await this.messagesService.createMentorTextMessage({
       conversationId,
       text: reply.replyText,
