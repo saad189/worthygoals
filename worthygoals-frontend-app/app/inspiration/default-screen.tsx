@@ -5,8 +5,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
+import Skeleton from '@/components/Common/Skeleton';
 import { Image } from 'expo-image';
 import { MasonryFlashList } from '@shopify/flash-list';
 import { useNavigation } from 'expo-router';
@@ -18,6 +18,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import useBoard from '@/hooks/useBoard';
 import { BoardItem, MilestoneKind } from '@/models';
 import { ROUTE_NAMES } from '@/constants';
+import { MotiView } from 'moti';
 
 const MOOD_EMOJI: Record<number, string> = { 1: '😣', 2: '😐', 3: '🙂', 4: '🔥' };
 const MILESTONE_EMOJI: Record<MilestoneKind, string> = {
@@ -59,7 +60,10 @@ const MotivationalBoardScreen: React.FC = () => {
       if (item.type === 'milestone') {
         const kind = item.milestoneKind ?? 'streak_7';
         return (
-          <View
+          <MotiView
+            from={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: 'timing', duration: 300 }}
             style={[
               styles.card,
               styles.milestoneCard,
@@ -70,6 +74,7 @@ const MotivationalBoardScreen: React.FC = () => {
                 margin: space['1'],
               },
             ]}
+            accessibilityLabel={`${MILESTONE_LABEL[kind]} milestone for ${item.goalTitle}`}
           >
             <Text style={styles.milestoneEmoji}>{MILESTONE_EMOJI[kind]}</Text>
             <Text style={[styles.milestoneLabel, { color: accent }]}>
@@ -83,7 +88,7 @@ const MotivationalBoardScreen: React.FC = () => {
                 {item.streakDays} days
               </Text>
             )}
-          </View>
+          </MotiView>
         );
       }
 
@@ -91,62 +96,70 @@ const MotivationalBoardScreen: React.FC = () => {
       const cardHeight = hasPhoto ? 200 : 140;
 
       return (
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() =>
-            navigation.navigate(ROUTE_NAMES.TABS.INSPIRATION.IMAGE_VIEWER, {
-              item,
-            })
-          }
-          style={[
-            styles.card,
-            {
-              height: cardHeight,
-              borderRadius: radius.md,
-              margin: space['1'],
-              overflow: 'hidden',
-            },
-          ]}
+        <MotiView
+          from={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: 'timing', duration: 300 }}
         >
-          {hasPhoto ? (
-            <Image
-              source={{ uri: item.mediaUrl }}
-              style={StyleSheet.absoluteFill}
-              contentFit="cover"
-              transition={200}
-            />
-          ) : (
-            <View
-              style={[
-                StyleSheet.absoluteFill,
-                { backgroundColor: colors.canvas },
-              ]}
-            />
-          )}
-          <View
-            style={[styles.cardOverlay, { backgroundColor: colors.overlayBlack }]}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() =>
+              navigation.navigate(ROUTE_NAMES.TABS.INSPIRATION.IMAGE_VIEWER, {
+                item,
+              })
+            }
+            accessibilityLabel={`Win card: ${item.goalTitle ?? 'task'}, mood ${MOOD_EMOJI[item.moodScore ?? 3]}`}
+            accessibilityRole="button"
+            style={[
+              styles.card,
+              {
+                height: cardHeight,
+                borderRadius: radius.md,
+                margin: space['1'],
+                overflow: 'hidden',
+              },
+            ]}
           >
-            <Text style={styles.moodEmoji}>
-              {MOOD_EMOJI[item.moodScore ?? 3]}
-            </Text>
-            {item.goalTitle ? (
-              <Text
-                style={[styles.goalName, { color: accent }]}
-                numberOfLines={1}
-              >
-                {item.goalTitle}
+            {hasPhoto ? (
+              <Image
+                source={{ uri: item.mediaUrl }}
+                style={StyleSheet.absoluteFill}
+                contentFit="cover"
+                transition={200}
+              />
+            ) : (
+              <View
+                style={[
+                  StyleSheet.absoluteFill,
+                  { backgroundColor: colors.canvas },
+                ]}
+              />
+            )}
+            <View
+              style={[styles.cardOverlay, { backgroundColor: colors.overlayBlack }]}
+            >
+              <Text style={styles.moodEmoji}>
+                {MOOD_EMOJI[item.moodScore ?? 3]}
               </Text>
-            ) : null}
-            {item.reflection ? (
-              <Text
-                style={[styles.reflection, { color: colors.textWhite }]}
-                numberOfLines={2}
-              >
-                {item.reflection}
-              </Text>
-            ) : null}
-          </View>
-        </TouchableOpacity>
+              {item.goalTitle ? (
+                <Text
+                  style={[styles.goalName, { color: accent }]}
+                  numberOfLines={1}
+                >
+                  {item.goalTitle}
+                </Text>
+              ) : null}
+              {item.reflection ? (
+                <Text
+                  style={[styles.reflection, { color: colors.textWhite }]}
+                  numberOfLines={2}
+                >
+                  {item.reflection}
+                </Text>
+              ) : null}
+            </View>
+          </TouchableOpacity>
+        </MotiView>
       );
     },
     [colors, space, radius, navigation],
@@ -158,7 +171,16 @@ const MotivationalBoardScreen: React.FC = () => {
         <View style={styles.titleContainer}>
           <Header>Motivational Board</Header>
         </View>
-        <ActivityIndicator color={colors.primary} style={styles.loader} />
+        <View style={{ flexDirection: 'row', gap: 12, paddingHorizontal: 12, paddingTop: 12 }}>
+          <View style={{ flex: 1, gap: 12 }}>
+            <Skeleton height={180} radius={12} />
+            <Skeleton height={120} radius={12} />
+          </View>
+          <View style={{ flex: 1, gap: 12, paddingTop: 40 }}>
+            <Skeleton height={120} radius={12} />
+            <Skeleton height={160} radius={12} />
+          </View>
+        </View>
       </Background>
     );
   }

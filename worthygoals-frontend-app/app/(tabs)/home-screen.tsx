@@ -8,11 +8,11 @@ import {
   TouchableOpacity,
   Dimensions,
   Platform,
-  ActivityIndicator,
 } from "react-native";
 import Header from "@/components/SubComponents/Header";
 import Background from "@/components/SubComponents/Background";
 import { LinearGradient } from "expo-linear-gradient";
+import Skeleton from "@/components/Common/Skeleton";
 import WeeklyDatePicker from "@/components/CalenderView";
 import BorderGradient from "@/components/Common/BorderGradient";
 import { useAppTheme } from "@/hooks/useAppTheme";
@@ -245,7 +245,10 @@ const DashboardScreen = () => {
         </View>
 
         {loading && !data ? (
-          <ActivityIndicator color={colors.primary} style={{ marginTop: 24 }} />
+          <View style={{ paddingHorizontal: 16, paddingTop: 16, gap: 12 }}>
+            <Skeleton height={width / 2.3} radius={12} />
+            <Skeleton height={width / 2.3} radius={12} />
+          </View>
         ) : goals.length === 0 ? (
           <Text style={dynamicStyles.emptyText}>
             No active goals yet.{"\n"}Create a goal to get started.

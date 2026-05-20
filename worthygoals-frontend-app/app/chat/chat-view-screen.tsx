@@ -26,6 +26,8 @@ import { ROUTE_NAMES } from "@/constants";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import TypingIndicator from "@/components/Common/TypingIndicator";
+import Skeleton from "@/components/Common/Skeleton";
 
 const { height, width } = Dimensions.get("window");
 
@@ -49,7 +51,7 @@ function ChatViewScreen() {
   const chatListRef = useRef<FlatList<ConversationMessage>>(null);
   const shouldScrollToBottomRef = useRef(false);
 
-  const { messages: apiMessages, sendText } = useMessages(chatDetail?.id);
+  const { messages: apiMessages, sendText, loading: messagesLoading, isMentorTyping } = useMessages(chatDetail?.id);
 
   const messages: ConversationMessage[] = (apiMessages ?? []).map((m) => ({
     id: m.id,
@@ -267,7 +269,12 @@ function ChatViewScreen() {
       keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
     >
       <View style={dynamicStyles.header}>
-        <TouchableOpacity onPress={navigation.goBack} style={{ marginLeft: 5 }}>
+        <TouchableOpacity
+          onPress={navigation.goBack}
+          style={{ marginLeft: 5 }}
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+        >
           <Ionicons name="arrow-back" size={24} color={colors.textWhite} />
         </TouchableOpacity>
 
@@ -293,19 +300,29 @@ function ChatViewScreen() {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        ref={chatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={renderMessage}
-        style={staticStyles.chatList}
-        contentContainerStyle={staticStyles.chatContentContainer}
-        onContentSizeChange={() => {
-          if (!shouldScrollToBottomRef.current) return;
-          shouldScrollToBottomRef.current = false;
-          requestAnimationFrame(() => scrollToBottom(true));
-        }}
-      />
+      {messagesLoading && messages.length === 0 ? (
+        <View style={[staticStyles.chatList, { paddingHorizontal: 16, paddingTop: 16 }]}>
+          <Skeleton height={40} width="65%" radius={8} style={{ marginBottom: 10 }} />
+          <Skeleton height={40} width="80%" radius={8} style={{ alignSelf: 'flex-end', marginBottom: 10 }} />
+          <Skeleton height={56} width="70%" radius={8} style={{ marginBottom: 10 }} />
+          <Skeleton height={40} width="55%" radius={8} style={{ alignSelf: 'flex-end', marginBottom: 10 }} />
+        </View>
+      ) : (
+        <FlatList
+          ref={chatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={renderMessage}
+          style={staticStyles.chatList}
+          contentContainerStyle={staticStyles.chatContentContainer}
+          onContentSizeChange={() => {
+            if (!shouldScrollToBottomRef.current) return;
+            shouldScrollToBottomRef.current = false;
+            requestAnimationFrame(() => scrollToBottom(true));
+          }}
+          ListFooterComponent={isMentorTyping ? <TypingIndicator /> : null}
+        />
+      )}
       <View style={{ marginBottom: 30 }} />
       <View style={dynamicStyles.inputContainer}>
         <ScrollView
@@ -324,7 +341,13 @@ function ChatViewScreen() {
             returnKeyType="default"
           />
         </ScrollView>
-        <TouchableOpacity style={dynamicStyles.sendButton} onPress={handleSend}>
+        <TouchableOpacity
+          style={dynamicStyles.sendButton}
+          onPress={handleSend}
+          accessibilityLabel="Send message"
+          accessibilityRole="button"
+          disabled={!inputText.trim()}
+        >
           <Ionicons
             name="send"
             size={18}
