@@ -29,6 +29,9 @@ export class TaskCompletion {
   @Column({ type: 'varchar', length: 36, nullable: true })
   memoryPictureId?: string;
 
+  @Column({ type: 'text', nullable: true })
+  mentorReaction?: string;
+
   @ManyToOne(() => Task, (t) => t.completions, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'taskId' })
   task!: Task;
