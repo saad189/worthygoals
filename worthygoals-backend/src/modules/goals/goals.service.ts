@@ -59,11 +59,15 @@ export class GoalsService {
     try {
       parsed = JSON.parse(response.text) as GoalProposalDto;
     } catch {
-      this.logger.warn('Goal proposal JSON parse failed, returning minimal proposal');
+      this.logger.warn(
+        'Goal proposal JSON parse failed, returning minimal proposal',
+      );
       parsed = { title: dto.raw.slice(0, 60) };
     }
 
-    if (!Object.values(GoalCategory).includes(parsed.category as GoalCategory)) {
+    if (
+      !Object.values(GoalCategory).includes(parsed.category as GoalCategory)
+    ) {
       parsed.category = undefined;
     }
 

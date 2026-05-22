@@ -137,12 +137,21 @@ export class TasksService {
     await this.attachReaction(result, user.id, dto.personalityId, {
       safetyText: dto.reflection ?? '',
       event: 'task.completed',
-      context: { goalName: goal.title, streak: '', reflection: dto.reflection ?? '' },
+      context: {
+        goalName: goal.title,
+        streak: '',
+        reflection: dto.reflection ?? '',
+      },
       userMessage: dto.reflection || 'I completed the task.',
     });
 
     if (dto.reflection) {
-      this.memoryService?.indexCompletion(user.id, taskId, dto.reflection, dto.personalityId);
+      this.memoryService?.indexCompletion(
+        user.id,
+        taskId,
+        dto.reflection,
+        dto.personalityId,
+      );
     }
 
     return result;
@@ -191,11 +200,17 @@ export class TasksService {
       safetyText: dto.freeText ?? '',
       event: `task.failed.${dto.reason}`,
       context: { reason: dto.reason, freeText: dto.freeText ?? '' },
-      userMessage: dto.freeText || `I ${dto.reason.replace('_', ' ')} complete the task.`,
+      userMessage:
+        dto.freeText || `I ${dto.reason.replace('_', ' ')} complete the task.`,
     });
 
     if (dto.freeText) {
-      this.memoryService?.indexExplanation(user.id, taskId, dto.freeText, dto.personalityId);
+      this.memoryService?.indexExplanation(
+        user.id,
+        taskId,
+        dto.freeText,
+        dto.personalityId,
+      );
     }
 
     return result;

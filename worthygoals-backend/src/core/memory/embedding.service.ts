@@ -19,7 +19,8 @@ export class EmbeddingService {
   ) {
     const apiKey = config.get<string>('OPENAI_API_KEY');
     this.client = apiKey ? new OpenAI({ apiKey }) : null;
-    this.model = config.get<string>('EMBEDDING_MODEL') ?? 'text-embedding-3-small';
+    this.model =
+      config.get<string>('EMBEDDING_MODEL') ?? 'text-embedding-3-small';
   }
 
   get available(): boolean {

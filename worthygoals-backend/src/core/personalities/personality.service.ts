@@ -26,8 +26,7 @@ export class PersonalityService {
       throw new NotFoundException(`Personality "${personalityId}" not found`);
     }
 
-    const eventDef =
-      personality.events[event] ?? personality.events['default'];
+    const eventDef = personality.events[event] ?? personality.events['default'];
 
     if (!eventDef) {
       throw new Error(

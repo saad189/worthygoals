@@ -9,11 +9,15 @@ describe('SafetyService', () => {
     });
 
     it('returns false for normal reflection text', () => {
-      expect(svc.isCrisisSignal('I felt tired but pushed through it.')).toBe(false);
+      expect(svc.isCrisisSignal('I felt tired but pushed through it.')).toBe(
+        false,
+      );
     });
 
     it('returns false for "not going well" without crisis terms', () => {
-      expect(svc.isCrisisSignal('Things are not going well today.')).toBe(false);
+      expect(svc.isCrisisSignal('Things are not going well today.')).toBe(
+        false,
+      );
     });
 
     it('detects "hurt myself"', () => {
@@ -33,7 +37,9 @@ describe('SafetyService', () => {
     });
 
     it('detects "self-harm"', () => {
-      expect(svc.isCrisisSignal('been thinking about self-harm again')).toBe(true);
+      expect(svc.isCrisisSignal('been thinking about self-harm again')).toBe(
+        true,
+      );
     });
   });
 

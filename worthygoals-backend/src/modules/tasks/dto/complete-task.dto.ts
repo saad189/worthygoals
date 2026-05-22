@@ -19,7 +19,9 @@ export class CompleteTaskDto {
   @IsString()
   memoryPictureId?: string;
 
-  @ApiPropertyOptional({ description: 'Personality ID for mentor reaction generation' })
+  @ApiPropertyOptional({
+    description: 'Personality ID for mentor reaction generation',
+  })
   @IsOptional()
   @IsString()
   personalityId?: string;

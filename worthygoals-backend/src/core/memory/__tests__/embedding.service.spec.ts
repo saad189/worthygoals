@@ -12,7 +12,9 @@ describe('EmbeddingService', () => {
     });
 
     it('returns -1 for opposite vectors', () => {
-      expect(EmbeddingService.cosineSimilarity([1, 0], [-1, 0])).toBeCloseTo(-1);
+      expect(EmbeddingService.cosineSimilarity([1, 0], [-1, 0])).toBeCloseTo(
+        -1,
+      );
     });
 
     it('returns 0 for zero vectors', () => {

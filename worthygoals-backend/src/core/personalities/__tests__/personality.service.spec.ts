@@ -20,7 +20,11 @@ function buildMockPersonality(id: string): PersonalitySchema {
       'task.failed.forgot': { system_prompt: 'Forgot prompt.' },
       'task.failed.chose_not_to': { system_prompt: 'Chose not to prompt.' },
     },
-    routing: { preferred_model: 'gpt-4o-mini', temperature: 0.7, max_tokens: 150 },
+    routing: {
+      preferred_model: 'gpt-4o-mini',
+      temperature: 0.7,
+      max_tokens: 150,
+    },
   };
 }
 
@@ -32,12 +36,18 @@ function buildLoader(personalities: PersonalitySchema[]): PersonalityLoader {
   return loader;
 }
 
-function buildService(
-  personalities: PersonalitySchema[],
-): PersonalityService {
+function buildService(personalities: PersonalitySchema[]): PersonalityService {
   const loader = buildLoader(personalities);
-  const personalityRepo = { findOne: jest.fn(), create: jest.fn(), save: jest.fn() } as any;
-  const userPersonalityRepo = { findOne: jest.fn(), create: jest.fn(), save: jest.fn() } as any;
+  const personalityRepo = {
+    findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+  } as any;
+  const userPersonalityRepo = {
+    findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+  } as any;
   return new PersonalityService(loader, personalityRepo, userPersonalityRepo);
 }
 

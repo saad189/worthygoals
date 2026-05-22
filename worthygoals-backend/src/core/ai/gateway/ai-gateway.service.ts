@@ -53,7 +53,7 @@ export class AiGatewayService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     @Optional() private readonly personalityService?: PersonalityService,
-  @Optional() private readonly memoryService?: MemoryService,
+    @Optional() private readonly memoryService?: MemoryService,
   ) {}
 
   async chat(req: GatewayChatRequest): Promise<GatewayChatResponse> {
@@ -185,7 +185,9 @@ export class AiGatewayService {
     }
   }
 
-  private async injectPersonality(req: GatewayChatRequest): Promise<ChatMessage[]> {
+  private async injectPersonality(
+    req: GatewayChatRequest,
+  ): Promise<ChatMessage[]> {
     if (!req.personalityId || !this.personalityService) {
       return req.messages;
     }
@@ -199,7 +201,8 @@ export class AiGatewayService {
 
       if (this.memoryService && req.userId > 0) {
         const lastUserMsg =
-          [...req.messages].reverse().find((m) => m.role === 'user')?.content ?? '';
+          [...req.messages].reverse().find((m) => m.role === 'user')?.content ??
+          '';
         const memCtx = await this.memoryService.buildContext(
           req.userId,
           req.personalityId,
