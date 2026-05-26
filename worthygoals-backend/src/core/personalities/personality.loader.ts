@@ -13,7 +13,9 @@ export class PersonalityLoader implements OnModuleInit {
   private readonly personalities = new Map<string, PersonalitySchema>();
 
   private get dataDir(): string {
-    return path.join(__dirname, 'data');
+    const distPath = path.join(__dirname, 'data');
+    if (fs.existsSync(distPath)) return distPath;
+    return path.join(process.cwd(), 'src', 'core', 'personalities', 'data');
   }
 
   onModuleInit(): void {

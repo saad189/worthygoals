@@ -42,7 +42,7 @@ export const envValidationSchema = Joi.object({
   EXPO_ACCESS_TOKEN: Joi.string().optional(), // Tier 2: graceful no-op if absent
 
   // ── Observability (optional — graceful no-op if absent) ──────────────────
-  SENTRY_DSN: Joi.string().optional(),
+  SENTRY_DSN: Joi.string().allow('').optional(),
   SUPPORT_EMAIL_SENDER: Joi.string().email().optional(),
 }).options({
   allowUnknown: true, // don't reject OS-level env vars
