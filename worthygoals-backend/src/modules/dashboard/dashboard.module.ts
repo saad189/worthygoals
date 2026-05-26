@@ -6,7 +6,10 @@ import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Goal, Task, TaskCompletion]), UsersModule],
+  imports: [
+    TypeOrmModule.forFeature([Goal, Task, TaskCompletion]),
+    UsersModule,
+  ],
   controllers: [DashboardController],
   providers: [DashboardService],
 })

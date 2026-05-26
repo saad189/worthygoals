@@ -154,7 +154,8 @@ export class DashboardService {
     let run = 1;
     for (let i = 1; i < days.length; i++) {
       const diff = Math.round(
-        (parseLocalDay(days[i]).getTime() - parseLocalDay(days[i - 1]).getTime()) /
+        (parseLocalDay(days[i]).getTime() -
+          parseLocalDay(days[i - 1]).getTime()) /
           86_400_000,
       );
       run = diff === 1 ? run + 1 : 1;
@@ -172,7 +173,11 @@ export class DashboardService {
       let check = parseLocalDay(daySet.has(todayStr) ? todayStr : yesterdayStr);
       while (daySet.has(dayStr(check))) {
         current++;
-        check = new Date(check.getFullYear(), check.getMonth(), check.getDate() - 1);
+        check = new Date(
+          check.getFullYear(),
+          check.getMonth(),
+          check.getDate() - 1,
+        );
       }
     }
 

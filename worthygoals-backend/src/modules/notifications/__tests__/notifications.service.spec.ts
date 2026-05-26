@@ -60,7 +60,10 @@ describe('NotificationsService', () => {
         timezone: 'America/Chicago',
       });
       expect(tokenRepo.upsert).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: USER_ID, token: 'ExponentPushToken[abc]' }),
+        expect.objectContaining({
+          userId: USER_ID,
+          token: 'ExponentPushToken[abc]',
+        }),
         ['userId', 'token'],
       );
     });

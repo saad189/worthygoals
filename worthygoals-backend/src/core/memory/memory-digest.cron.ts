@@ -24,7 +24,9 @@ export class MemoryDigestCron {
     }
 
     const pairs = await this.memory.getActiveUserPersonalityPairs();
-    this.logger.log(`Generating digests for ${pairs.length} user-personality pairs`);
+    this.logger.log(
+      `Generating digests for ${pairs.length} user-personality pairs`,
+    );
 
     const periodEnd = new Date();
     const periodStart = new Date();
@@ -77,6 +79,8 @@ export class MemoryDigestCron {
       }
     }
 
-    this.logger.log(`Digest run complete — ${generated}/${pairs.length} generated`);
+    this.logger.log(
+      `Digest run complete — ${generated}/${pairs.length} generated`,
+    );
   }
 }

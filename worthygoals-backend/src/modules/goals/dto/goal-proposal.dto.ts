@@ -5,13 +5,19 @@ export class GoalProposalDto {
   @ApiProperty({ example: 'Run a half-marathon' })
   title: string;
 
-  @ApiPropertyOptional({ example: '13.1 miles of training time and physical discomfort' })
+  @ApiPropertyOptional({
+    example: '13.1 miles of training time and physical discomfort',
+  })
   costText?: string;
 
-  @ApiPropertyOptional({ example: 'Improved cardiovascular health and personal accomplishment' })
+  @ApiPropertyOptional({
+    example: 'Improved cardiovascular health and personal accomplishment',
+  })
   benefitText?: string;
 
-  @ApiPropertyOptional({ example: 'Letting sedentary habits win; missing the October race window' })
+  @ApiPropertyOptional({
+    example: 'Letting sedentary habits win; missing the October race window',
+  })
   failureText?: string;
 
   @ApiPropertyOptional({ example: '2026-10-01T00:00:00.000Z' })
@@ -23,6 +29,9 @@ export class GoalProposalDto {
   @ApiPropertyOptional({ enum: GoalCategory })
   category?: GoalCategory;
 
-  @ApiPropertyOptional({ example: 'Maintain a weekly schedule of long-run, tempo, and recovery runs.' })
+  @ApiPropertyOptional({
+    example:
+      'Maintain a weekly schedule of long-run, tempo, and recovery runs.',
+  })
   description?: string;
 }

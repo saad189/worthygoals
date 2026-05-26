@@ -118,9 +118,9 @@ describe('GoalsService', () => {
 
     it('throws NotFoundException when user not found', async () => {
       usersService.findByAccountSub.mockResolvedValue(null);
-      await expect(
-        service.propose(USER_SUB, { raw: 'Test' }),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.propose(USER_SUB, { raw: 'Test' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

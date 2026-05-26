@@ -59,7 +59,10 @@ describe('TasksService', () => {
   let goalRepo: Record<string, jest.Mock>;
   let usersService: { findByAccountSub: jest.Mock };
   let aiGateway: { chat: jest.Mock };
-  let safetyService: { isCrisisSignal: jest.Mock; getCrisisResponse: jest.Mock };
+  let safetyService: {
+    isCrisisSignal: jest.Mock;
+    getCrisisResponse: jest.Mock;
+  };
 
   beforeEach(async () => {
     const qbMock = {
@@ -97,7 +100,13 @@ describe('TasksService', () => {
       findByAccountSub: jest.fn().mockResolvedValue({ id: USER_ID }),
     };
     aiGateway = {
-      chat: jest.fn().mockResolvedValue({ text: 'Stoic reaction.', model: 'gpt-4o-mini', provider: 'openai', tokensIn: 10, tokensOut: 5 }),
+      chat: jest.fn().mockResolvedValue({
+        text: 'Stoic reaction.',
+        model: 'gpt-4o-mini',
+        provider: 'openai',
+        tokensIn: 10,
+        tokensOut: 5,
+      }),
     };
     safetyService = {
       isCrisisSignal: jest.fn().mockReturnValue(false),
@@ -108,8 +117,14 @@ describe('TasksService', () => {
       providers: [
         TasksService,
         { provide: getRepositoryToken(Task), useValue: taskRepo },
-        { provide: getRepositoryToken(TaskCompletion), useValue: completionRepo },
-        { provide: getRepositoryToken(TaskExplanation), useValue: explanationRepo },
+        {
+          provide: getRepositoryToken(TaskCompletion),
+          useValue: completionRepo,
+        },
+        {
+          provide: getRepositoryToken(TaskExplanation),
+          useValue: explanationRepo,
+        },
         { provide: getRepositoryToken(Goal), useValue: goalRepo },
         { provide: UsersService, useValue: usersService },
         { provide: AiGatewayService, useValue: aiGateway },
@@ -131,7 +146,10 @@ describe('TasksService', () => {
       taskRepo.create.mockReturnValue(task);
       taskRepo.save.mockResolvedValue(task);
 
-      const result = await service.create(SUB, { title: 'Run', goalId: GOAL_ID });
+      const result = await service.create(SUB, {
+        title: 'Run',
+        goalId: GOAL_ID,
+      });
       expect(result.title).toBe('Run');
     });
 
@@ -167,7 +185,9 @@ describe('TasksService', () => {
       const comp = makeCompletion();
       completionRepo.create.mockReturnValue(comp);
       completionRepo.save.mockResolvedValue(comp);
-      taskRepo.save.mockResolvedValue(makeTask({ status: TaskStatus.COMPLETED }));
+      taskRepo.save.mockResolvedValue(
+        makeTask({ status: TaskStatus.COMPLETED }),
+      );
     });
 
     it('creates completion and marks non-repeating task completed', async () => {
@@ -182,10 +202,16 @@ describe('TasksService', () => {
     });
 
     it('returns mentor reaction when personalityId is provided', async () => {
-      const result = await service.complete(SUB, TASK_ID, { moodScore: 3, personalityId: 'marcus' });
+      const result = await service.complete(SUB, TASK_ID, {
+        moodScore: 3,
+        personalityId: 'marcus',
+      });
       expect(result.mentorReaction).toBe('Stoic reaction.');
       expect(aiGateway.chat).toHaveBeenCalledWith(
-        expect.objectContaining({ event: 'task.completed', personalityId: 'marcus' }),
+        expect.objectContaining({
+          event: 'task.completed',
+          personalityId: 'marcus',
+        }),
       );
     });
 
@@ -226,13 +252,17 @@ describe('TasksService', () => {
     });
 
     it('creates explanation and marks task skipped', async () => {
-      const result = await service.explain(SUB, TASK_ID, { reason: ExplanationReason.FORGOT });
+      const result = await service.explain(SUB, TASK_ID, {
+        reason: ExplanationReason.FORGOT,
+      });
       expect(result.data.reason).toBe(ExplanationReason.FORGOT);
       expect(taskRepo.save).toHaveBeenCalled();
     });
 
     it('returns no reaction when personalityId is absent', async () => {
-      const result = await service.explain(SUB, TASK_ID, { reason: ExplanationReason.FORGOT });
+      const result = await service.explain(SUB, TASK_ID, {
+        reason: ExplanationReason.FORGOT,
+      });
       expect(result.mentorReaction).toBeUndefined();
     });
 
@@ -243,7 +273,10 @@ describe('TasksService', () => {
       });
       expect(result.mentorReaction).toBe('Stoic reaction.');
       expect(aiGateway.chat).toHaveBeenCalledWith(
-        expect.objectContaining({ event: 'task.failed.chose_not_to', personalityId: 'goggs' }),
+        expect.objectContaining({
+          event: 'task.failed.chose_not_to',
+          personalityId: 'goggs',
+        }),
       );
     });
 

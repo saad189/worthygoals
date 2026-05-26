@@ -2,10 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
-import {
-  PersonalitySchema,
-  REQUIRED_EVENTS,
-} from './personality.schema';
+import { PersonalitySchema, REQUIRED_EVENTS } from './personality.schema';
 
 @Injectable()
 export class PersonalityLoader implements OnModuleInit {
@@ -28,7 +25,9 @@ export class PersonalityLoader implements OnModuleInit {
       .filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'));
 
     if (files.length === 0) {
-      throw new Error('PersonalityLoader: no personality YAML files found in data/');
+      throw new Error(
+        'PersonalityLoader: no personality YAML files found in data/',
+      );
     }
 
     for (const file of files) {
@@ -47,13 +46,16 @@ export class PersonalityLoader implements OnModuleInit {
     if (!p.name) throw new Error(`${ctx} missing required field: name`);
     if (!p.voice) throw new Error(`${ctx} missing required field: voice`);
     if (!p.voice.tone) throw new Error(`${ctx} voice.tone is required`);
-    if (!Array.isArray(p.voice.vocabulary)) throw new Error(`${ctx} voice.vocabulary must be an array`);
+    if (!Array.isArray(p.voice.vocabulary))
+      throw new Error(`${ctx} voice.vocabulary must be an array`);
     if (!p.events) throw new Error(`${ctx} missing required field: events`);
     if (!p.routing) throw new Error(`${ctx} missing required field: routing`);
 
     for (const event of REQUIRED_EVENTS) {
       if (!p.events[event]) {
-        throw new Error(`${ctx} personality "${p.id}" missing required event: ${event}`);
+        throw new Error(
+          `${ctx} personality "${p.id}" missing required event: ${event}`,
+        );
       }
       if (!p.events[event].system_prompt) {
         throw new Error(`${ctx} event "${event}" missing system_prompt`);

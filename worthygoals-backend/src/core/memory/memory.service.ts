@@ -72,9 +72,7 @@ export class MemoryService {
       MemorySourceType.MESSAGE,
       messageId,
       personalityId ?? null,
-    ).catch((err) =>
-      this.logger.warn(`indexMessage failed: ${err?.message}`),
-    );
+    ).catch((err) => this.logger.warn(`indexMessage failed: ${err?.message}`));
   }
 
   async buildContext(
@@ -198,9 +196,7 @@ export class MemoryService {
       select: ['embeddingText', 'createdAt'],
       order: { createdAt: 'ASC' },
     });
-    return rows
-      .filter((r) => r.createdAt >= since)
-      .map((r) => r.embeddingText);
+    return rows.filter((r) => r.createdAt >= since).map((r) => r.embeddingText);
   }
 
   async saveDigest(
