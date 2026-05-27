@@ -8,6 +8,8 @@ import {
   emitSendMessage,
 } from "@/helpers/messagesSocket";
 
+const TYPING_TIMEOUT_MS = 4000;
+
 function upsertById(items: ApiMessage[], next: ApiMessage): ApiMessage[] {
   const idx = items.findIndex((m) => m.id === next.id);
   if (idx === -1) return [...items, next];
@@ -24,8 +26,10 @@ export function useMessages(conversationId?: string) {
   const [messages, setMessages] = useState<ApiMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isMentorTyping, setIsMentorTyping] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSendRef = useRef(
     new Map<
       string,
@@ -36,6 +40,13 @@ export function useMessages(conversationId?: string) {
       }
     >()
   );
+
+  const clearTypingTimeout = useCallback(() => {
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+  }, []);
 
   const canRun = useMemo(() => Boolean(conversationId), [conversationId]);
 
@@ -119,6 +130,13 @@ export function useMessages(conversationId?: string) {
             onMessageCreated: (msg) => {
               if (cancelled) return;
               if (!msg || msg.conversationId !== conversationId) return;
+
+              // Mentor message arriving clears the typing indicator.
+              if (msg.role === "assistant") {
+                clearTypingTimeout();
+                setIsMentorTyping(false);
+              }
+
               setMessages((prev) => upsertById(prev, msg));
 
               // Resolve pending send if this is the echoed user message.
@@ -131,9 +149,18 @@ export function useMessages(conversationId?: string) {
                 }
               }
             },
+            onMentorTyping: (cid) => {
+              if (cancelled || cid !== conversationId) return;
+              setIsMentorTyping(true);
+              clearTypingTimeout();
+              // Auto-clear after timeout in case the reply never arrives.
+              typingTimeoutRef.current = setTimeout(() => {
+                setIsMentorTyping(false);
+              }, TYPING_TIMEOUT_MS);
+            },
             onConnectError: (err) => {
               if (cancelled) return;
-              // Don’t hard-fail the UI; REST still works.
+              // Don't hard-fail the UI; REST still works.
               setError(err?.message ?? "Realtime connection failed");
             },
           },
@@ -156,6 +183,7 @@ export function useMessages(conversationId?: string) {
 
     return () => {
       cancelled = true;
+      clearTypingTimeout();
 
       // Reject any pending sends for this conversation.
       for (const [key, pending] of pendingSendRef.current.entries()) {
@@ -171,12 +199,13 @@ export function useMessages(conversationId?: string) {
         disconnectMessagesSocket(socket, conversationId);
       }
     };
-  }, [conversationId]);
+  }, [conversationId, clearTypingTimeout]);
 
   return {
     messages,
     loading,
     error,
+    isMentorTyping,
     refresh,
     sendText,
   };

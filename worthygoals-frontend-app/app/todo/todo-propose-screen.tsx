@@ -18,11 +18,10 @@ import Button from '@/components/SubComponents/Button';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useGoalProposal } from '@/hooks/useGoalProposal';
 import { ROUTE_NAMES } from '@/constants/Routes';
+import Skeleton from '@/components/Common/Skeleton';
 
 function SkeletonLine({ width = '100%' }: { width?: string | number }) {
-  return (
-    <View style={[styles.skeletonLine, { width: width as any, opacity: 0.25 }]} />
-  );
+  return <Skeleton height={14} width={width as any} radius={6} />;
 }
 
 function FieldSkeleton({ label }: { label: string }) {
@@ -224,11 +223,6 @@ const styles = StyleSheet.create({
     gap: 8,
     minHeight: 64,
     justifyContent: 'center',
-  },
-  skeletonLine: {
-    height: 14,
-    borderRadius: 6,
-    backgroundColor: 'white',
   },
   footerInScroll: {
     marginTop: 24,

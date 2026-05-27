@@ -12,8 +12,10 @@ import BottomSheet, {
   BottomSheetView,
   BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
+import { MotiView } from 'moti';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ExplainTaskPayload, ExplanationReason } from '@/models';
+import { triggerPersonalityHaptic, triggerSelectionHaptic } from '@/helpers/haptics';
 
 const REASONS: { value: ExplanationReason; label: string; description: string }[] = [
   { value: 'couldnt', label: "Couldn't do it", description: 'Something blocked me' },
@@ -23,6 +25,7 @@ const REASONS: { value: ExplanationReason; label: string; description: string }[
 
 interface Props {
   taskTitle?: string;
+  personalityId?: string | null;
   submitting: boolean;
   mentorReaction?: string | null;
   safetyFlag?: boolean;
@@ -36,7 +39,7 @@ export interface ExplanationSheetHandle {
 }
 
 const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
-  ({ taskTitle, submitting, mentorReaction, safetyFlag, onSubmit, onClose }, ref) => {
+  ({ taskTitle, personalityId, submitting, mentorReaction, safetyFlag, onSubmit, onClose }, ref) => {
     const { colors, space, radius } = useAppTheme();
     const sheetRef = useRef<BottomSheet>(null);
     const [reason, setReason] = useState<ExplanationReason | null>(null);
@@ -58,9 +61,15 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
       [],
     );
 
+    const handleReasonSelect = (value: ExplanationReason) => {
+      triggerSelectionHaptic();
+      setReason(value);
+    };
+
     const handleSubmit = () => {
       if (!reason) return;
-      onSubmit({ reason });
+      triggerPersonalityHaptic(personalityId);
+      onSubmit({ reason, personalityId: personalityId ?? undefined });
     };
 
     const s = StyleSheet.create({
@@ -151,7 +160,12 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
     });
 
     const renderReactionView = () => (
-      <View style={s.reactionCard}>
+      <MotiView
+        from={{ opacity: 0, translateY: 16 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: 'timing', duration: 350 }}
+        style={s.reactionCard}
+      >
         <Text style={s.reactionLabel}>
           {showingCrisis ? 'Resources' : 'Your mentor says'}
         </Text>
@@ -160,10 +174,15 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
             ? "Your wellbeing matters far more than any goal.\n\nIf you're in crisis:\n• Call or text 988\n• Text HOME to 741741\n• findahelpline.com"
             : mentorReaction}
         </Text>
-        <TouchableOpacity style={s.doneBtn} onPress={onClose}>
+        <TouchableOpacity
+          style={s.doneBtn}
+          onPress={onClose}
+          accessibilityLabel="Done"
+          accessibilityRole="button"
+        >
           <Text style={s.doneBtnText}>Done</Text>
         </TouchableOpacity>
-      </View>
+      </MotiView>
     );
 
     return (
@@ -199,7 +218,10 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
                         backgroundColor: selected ? colors.primarySubtle : colors.canvas,
                       },
                     ]}
-                    onPress={() => setReason(value)}
+                    onPress={() => handleReasonSelect(value)}
+                    accessibilityLabel={label}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
                   >
                     <View>
                       <Text style={[s.optionLabel, { color: selected ? colors.primary : colors.text }]}>
@@ -215,6 +237,9 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
                 style={[s.submitBtn, { backgroundColor: reason ? colors.primary : colors.border }]}
                 onPress={handleSubmit}
                 disabled={!reason || submitting}
+                accessibilityLabel="Submit explanation"
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !reason || submitting }}
               >
                 {submitting ? (
                   <ActivityIndicator color={colors.textWhite} />

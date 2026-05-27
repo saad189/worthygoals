@@ -6,6 +6,7 @@ import type { ApiMessage } from "@/models";
 
 export type MessagesSocketHandlers = {
   onMessageCreated?: (msg: ApiMessage) => void;
+  onMentorTyping?: (conversationId: string) => void;
   onConnectError?: (err: any) => void;
 };
 
@@ -29,6 +30,10 @@ export async function connectMessagesSocket(params: {
 
   socket.on("messageCreated", (msg: ApiMessage) => {
     params.handlers?.onMessageCreated?.(msg);
+  });
+
+  socket.on("mentorTyping", (data: { conversationId: string }) => {
+    params.handlers?.onMentorTyping?.(data?.conversationId);
   });
 
   socket.on("connect_error", (err: any) => {

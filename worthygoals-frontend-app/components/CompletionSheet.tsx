@@ -15,11 +15,13 @@ import BottomSheet, {
   BottomSheetView,
   BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
+import { MotiView } from 'moti';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { CompleteTaskPayload } from '@/models';
 import { mediaService } from '@/services/media.service';
+import { triggerPersonalityHaptic, triggerSelectionHaptic } from '@/helpers/haptics';
 
 const MOODS: { score: 1 | 2 | 3 | 4; emoji: string; label: string }[] = [
   { score: 1, emoji: '😣', label: 'Tough' },
@@ -40,6 +42,7 @@ const CRISIS_RESOURCES =
 
 interface Props {
   taskTitle?: string;
+  personalityId?: string | null;
   submitting: boolean;
   mentorReaction?: string | null;
   safetyFlag?: boolean;
@@ -53,7 +56,7 @@ export interface CompletionSheetHandle {
 }
 
 const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
-  ({ taskTitle, submitting, mentorReaction, safetyFlag, onSubmit, onClose }, ref) => {
+  ({ taskTitle, personalityId, submitting, mentorReaction, safetyFlag, onSubmit, onClose }, ref) => {
     const { colors, space, radius } = useAppTheme();
     const sheetRef = useRef<BottomSheet>(null);
     const [mood, setMood] = useState<1 | 2 | 3 | 4 | null>(null);
@@ -140,11 +143,18 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
 
     const handleSubmit = () => {
       if (!mood) return;
+      triggerPersonalityHaptic(personalityId);
       onSubmit({
         moodScore: mood,
         reflection: reflection.trim() || undefined,
         memoryPictureId: mediaId ?? undefined,
+        personalityId: personalityId ?? undefined,
       });
+    };
+
+    const handleMoodPress = (score: 1 | 2 | 3 | 4) => {
+      triggerSelectionHaptic();
+      setMood(score);
     };
 
     const s = StyleSheet.create({
@@ -284,7 +294,12 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
     });
 
     const renderReactionView = () => (
-      <View style={s.reactionCard}>
+      <MotiView
+        from={{ opacity: 0, translateY: 16 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: 'timing', duration: 350 }}
+        style={s.reactionCard}
+      >
         <Text style={s.reactionLabel}>
           {showingCrisis ? 'Resources' : 'Your mentor says'}
         </Text>
@@ -293,10 +308,15 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
             ? CRISIS_RESOURCES
             : mentorReaction}
         </Text>
-        <TouchableOpacity style={s.doneBtn} onPress={onClose}>
+        <TouchableOpacity
+          style={s.doneBtn}
+          onPress={onClose}
+          accessibilityLabel="Done"
+          accessibilityRole="button"
+        >
           <Text style={s.doneBtnText}>Done</Text>
         </TouchableOpacity>
-      </View>
+      </MotiView>
     );
 
     return (
@@ -333,7 +353,10 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
                           backgroundColor: selected ? colors.primarySubtle : colors.canvas,
                         },
                       ]}
-                      onPress={() => setMood(score)}
+                      onPress={() => handleMoodPress(score)}
+                      accessibilityLabel={`Mood: ${label}`}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected }}
                     >
                       <Text style={s.moodEmoji}>{emoji}</Text>
                       <Text style={[s.moodLabel, { color: selected ? colors.primary : colors.textMuted }]}>
@@ -381,6 +404,9 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
                 style={[s.submitBtn, { backgroundColor: mood ? colors.primary : colors.border }]}
                 onPress={handleSubmit}
                 disabled={!mood || submitting || photoUploading}
+                accessibilityLabel="Submit completion"
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !mood || submitting || photoUploading }}
               >
                 {submitting ? (
                   <ActivityIndicator color={colors.textWhite} />
@@ -392,6 +418,8 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
               <TouchableOpacity
                 style={s.notOkayBtn}
                 onPress={() => setLocalCrisis(true)}
+                accessibilityLabel="I'm not okay — get support resources"
+                accessibilityRole="button"
               >
                 <Text style={s.notOkayText}>I'm not okay</Text>
               </TouchableOpacity>
