@@ -8,32 +8,57 @@ Sentry.init({
 });
 
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import helmet from 'helmet';
 import { AppModule } from './modules/app/app.module';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const PORT = process.env.PORT || 3000;
-  const serverUrl = `${process.env.SERVER_URL}:${PORT}`;
+  const isProduction = process.env.NODE_ENV === 'production';
 
+  // Security headers
+  app.use(helmet());
+
+  // CORS: use ALLOWED_ORIGINS env var in production; allow all in development
+  const rawOrigins = process.env.ALLOWED_ORIGINS;
+  const allowedOrigins = rawOrigins
+    ? rawOrigins.split(',').map((o) => o.trim())
+    : null;
   app.enableCors({
-    origin: true,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    origin: allowedOrigins ?? (isProduction ? false : true),
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
 
-  const options = new DocumentBuilder()
-    .setTitle('Worthy Goals API')
-    .setDescription('Backend Server API')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .addServer(serverUrl, 'Local environment')
-    // .addServer('https://staging.yourapi.com/', 'Staging')
-    //  .addServer('https://production.yourapi.com/', 'Production')
-    .build();
+  // Global validation — strip unknown fields, fail on unexpected ones
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
 
-  const document = SwaggerModule.createDocument(app, options);
-  SwaggerModule.setup('api-docs', app, document);
+  // Global exception filter — consistent error shape
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  // Swagger: only expose in non-production
+  if (!isProduction) {
+    const serverUrl = `${process.env.SERVER_URL ?? 'http://localhost'}:${PORT}`;
+    const options = new DocumentBuilder()
+      .setTitle('Worthy Goals API')
+      .setDescription('Backend Server API')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addServer(serverUrl, 'Local environment')
+      .build();
+    const document = SwaggerModule.createDocument(app, options);
+    SwaggerModule.setup('api-docs', app, document);
+  }
+
   await app.listen(PORT, '0.0.0.0');
   console.log(`Server running on port ${PORT}`);
 }
