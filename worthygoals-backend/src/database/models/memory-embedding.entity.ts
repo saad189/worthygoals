@@ -30,9 +30,8 @@ export class MemoryEmbedding {
   @Column({ type: 'text' })
   embeddingText: string;
 
-  // Float array stored as JSON — pgvector-ready (swap to vector(1536) on Postgres)
-  @Column({ type: 'longtext' })
-  embeddingJson: string;
+  // embedding (vector(1536)) is managed via raw SQL — not declared here so
+  // TypeORM never tries to read/write it through the ORM layer.
 
   @Column({ type: 'varchar', length: 64, nullable: true })
   personalityId: string | null;

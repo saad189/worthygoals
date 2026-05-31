@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MySQLConfiguration } from './mysql.config';
+import { DatabaseConfiguration } from './database.config';
 import { envValidationSchema } from './env.validation';
 
 @Module({
@@ -11,7 +11,7 @@ import { envValidationSchema } from './env.validation';
       validationSchema: envValidationSchema,
     }),
   ],
-  providers: [ConfigService, MySQLConfiguration],
-  exports: [MySQLConfiguration],
+  providers: [ConfigService, DatabaseConfiguration],
+  exports: [DatabaseConfiguration],
 })
 export class CustomConfigModule {}

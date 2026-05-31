@@ -6,7 +6,7 @@ export const envValidationSchema = Joi.object({
   PORT: Joi.number().default(3000),
   SERVER_URL: Joi.string().default('http://localhost'),
 
-  // ── Database ─────────────────────────────────────────────────────────────
+  // ── Database (PostgreSQL + pgvector) ─────────────────────────────────────
   DB_HOST: Joi.string().required(),
   DB_PORT: Joi.number().required(),
   DB_USERNAME: Joi.string().required(),
