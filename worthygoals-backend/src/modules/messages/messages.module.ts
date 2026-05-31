@@ -8,6 +8,7 @@ import { MessagesService } from './messages.service';
 import { UsersModule } from 'src/modules/users/users.module';
 import { AiModule } from 'src/core/ai';
 import { MemoryModule } from 'src/core/memory/memory.module';
+import { SafetyModule } from 'src/core/safety/safety.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { MemoryModule } from 'src/core/memory/memory.module';
     UsersModule,
     AiModule,
     MemoryModule,
+    SafetyModule,
   ],
   controllers: [MessagesController],
   providers: [MessagesService, MessagesGateway],
