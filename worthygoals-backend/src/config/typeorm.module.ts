@@ -58,7 +58,9 @@ export class TypeOrmDatabaseModule implements OnModuleInit {
         this.logger.error('❌ Seeding failed:', error);
       }
     } else {
-      this.logger.error('❌ Database connection is not initialized. Skipping seeding.');
+      this.logger.error(
+        '❌ Database connection is not initialized. Skipping seeding.',
+      );
     }
   }
 }

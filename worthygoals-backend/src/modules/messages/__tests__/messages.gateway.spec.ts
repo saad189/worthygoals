@@ -39,7 +39,10 @@ describe('MessagesGateway — safety gate', () => {
     createMentorTextMessage: jest.Mock;
   };
   let agentService: { generateMentorReply: jest.Mock };
-  let safetyService: { isCrisisSignal: jest.Mock; getCrisisResponse: jest.Mock };
+  let safetyService: {
+    isCrisisSignal: jest.Mock;
+    getCrisisResponse: jest.Mock;
+  };
 
   beforeEach(async () => {
     messagesService = {
