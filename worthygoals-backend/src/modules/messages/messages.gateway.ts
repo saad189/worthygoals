@@ -11,6 +11,7 @@ import { Server, Socket } from 'socket.io';
 import { WsJwtAuthGuard } from 'src/common/guards/ws-jwtauth.guard';
 import { MessagesService } from './messages.service';
 import { AgentService } from 'src/core/ai';
+import { SafetyService } from 'src/core/safety/safety.service';
 import { MessageResponseDto } from './dto/message-response.dto';
 
 @WebSocketGateway({ namespace: '/messages', cors: true })
@@ -21,6 +22,7 @@ export class MessagesGateway {
   constructor(
     private readonly messagesService: MessagesService,
     private readonly agentService: AgentService,
+    private readonly safetyService: SafetyService,
   ) {}
 
   private roomForConversation(conversationId: string) {
@@ -96,10 +98,29 @@ export class MessagesGateway {
     const userPayload = MessageResponseDto.fromEntity(userMessage);
     this.emitMessageCreated(conversationId, userPayload);
 
-    // 2) Signal mentor is composing before the AI call
+    // 2) Safety gate — crisis signals bypass AI entirely
+    if (this.safetyService.isCrisisSignal(text)) {
+      const crisisMessage = await this.messagesService.createMentorTextMessage({
+        conversationId,
+        text: this.safetyService.getCrisisResponse(),
+        tokensIn: null,
+        tokensOut: null,
+      });
+      this.emitMessageCreated(
+        conversationId,
+        MessageResponseDto.fromEntity(crisisMessage),
+      );
+      return {
+        ok: true,
+        userMessageId: userMessage.id,
+        mentorMessageId: crisisMessage.id,
+      };
+    }
+
+    // 3) Signal mentor is composing before the AI call
     this.emitMentorTyping(conversationId);
 
-    // 3) Generate agent reply
+    // 4) Generate agent reply
     if (!userMessage.userId) {
       throw new WsException('User message missing userId');
     }
@@ -109,7 +130,7 @@ export class MessagesGateway {
       userId: userMessage.userId,
     });
 
-    // 4) Save mentor message
+    // 5) Save mentor message
     const mentorMessage = await this.messagesService.createMentorTextMessage({
       conversationId,
       text: reply.replyText,
