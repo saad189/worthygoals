@@ -164,6 +164,30 @@ describe('AgentService', () => {
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
+
+    it('passes personalityId and event:chat to gateway when mentor has a mapping', async () => {
+      await service.generateMentorReply({
+        conversationId: CONV_ID,
+        userId: USER_ID,
+      });
+
+      expect(gateway.chat).toHaveBeenCalledWith(
+        expect.objectContaining({ personalityId: 'goggs', event: 'chat' }),
+      );
+    });
+
+    it('passes undefined personalityId to gateway when mentor has no mapping', async () => {
+      mentorRepo.findOne.mockResolvedValue(makeMentor({ personalityId: null }));
+
+      await service.generateMentorReply({
+        conversationId: CONV_ID,
+        userId: USER_ID,
+      });
+
+      expect(gateway.chat).toHaveBeenCalledWith(
+        expect.objectContaining({ personalityId: undefined, event: 'chat' }),
+      );
+    });
   });
 
   describe('validatePersonalityMappings', () => {
