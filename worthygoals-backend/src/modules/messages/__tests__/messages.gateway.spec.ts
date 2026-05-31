@@ -118,6 +118,65 @@ describe('MessagesGateway — safety gate', () => {
         mentorMessageId: MENTOR_MSG_ID,
       });
     });
+
+    it('passes onChunk callback to agentService (S19 streaming)', async () => {
+      messagesService.createMentorTextMessage.mockResolvedValue(
+        makeMentorMessage(MENTOR_MSG_ID),
+      );
+
+      await gateway.handleSendMessage(makeSocket(), {
+        conversationId: CONV_ID,
+        text: 'How do I stay consistent?',
+      });
+
+      const callArgs = agentService.generateMentorReply.mock.calls[0][0];
+      expect(typeof callArgs.onChunk).toBe('function');
+    });
+
+    it('emits messageChunk events when onChunk is called', async () => {
+      messagesService.createMentorTextMessage.mockResolvedValue(
+        makeMentorMessage(MENTOR_MSG_ID),
+      );
+
+      agentService.generateMentorReply.mockImplementation(
+        async (params: { onChunk?: (c: string) => void }) => {
+          params.onChunk?.('token1');
+          params.onChunk?.(' token2');
+          return {
+            replyText: 'token1 token2',
+            model: 'gpt-4o-mini',
+            provider: 'openai',
+            tokensIn: 10,
+            tokensOut: 20,
+          };
+        },
+      );
+
+      const emittedEvents: Array<{ event: string; data: unknown }> = [];
+      (gateway as any).server = {
+        to: jest.fn().mockReturnValue({
+          emit: jest.fn((event: string, data: unknown) =>
+            emittedEvents.push({ event, data }),
+          ),
+        }),
+      };
+
+      await gateway.handleSendMessage(makeSocket(), {
+        conversationId: CONV_ID,
+        text: 'How do I stay consistent?',
+      });
+
+      const chunkEvents = emittedEvents.filter((e) => e.event === 'messageChunk');
+      expect(chunkEvents).toHaveLength(2);
+      expect(chunkEvents[0].data).toEqual({
+        conversationId: CONV_ID,
+        chunk: 'token1',
+      });
+      expect(chunkEvents[1].data).toEqual({
+        conversationId: CONV_ID,
+        chunk: ' token2',
+      });
+    });
   });
 
   describe('crisis message', () => {

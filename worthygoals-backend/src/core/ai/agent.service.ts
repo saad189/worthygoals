@@ -144,6 +144,7 @@ ${traitLine}
     conversationId: string;
     userId: number;
     recentLimit?: number;
+    onChunk?: (chunk: string) => void;
   }): Promise<{
     replyText: string;
     model: string;
@@ -208,7 +209,7 @@ ${traitLine}
     const temperature = mentor.promptBlocks?.temperature;
     const maxTokens = mentor.promptBlocks?.maxOutputTokens;
 
-    const result = await this.gateway.chat({
+    const gatewayReq = {
       userId: params.userId,
       feature: 'chat',
       messages,
@@ -217,7 +218,11 @@ ${traitLine}
       maxTokens,
       personalityId: mentor.personalityId ?? undefined,
       event: 'chat',
-    });
+    };
+
+    const result = params.onChunk
+      ? await this.gateway.chatStream(gatewayReq, params.onChunk)
+      : await this.gateway.chat(gatewayReq);
 
     return {
       replyText: result.text,

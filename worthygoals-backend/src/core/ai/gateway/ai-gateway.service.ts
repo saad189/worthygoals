@@ -1,10 +1,9 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import { HttpException, Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AiCall } from 'src/database/models/ai-call.entity';
+import { DriftSample } from 'src/database/models/drift-sample.entity';
 import { User } from 'src/database/models/user.entity';
 import { UserTier } from 'src/common/constants/enums';
 import { QuotaExceededException, QuotaService } from '../quota/quota.service';
@@ -52,11 +51,27 @@ export class AiGatewayService {
     private readonly aiCallRepo: Repository<AiCall>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @InjectRepository(DriftSample)
+    private readonly driftRepo: Repository<DriftSample>,
     @Optional() private readonly personalityService?: PersonalityService,
     @Optional() private readonly memoryService?: MemoryService,
   ) {}
 
   async chat(req: GatewayChatRequest): Promise<GatewayChatResponse> {
+    return this.chatInternal(req);
+  }
+
+  async chatStream(
+    req: GatewayChatRequest,
+    onChunk: (chunk: string) => void,
+  ): Promise<GatewayChatResponse> {
+    return this.chatInternal(req, onChunk);
+  }
+
+  private async chatInternal(
+    req: GatewayChatRequest,
+    onChunk?: (chunk: string) => void,
+  ): Promise<GatewayChatResponse> {
     const user = await this.userRepo.findOne({
       where: { id: req.userId },
       select: { id: true, tier: true },
@@ -76,18 +91,22 @@ export class AiGatewayService {
     const primary = this.resolveActiveProvider();
     const fallback = primary === this.openai ? this.anthropic : this.openai;
 
+    const params = {
+      messages,
+      model: req.model,
+      temperature: req.temperature,
+      maxTokens: req.maxTokens,
+    };
+
     const t0 = Date.now();
     let result: Awaited<ReturnType<IChatProvider['chat']>> | null = null;
     let usedProvider: IChatProvider = primary;
 
     if (primary.available && this.breaker.isAvailable(primary.name)) {
       try {
-        result = await primary.chat({
-          messages,
-          model: req.model,
-          temperature: req.temperature,
-          maxTokens: req.maxTokens,
-        });
+        result = onChunk && primary.chatStream
+          ? await primary.chatStream(params, onChunk)
+          : await primary.chat(params);
         this.breaker.recordSuccess(primary.name);
       } catch (err: any) {
         this.logger.warn(
@@ -103,11 +122,9 @@ export class AiGatewayService {
       this.breaker.isAvailable(fallback.name)
     ) {
       try {
-        result = await fallback.chat({
-          messages,
-          temperature: req.temperature,
-          maxTokens: req.maxTokens,
-        });
+        result = onChunk && fallback.chatStream
+          ? await fallback.chatStream(params, onChunk)
+          : await fallback.chat(params);
         this.breaker.recordSuccess(fallback.name);
         usedProvider = fallback;
       } catch (err: any) {
@@ -162,27 +179,23 @@ export class AiGatewayService {
 
   private maybeSampleDrift(req: GatewayChatRequest, output: string): void {
     if (Math.random() >= 0.001) return;
-    try {
-      const driftDir =
-        this.config.get<string>('EVAL_DRIFT_DIR') ??
-        path.join(process.cwd(), 'eval', 'drift');
-      if (!fs.existsSync(driftDir)) return;
-      const date = new Date().toISOString().slice(0, 10);
-      const file = path.join(driftDir, `${date}.jsonl`);
-      const entry = JSON.stringify({
-        ts: new Date().toISOString(),
-        personality: req.personalityId ?? null,
-        event: req.event ?? null,
-        userMessage:
-          [...req.messages].reverse().find((m) => m.role === 'user')?.content ??
-          null,
-        output,
-        model: req.model ?? null,
+    const userMessage =
+      [...req.messages].reverse().find((m) => m.role === 'user')?.content ??
+      null;
+
+    this.driftRepo
+      .save(
+        this.driftRepo.create({
+          personalityId: req.personalityId ?? null,
+          event: req.event ?? null,
+          userMessage,
+          output,
+          model: req.model ?? null,
+        }),
+      )
+      .catch((err) => {
+        this.logger.error(`Failed to save drift sample: ${err.message}`);
       });
-      fs.appendFileSync(file, entry + '\n');
-    } catch {
-      // drift sampling is best-effort; never throw
-    }
   }
 
   private async injectPersonality(

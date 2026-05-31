@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
-import { ChatMessage, IChatProvider } from './types';
+import { ChatProviderParams, ChatProviderResult, IChatProvider } from './types';
 
 @Injectable()
 export class OpenAiProvider implements IChatProvider {
@@ -25,12 +25,7 @@ export class OpenAiProvider implements IChatProvider {
     }
   }
 
-  async chat(params: {
-    messages: ChatMessage[];
-    model?: string;
-    temperature?: number;
-    maxTokens?: number;
-  }) {
+  async chat(params: ChatProviderParams): Promise<ChatProviderResult> {
     if (!this.client) throw new Error('OpenAI provider is not configured');
 
     const completion = await this.client.chat.completions.create({
@@ -52,5 +47,41 @@ export class OpenAiProvider implements IChatProvider {
           ? usage.completion_tokens
           : null,
     };
+  }
+
+  async chatStream(
+    params: ChatProviderParams,
+    onChunk: (chunk: string) => void,
+  ): Promise<ChatProviderResult> {
+    if (!this.client) throw new Error('OpenAI provider is not configured');
+
+    const stream = await this.client.chat.completions.create({
+      model: params.model ?? this.defaultModel,
+      messages: params.messages,
+      temperature: params.temperature,
+      max_tokens: params.maxTokens,
+      stream: true,
+      stream_options: { include_usage: true },
+    });
+
+    let text = '';
+    let tokensIn: number | null = null;
+    let tokensOut: number | null = null;
+    let model = params.model ?? this.defaultModel;
+
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content;
+      if (delta) {
+        text += delta;
+        onChunk(delta);
+      }
+      if (chunk.usage) {
+        tokensIn = chunk.usage.prompt_tokens ?? null;
+        tokensOut = chunk.usage.completion_tokens ?? null;
+      }
+      if ((chunk as any).model) model = (chunk as any).model;
+    }
+
+    return { text, model, tokensIn, tokensOut };
   }
 }

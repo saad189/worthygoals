@@ -69,6 +69,12 @@ export class MessagesGateway {
       .emit('mentorTyping', { conversationId });
   }
 
+  emitMessageChunk(conversationId: string, chunk: string) {
+    this.server
+      .to(this.roomForConversation(conversationId))
+      .emit('messageChunk', { conversationId, chunk });
+  }
+
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('send_message')
   async handleSendMessage(
@@ -117,10 +123,10 @@ export class MessagesGateway {
       };
     }
 
-    // 3) Signal mentor is composing before the AI call
+    // 3) Signal mentor is composing before streaming starts
     this.emitMentorTyping(conversationId);
 
-    // 4) Generate agent reply
+    // 4) Generate agent reply with token streaming
     if (!userMessage.userId) {
       throw new WsException('User message missing userId');
     }
@@ -128,9 +134,10 @@ export class MessagesGateway {
     const reply = await this.agentService.generateMentorReply({
       conversationId,
       userId: userMessage.userId,
+      onChunk: (chunk) => this.emitMessageChunk(conversationId, chunk),
     });
 
-    // 5) Save mentor message
+    // 5) Save complete mentor message and emit final event
     const mentorMessage = await this.messagesService.createMentorTextMessage({
       conversationId,
       text: reply.replyText,
