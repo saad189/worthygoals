@@ -6,6 +6,7 @@ const mockEmbeddingRepo = {
   save: jest.fn(async (data) => data),
   find: jest.fn(async () => []),
   findOne: jest.fn(async () => null),
+  manager: { query: jest.fn(async () => []) },
   createQueryBuilder: jest.fn(() => ({
     select: jest.fn().mockReturnThis(),
     addSelect: jest.fn().mockReturnThis(),
@@ -47,7 +48,7 @@ describe('MemoryService', () => {
       svc.indexCompletion(1, 'task-uuid', 'Ran 5k today', 'marcus');
       await new Promise((r) => setTimeout(r, 20));
       expect(mockEmbeddingService.embed).toHaveBeenCalledWith('Ran 5k today');
-      expect(mockEmbeddingRepo.save).toHaveBeenCalled();
+      expect(mockEmbeddingRepo.manager.query).toHaveBeenCalled();
     });
 
     it('skips embedding for empty text', async () => {

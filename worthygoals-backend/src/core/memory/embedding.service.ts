@@ -1,8 +1,9 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThanOrEqual, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import OpenAI from 'openai';
+import { toSql } from 'pgvector';
 import { MemoryEmbedding } from 'src/database/models/memory-embedding.entity';
 
 @Injectable()
@@ -41,6 +42,7 @@ export class EmbeddingService {
     }
   }
 
+  // Kept for tests and as a fallback utility.
   static cosineSimilarity(a: number[], b: number[]): number {
     let dot = 0;
     let normA = 0;
@@ -63,32 +65,36 @@ export class EmbeddingService {
   ): Promise<Array<{ text: string; score: number }>> {
     if (!this.embeddingRepo) return [];
     try {
-      const where: Record<string, unknown> = { userId };
-      if (personalityId) where.personalityId = personalityId;
-      if (sinceDate) where.createdAt = MoreThanOrEqual(sinceDate);
+      const vecStr = toSql(queryEmbedding);
+      const params: unknown[] = [vecStr, userId];
+      const conditions: string[] = [`"userId" = $2`];
 
-      const rows = await this.embeddingRepo.find({
-        where,
-        select: ['embeddingText', 'embeddingJson'],
-        order: { createdAt: 'DESC' },
-        take: 500,
-      });
+      if (personalityId) {
+        conditions.push(`"personalityId" = $${params.length + 1}`);
+        params.push(personalityId);
+      }
+      if (sinceDate) {
+        conditions.push(`"createdAt" >= $${params.length + 1}`);
+        params.push(sinceDate);
+      }
+      const limitIdx = params.length + 1;
+      params.push(limit);
 
-      return rows
-        .map((row) => {
-          try {
-            const vec: number[] = JSON.parse(row.embeddingJson);
-            return {
-              text: row.embeddingText,
-              score: EmbeddingService.cosineSimilarity(queryEmbedding, vec),
-            };
-          } catch {
-            return null;
-          }
-        })
-        .filter((x): x is { text: string; score: number } => x !== null)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, limit);
+      const rows = await this.embeddingRepo.manager.query<
+        Array<{ embeddingText: string; score: string }>
+      >(
+        `SELECT "embeddingText", 1 - (embedding <=> $1::vector) AS score
+         FROM memory_embeddings
+         WHERE ${conditions.join(' AND ')}
+         ORDER BY embedding <=> $1::vector
+         LIMIT $${limitIdx}`,
+        params,
+      );
+
+      return rows.map((r) => ({
+        text: r.embeddingText,
+        score: parseFloat(r.score),
+      }));
     } catch (err: any) {
       this.logger.warn(`Vector search failed: ${err?.message}`);
       return [];

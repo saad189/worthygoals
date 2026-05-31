@@ -1,6 +1,7 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { toSql } from 'pgvector';
 import {
   MemoryEmbedding,
   MemorySourceType,
@@ -126,15 +127,13 @@ export class MemoryService {
     const vec = await this.embeddings.embed(text);
     if (!vec) return;
 
-    const row = this.embeddingRepo.create({
-      userId,
-      sourceType,
-      sourceId,
-      embeddingText: text.slice(0, 2000),
-      embeddingJson: JSON.stringify(vec),
-      personalityId,
-    });
-    await this.embeddingRepo.save(row);
+    await this.embeddingRepo.manager.query(
+      `INSERT INTO memory_embeddings
+         (id, "userId", "sourceType", "sourceId", "embeddingText", embedding, "personalityId", "createdAt")
+       VALUES
+         (gen_random_uuid(), $1, $2, $3, $4, $5::vector, $6, NOW())`,
+      [userId, sourceType, sourceId, text.slice(0, 2000), toSql(vec), personalityId],
+    );
   }
 
   private async getShortTerm(
