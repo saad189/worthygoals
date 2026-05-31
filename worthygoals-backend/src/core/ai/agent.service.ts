@@ -1,7 +1,10 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
+  OnModuleInit,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,9 +15,12 @@ import { ConversationSummary } from 'src/database/models/conversation-summary.en
 import { MessageRole } from 'src/common/constants';
 import { ChatMessage } from './gateway/types';
 import { AiGatewayService } from './gateway/ai-gateway.service';
+import { PersonalityService } from 'src/core/personalities/personality.service';
 
 @Injectable()
-export class AgentService {
+export class AgentService implements OnModuleInit {
+  private readonly logger = new Logger(AgentService.name);
+
   constructor(
     @InjectRepository(MentorEntity)
     private readonly mentorRepository: Repository<MentorEntity>,
@@ -25,7 +31,48 @@ export class AgentService {
     @InjectRepository(ConversationSummary)
     private readonly conversationSummaryRepository: Repository<ConversationSummary>,
     private readonly gateway: AiGatewayService,
+    @Optional() private readonly personalityService?: PersonalityService,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    await this.validatePersonalityMappings();
+  }
+
+  async validatePersonalityMappings(): Promise<{
+    valid: string[];
+    missing: string[];
+    invalid: string[];
+  }> {
+    const activeMentors = await this.mentorRepository.find({
+      where: { isActive: true },
+      select: ['slug', 'personalityId'],
+    });
+
+    const valid: string[] = [];
+    const missing: string[] = [];
+    const invalid: string[] = [];
+
+    for (const mentor of activeMentors) {
+      if (!mentor.personalityId) {
+        missing.push(mentor.slug);
+        this.logger.warn(
+          `Mentor "${mentor.slug}" has no personalityId — YAML runtime will not engage for this mentor`,
+        );
+      } else if (
+        this.personalityService &&
+        !this.personalityService.hasPersonality(mentor.personalityId)
+      ) {
+        invalid.push(mentor.slug);
+        this.logger.warn(
+          `Mentor "${mentor.slug}" has personalityId "${mentor.personalityId}" but no matching YAML personality exists`,
+        );
+      } else {
+        valid.push(mentor.slug);
+      }
+    }
+
+    return { valid, missing, invalid };
+  }
 
   async buildAgentInstructionsByMentorId(mentorId: number): Promise<string> {
     const mentor = await this.mentorRepository.findOne({
@@ -103,6 +150,7 @@ ${traitLine}
     provider: string;
     tokensIn: number | null;
     tokensOut: number | null;
+    personalityId: string | null;
   }> {
     const conversation = await this.conversationRepository.findOne({
       where: { id: params.conversationId },
@@ -175,6 +223,7 @@ ${traitLine}
       provider: result.provider,
       tokensIn: result.tokensIn,
       tokensOut: result.tokensOut,
+      personalityId: mentor.personalityId ?? null,
     };
   }
 }

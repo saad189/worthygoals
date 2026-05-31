@@ -45,6 +45,7 @@ function hasRelation(repo: { metadata: any }, propertyName: string): boolean {
 const MENTOR_DATA: Array<Partial<Mentor> & { tagSlugs?: string[] }> = [
   {
     slug: 'imam-hakeem',
+    personalityId: 'marcus',
     name: 'Imam Hakeem',
     title: 'Faith & Daily Practice',
     shortDescription:
@@ -120,6 +121,7 @@ const MENTOR_DATA: Array<Partial<Mentor> & { tagSlugs?: string[] }> = [
 
   {
     slug: 'quran-companion',
+    personalityId: 'lyra',
     name: 'Noor',
     title: 'Qur’an Companion',
     shortDescription:
@@ -179,6 +181,7 @@ const MENTOR_DATA: Array<Partial<Mentor> & { tagSlugs?: string[] }> = [
 
   {
     slug: 'mindful-therapist',
+    personalityId: 'lyra',
     name: 'Ayla',
     title: 'Mindfulness & Stress',
     shortDescription:
@@ -233,6 +236,7 @@ const MENTOR_DATA: Array<Partial<Mentor> & { tagSlugs?: string[] }> = [
 
   {
     slug: 'career-architect',
+    personalityId: 'marcus',
     name: 'Nova',
     title: 'Career Architect',
     shortDescription:
@@ -277,6 +281,7 @@ const MENTOR_DATA: Array<Partial<Mentor> & { tagSlugs?: string[] }> = [
 
   {
     slug: 'fitness-coach',
+    personalityId: 'goggs',
     name: 'Rafi',
     title: 'Fitness & Mobility',
     shortDescription:
@@ -319,6 +324,7 @@ const MENTOR_DATA: Array<Partial<Mentor> & { tagSlugs?: string[] }> = [
 
   {
     slug: 'finance-mentor',
+    personalityId: 'marcus',
     name: 'Sage',
     title: 'Personal Finance',
     shortDescription:
@@ -364,6 +370,7 @@ const MENTOR_DATA: Array<Partial<Mentor> & { tagSlugs?: string[] }> = [
 
   {
     slug: 'parenting-guide',
+    personalityId: 'lyra',
     name: 'Hana',
     title: 'Parenting & Family',
     shortDescription:
@@ -414,6 +421,7 @@ const MENTOR_DATA: Array<Partial<Mentor> & { tagSlugs?: string[] }> = [
 
   {
     slug: 'study-buddy',
+    personalityId: 'goggs',
     name: 'Atlas',
     title: 'Study Buddy',
     shortDescription:
