@@ -215,6 +215,8 @@ ${traitLine}
       model,
       temperature,
       maxTokens,
+      personalityId: mentor.personalityId ?? undefined,
+      event: 'chat',
     });
 
     return {
