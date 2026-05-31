@@ -3,6 +3,7 @@ import { HttpException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { AiCall } from 'src/database/models/ai-call.entity';
+import { DriftSample } from 'src/database/models/drift-sample.entity';
 import { User } from 'src/database/models/user.entity';
 import { UserTier } from 'src/common/constants/enums';
 import { AiGatewayService } from '../gateway/ai-gateway.service';
@@ -25,6 +26,16 @@ const makeMockProvider = (name: string, available = true, impl?: any) => ({
   available,
   defaultModel: name === 'openai' ? 'gpt-4o-mini' : 'claude-3-5-haiku-20241022',
   chat: impl ?? jest.fn().mockResolvedValue(fakeResponse),
+  chatStream: jest.fn().mockImplementation(
+    async (
+      _params: any,
+      onChunk: (c: string) => void,
+    ) => {
+      onChunk('chunk1');
+      onChunk('chunk2');
+      return { ...fakeResponse, text: 'chunk1chunk2' };
+    },
+  ),
 });
 
 describe('AiGatewayService', () => {
@@ -34,6 +45,7 @@ describe('AiGatewayService', () => {
   let mockQuota: Partial<QuotaService>;
   let mockUserRepo: any;
   let mockCallRepo: any;
+  let mockDriftRepo: any;
 
   const build = async (activeProvider = 'openai') => {
     mockOpenai = makeMockProvider('openai');
@@ -54,6 +66,10 @@ describe('AiGatewayService', () => {
       create: jest.fn().mockReturnValue({}),
       save: jest.fn().mockResolvedValue({}),
     };
+    mockDriftRepo = {
+      create: jest.fn().mockReturnValue({}),
+      save: jest.fn().mockResolvedValue({}),
+    };
 
     const module = await Test.createTestingModule({
       providers: [
@@ -67,6 +83,7 @@ describe('AiGatewayService', () => {
         { provide: QuotaService, useValue: mockQuota },
         { provide: getRepositoryToken(AiCall), useValue: mockCallRepo },
         { provide: getRepositoryToken(User), useValue: mockUserRepo },
+        { provide: getRepositoryToken(DriftSample), useValue: mockDriftRepo },
       ],
     }).compile();
 
@@ -147,6 +164,35 @@ describe('AiGatewayService', () => {
     ).rejects.toBeInstanceOf(HttpException);
   });
 
+  describe('chatStream — token streaming (S19)', () => {
+    it('calls provider.chatStream and forwards chunks via onChunk', async () => {
+      await build('openai');
+      const chunks: string[] = [];
+
+      const res = await service.chatStream(
+        { userId: 1, feature: 'chat', messages: MESSAGES },
+        (chunk) => chunks.push(chunk),
+      );
+
+      expect(mockOpenai.chatStream).toHaveBeenCalled();
+      expect(chunks).toEqual(['chunk1', 'chunk2']);
+      expect(res.text).toBe('chunk1chunk2');
+    });
+
+    it('falls back to chat() when provider has no chatStream', async () => {
+      await build('openai');
+      delete (mockOpenai as any).chatStream;
+
+      const res = await service.chatStream(
+        { userId: 1, feature: 'chat', messages: MESSAGES },
+        jest.fn(),
+      );
+
+      expect(mockOpenai.chat).toHaveBeenCalled();
+      expect(res.text).toBe('hi');
+    });
+  });
+
   describe('injectPersonality — persona + memory wiring (S16)', () => {
     const PERSONA_BLOCK = 'You are Marcus. Direct, disciplined, no excuses.';
     const MEMORY_BLOCK =
@@ -163,6 +209,10 @@ describe('AiGatewayService', () => {
         findOne: jest.fn().mockResolvedValue({ id: 1, tier: UserTier.FREE }),
       };
       mockCallRepo = {
+        create: jest.fn().mockReturnValue({}),
+        save: jest.fn().mockResolvedValue({}),
+      };
+      mockDriftRepo = {
         create: jest.fn().mockReturnValue({}),
         save: jest.fn().mockResolvedValue({}),
       };
@@ -185,6 +235,7 @@ describe('AiGatewayService', () => {
           { provide: QuotaService, useValue: mockQuota },
           { provide: getRepositoryToken(AiCall), useValue: mockCallRepo },
           { provide: getRepositoryToken(User), useValue: mockUserRepo },
+          { provide: getRepositoryToken(DriftSample), useValue: mockDriftRepo },
           {
             provide: PersonalityService,
             useValue: mockPersonalityService,
@@ -239,7 +290,6 @@ describe('AiGatewayService', () => {
 
       expect(systemMsg?.content).toContain('[Memory Context]');
       expect(systemMsg?.content).toContain(PERSONA_BLOCK);
-      // memory block appears before the persona block
       expect(systemMsg?.content.indexOf('[Memory Context]')).toBeLessThan(
         systemMsg?.content.indexOf(PERSONA_BLOCK),
       );

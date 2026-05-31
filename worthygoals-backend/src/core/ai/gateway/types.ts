@@ -23,19 +23,27 @@ export interface GatewayChatResponse {
   tokensOut: number | null;
 }
 
+export interface ChatProviderResult {
+  text: string;
+  model: string;
+  tokensIn: number | null;
+  tokensOut: number | null;
+}
+
+export interface ChatProviderParams {
+  messages: ChatMessage[];
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+}
+
 export interface IChatProvider {
   readonly name: string;
   readonly defaultModel: string;
   readonly available: boolean;
-  chat(params: {
-    messages: ChatMessage[];
-    model?: string;
-    temperature?: number;
-    maxTokens?: number;
-  }): Promise<{
-    text: string;
-    model: string;
-    tokensIn: number | null;
-    tokensOut: number | null;
-  }>;
+  chat(params: ChatProviderParams): Promise<ChatProviderResult>;
+  chatStream?(
+    params: ChatProviderParams,
+    onChunk: (chunk: string) => void,
+  ): Promise<ChatProviderResult>;
 }

@@ -15,7 +15,13 @@ export class DatabaseService {
     const password = this.configService.get<string>('DB_PASSWORD');
     const database = this.configService.get<string>('DB_NAME');
 
-    const client = new Client({ host, port, user, password, database: 'postgres' });
+    const client = new Client({
+      host,
+      port,
+      user,
+      password,
+      database: 'postgres',
+    });
     try {
       await client.connect();
       const result = await client.query(

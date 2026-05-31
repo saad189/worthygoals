@@ -132,7 +132,14 @@ export class MemoryService {
          (id, "userId", "sourceType", "sourceId", "embeddingText", embedding, "personalityId", "createdAt")
        VALUES
          (gen_random_uuid(), $1, $2, $3, $4, $5::vector, $6, NOW())`,
-      [userId, sourceType, sourceId, text.slice(0, 2000), toSql(vec), personalityId],
+      [
+        userId,
+        sourceType,
+        sourceId,
+        text.slice(0, 2000),
+        toSql(vec),
+        personalityId,
+      ],
     );
   }
 
