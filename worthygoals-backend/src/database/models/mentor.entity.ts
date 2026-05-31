@@ -36,6 +36,10 @@ export class Mentor {
   slug: string;
 
   @Index()
+  @Column({ type: 'varchar', length: 64, nullable: true, default: null })
+  personalityId: string | null;
+
+  @Index()
   @Column({ type: 'varchar', length: 120 })
   name: string;
 

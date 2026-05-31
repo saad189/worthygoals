@@ -52,6 +52,10 @@ export class PersonalityService {
     return this.loader.getAll();
   }
 
+  hasPersonality(id: string): boolean {
+    return this.loader.has(id);
+  }
+
   async getUserPersonality(userId: number): Promise<UserPersonality | null> {
     return this.userPersonalityRepo.findOne({
       where: { userId },
