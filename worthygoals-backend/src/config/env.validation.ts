@@ -29,6 +29,9 @@ export const envValidationSchema = Joi.object({
   AI_ACTIVE_PROVIDER: Joi.string()
     .valid('openai', 'anthropic')
     .default('openai'),
+  // JSON map of model → { in, out } cost per million tokens. Falls back to
+  // hard-coded defaults when absent. Allows price updates without a redeploy.
+  AI_MODEL_COSTS_JSON: Joi.string().optional(),
 
   // ── S3 / R2 media storage (optional — graceful no-op if absent) ──────────
   S3_ENDPOINT: Joi.string().optional(), // R2: https://<account_id>.r2.cloudflarestorage.com
