@@ -38,7 +38,8 @@
     "typeorm:drop": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js schema:drop -d src/database/dataSource.ts",
     "eval": "ts-node -r tsconfig-paths/register eval/run.ts",
     "eval:dry": "ts-node -r tsconfig-paths/register eval/run.ts --dry-run",
-    "eval:verbose": "ts-node -r tsconfig-paths/register eval/run.ts --verbose"
+    "eval:verbose": "ts-node -r tsconfig-paths/register eval/run.ts --verbose",
+    "spec:export": "ts-node -r tsconfig-paths/register scripts/export-spec.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0",

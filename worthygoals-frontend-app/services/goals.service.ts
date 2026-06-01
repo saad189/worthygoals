@@ -1,4 +1,5 @@
 import { GoalItem, GoalProposal } from "@/models";
+import type { ApiCreateGoalPayload, ApiCreateGoalResponse } from '@/types/api';
 import ApiService from "./api.service";
 import { formatErrorMessage } from "@/helpers";
 import Storage from "@/helpers/StorageUtilAsync";
@@ -125,18 +126,8 @@ export const goalsApiService = {
     return data;
   },
 
-  create: async (payload: {
-    title: string;
-    description?: string;
-    costText?: string;
-    benefitText?: string;
-    failureText?: string;
-    deadline?: string;
-    repeatRule?: Record<string, unknown>;
-    category?: string;
-    mentorId?: number;
-  }): Promise<{ id: string }> => {
-    const { data } = await ApiService.post<{ id: string }>(GOALS_BASE, payload);
+  create: async (payload: ApiCreateGoalPayload): Promise<ApiCreateGoalResponse> => {
+    const { data } = await ApiService.post<ApiCreateGoalResponse>(GOALS_BASE, payload);
     return data;
   },
 };

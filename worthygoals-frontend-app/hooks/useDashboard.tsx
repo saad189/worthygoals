@@ -1,5 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import DashboardService, { DashboardData } from '@/services/dashboard.service';
+
+const EMPTY: DashboardData = {
+  todaysTasks: [],
+  weekCompletions: Array(7).fill(0),
+  goals: [],
+  todayProgress: { completed: 0, total: 0 },
+};
 
 interface UseDashboardResult {
   data: DashboardData | null;
@@ -9,38 +16,18 @@ interface UseDashboardResult {
   refresh: () => void;
 }
 
-const empty: DashboardData = {
-  todaysTasks: [],
-  weekCompletions: Array(7).fill(0),
-  goals: [],
-  todayProgress: { completed: 0, total: 0 },
-};
-
 export default function useDashboard(): UseDashboardResult {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const query = useQuery({
+    queryKey: ['dashboard'],
+    queryFn: () => DashboardService.getDashboard(),
+    placeholderData: EMPTY,
+  });
 
-  const fetch = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
-    setError(null);
-    try {
-      const result = await DashboardService.getDashboard();
-      setData(result);
-    } catch {
-      setError('Could not load dashboard');
-      if (!data) setData(empty);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => { fetch(); }, [fetch]);
-
-  const refresh = useCallback(() => fetch(true), [fetch]);
-
-  return { data, loading, refreshing, error, refresh };
+  return {
+    data: query.data ?? null,
+    loading: query.isLoading,
+    refreshing: query.isFetching && !query.isLoading,
+    error: query.isError ? 'Could not load dashboard' : null,
+    refresh: () => { query.refetch(); },
+  };
 }

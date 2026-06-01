@@ -1,0 +1,454 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Worthy Goals API",
+    "description": "Backend Server API",
+    "version": "1.0.0"
+  },
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "TaskStatus": {
+        "type": "string",
+        "enum": ["pending", "completed", "skipped"]
+      },
+      "TaskRepeatFrequency": {
+        "type": "string",
+        "enum": ["none", "daily", "weekly", "monthly"]
+      },
+      "ExplanationReason": {
+        "type": "string",
+        "enum": ["couldnt", "forgot", "chose_not_to"]
+      },
+      "BoardItemType": {
+        "type": "string",
+        "enum": ["win", "milestone"]
+      },
+      "MilestoneKind": {
+        "type": "string",
+        "enum": ["streak_7", "streak_30", "goal_completed"]
+      },
+      "TaskSummary": {
+        "type": "object",
+        "required": ["id", "title", "goalId", "status"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "goalId": { "type": "string" },
+          "status": { "type": "string" },
+          "dueDate": { "type": "string", "nullable": true }
+        }
+      },
+      "GoalSummary": {
+        "type": "object",
+        "required": ["id", "title", "category", "currentStreak", "longestStreak", "todayTaskCount", "completedTodayCount"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "category": { "type": "string" },
+          "currentStreak": { "type": "integer" },
+          "longestStreak": { "type": "integer" },
+          "todayTaskCount": { "type": "integer" },
+          "completedTodayCount": { "type": "integer" }
+        }
+      },
+      "TodayProgress": {
+        "type": "object",
+        "required": ["completed", "total"],
+        "properties": {
+          "completed": { "type": "integer" },
+          "total": { "type": "integer" }
+        }
+      },
+      "DashboardData": {
+        "type": "object",
+        "required": ["todaysTasks", "weekCompletions", "goals", "todayProgress"],
+        "properties": {
+          "todaysTasks": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TaskSummary" }
+          },
+          "weekCompletions": {
+            "type": "array",
+            "items": { "type": "integer" },
+            "description": "Completion counts indexed Mon=0 … Sun=6"
+          },
+          "goals": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/GoalSummary" }
+          },
+          "todayProgress": { "$ref": "#/components/schemas/TodayProgress" }
+        }
+      },
+      "BoardItem": {
+        "type": "object",
+        "required": ["id", "type", "createdAt"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "$ref": "#/components/schemas/BoardItemType" },
+          "taskTitle": { "type": "string", "nullable": true },
+          "goalTitle": { "type": "string", "nullable": true },
+          "goalCategory": { "type": "string", "nullable": true },
+          "moodScore": { "type": "integer", "nullable": true },
+          "reflection": { "type": "string", "nullable": true },
+          "mentorReaction": { "type": "string", "nullable": true },
+          "mediaUrl": { "type": "string", "nullable": true },
+          "milestoneKind": { "$ref": "#/components/schemas/MilestoneKind", "nullable": true },
+          "streakDays": { "type": "integer", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TaskItem": {
+        "type": "object",
+        "required": ["id", "goalId", "title", "status", "repeatFrequency", "occurrenceIndex", "createdAt", "updatedAt"],
+        "properties": {
+          "id": { "type": "string" },
+          "goalId": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "status": { "$ref": "#/components/schemas/TaskStatus" },
+          "dueDate": { "type": "string", "nullable": true },
+          "repeatFrequency": { "$ref": "#/components/schemas/TaskRepeatFrequency" },
+          "occurrenceIndex": { "type": "integer" },
+          "parentTaskId": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateTaskPayload": {
+        "type": "object",
+        "required": ["title", "goalId"],
+        "properties": {
+          "title": { "type": "string" },
+          "goalId": { "type": "string" },
+          "description": { "type": "string" },
+          "dueDate": { "type": "string" },
+          "repeatFrequency": { "$ref": "#/components/schemas/TaskRepeatFrequency" }
+        }
+      },
+      "CompleteTaskPayload": {
+        "type": "object",
+        "required": ["moodScore"],
+        "properties": {
+          "moodScore": { "type": "integer", "minimum": 1, "maximum": 4 },
+          "reflection": { "type": "string" },
+          "memoryPictureId": { "type": "string" },
+          "personalityId": { "type": "string" }
+        }
+      },
+      "ExplainTaskPayload": {
+        "type": "object",
+        "required": ["reason"],
+        "properties": {
+          "reason": { "$ref": "#/components/schemas/ExplanationReason" },
+          "freeText": { "type": "string" },
+          "personalityId": { "type": "string" }
+        }
+      },
+      "TaskCompletion": {
+        "type": "object",
+        "required": ["id", "taskId", "moodScore", "createdAt"],
+        "properties": {
+          "id": { "type": "string" },
+          "taskId": { "type": "string" },
+          "moodScore": { "type": "integer" },
+          "reflection": { "type": "string", "nullable": true },
+          "memoryPictureId": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TaskExplanation": {
+        "type": "object",
+        "required": ["id", "taskId", "reason", "createdAt"],
+        "properties": {
+          "id": { "type": "string" },
+          "taskId": { "type": "string" },
+          "reason": { "$ref": "#/components/schemas/ExplanationReason" },
+          "freeText": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TaskCompletionResponse": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": { "$ref": "#/components/schemas/TaskCompletion" },
+          "mentorReaction": { "type": "string", "nullable": true },
+          "safetyFlag": { "type": "boolean", "nullable": true }
+        }
+      },
+      "TaskExplanationResponse": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": { "$ref": "#/components/schemas/TaskExplanation" },
+          "mentorReaction": { "type": "string", "nullable": true },
+          "safetyFlag": { "type": "boolean", "nullable": true }
+        }
+      },
+      "GoalProposal": {
+        "type": "object",
+        "required": ["title"],
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "costText": { "type": "string", "nullable": true },
+          "benefitText": { "type": "string", "nullable": true },
+          "failureText": { "type": "string", "nullable": true },
+          "deadline": { "type": "string", "nullable": true },
+          "repeatRule": { "type": "object", "nullable": true },
+          "category": { "type": "string", "nullable": true }
+        }
+      },
+      "CreateGoalPayload": {
+        "type": "object",
+        "required": ["title"],
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "costText": { "type": "string" },
+          "benefitText": { "type": "string" },
+          "failureText": { "type": "string" },
+          "deadline": { "type": "string" },
+          "repeatRule": { "type": "object" },
+          "category": { "type": "string" },
+          "mentorId": { "type": "integer" }
+        }
+      },
+      "CreateGoalResponse": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/dashboard": {
+      "get": {
+        "operationId": "getDashboard",
+        "summary": "Get dashboard aggregate data",
+        "tags": ["Dashboard"],
+        "security": [{ "bearer": [] }],
+        "responses": {
+          "200": {
+            "description": "Dashboard data",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DashboardData" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/board": {
+      "get": {
+        "operationId": "getBoard",
+        "summary": "Get motivational board items",
+        "tags": ["Board"],
+        "security": [{ "bearer": [] }],
+        "responses": {
+          "200": {
+            "description": "Board items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/BoardItem" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks": {
+      "get": {
+        "operationId": "listTasks",
+        "summary": "List tasks for a goal",
+        "tags": ["Tasks"],
+        "security": [{ "bearer": [] }],
+        "parameters": [
+          {
+            "name": "goalId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/TaskItem" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createTask",
+        "summary": "Create a task",
+        "tags": ["Tasks"],
+        "security": [{ "bearer": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateTaskPayload" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created task",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TaskItem" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{id}/complete": {
+      "post": {
+        "operationId": "completeTask",
+        "summary": "Mark a task complete",
+        "tags": ["Tasks"],
+        "security": [{ "bearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CompleteTaskPayload" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Completion result with optional mentor reaction",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TaskCompletionResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{id}/explain": {
+      "post": {
+        "operationId": "explainTask",
+        "summary": "Submit a task explanation (skipped/failed)",
+        "tags": ["Tasks"],
+        "security": [{ "bearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ExplainTaskPayload" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Explanation result with optional mentor reaction",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TaskExplanationResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/goals/propose": {
+      "post": {
+        "operationId": "proposeGoal",
+        "summary": "AI-assisted goal proposal",
+        "tags": ["Goals"],
+        "security": [{ "bearer": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["raw"],
+                "properties": {
+                  "raw": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "AI-structured goal proposal",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GoalProposal" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/goals": {
+      "post": {
+        "operationId": "createGoal",
+        "summary": "Create a goal",
+        "tags": ["Goals"],
+        "security": [{ "bearer": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateGoalPayload" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created goal",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CreateGoalResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [{ "bearer": [] }]
+}
