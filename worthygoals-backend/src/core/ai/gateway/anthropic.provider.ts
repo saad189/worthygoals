@@ -1,7 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Anthropic from '@anthropic-ai/sdk';
-import { ChatMessage, ChatProviderParams, ChatProviderResult, IChatProvider } from './types';
+import {
+  ChatMessage,
+  ChatProviderParams,
+  ChatProviderResult,
+  IChatProvider,
+} from './types';
 
 @Injectable()
 export class AnthropicProvider implements IChatProvider {
@@ -104,7 +109,10 @@ export class AnthropicProvider implements IChatProvider {
 
     const chatMessages = messages
       .filter((m) => m.role !== 'system')
-      .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+      .map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      }));
 
     return { system, chatMessages };
   }
