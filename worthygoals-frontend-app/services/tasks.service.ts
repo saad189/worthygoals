@@ -1,13 +1,10 @@
 import ApiService from './api.service';
-import {
-  TaskItem,
-  CreateTaskPayload,
-  CompleteTaskPayload,
-  ExplainTaskPayload,
-  TaskCompletion,
-  TaskExplanation,
-  TaskActionResponse,
-} from '@/models';
+import { TaskItem, TaskActionResponse, TaskCompletion, TaskExplanation } from '@/models';
+import type { ApiCompleteTaskPayload, ApiCreateTaskPayload, ApiExplainTaskPayload } from '@/types/api';
+
+type CreateTaskPayload = ApiCreateTaskPayload;
+type CompleteTaskPayload = ApiCompleteTaskPayload;
+type ExplainTaskPayload = ApiExplainTaskPayload;
 
 const TASKS_BASE = '/tasks';
 

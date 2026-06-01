@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { tasksService } from '@/services/tasks.service';
 import { enqueueExplain } from '@/helpers/taskOutbox';
 import { ExplainTaskPayload } from '@/models';
@@ -6,31 +7,32 @@ import { ExplainTaskPayload } from '@/models';
 export function useExplainTask(
   onSuccess?: (taskId: string, hasReaction: boolean) => void,
 ) {
-  const [submitting, setSubmitting] = useState(false);
+  const queryClient = useQueryClient();
   const [mentorReaction, setMentorReaction] = useState<string | null>(null);
   const [safetyFlag, setSafetyFlag] = useState(false);
 
-  const explain = useCallback(
-    async (taskId: string, payload: ExplainTaskPayload) => {
-      setSubmitting(true);
-      setMentorReaction(null);
-      setSafetyFlag(false);
-      let reactionText: string | null = null;
-      let wasSafetyFlag = false;
-      try {
-        const response = await tasksService.explain(taskId, payload);
-        reactionText = response.mentorReaction ?? null;
-        wasSafetyFlag = response.safetyFlag ?? false;
-        if (reactionText) setMentorReaction(reactionText);
-        if (wasSafetyFlag) setSafetyFlag(true);
-      } catch {
-        await enqueueExplain(taskId, payload);
-      } finally {
-        setSubmitting(false);
-        onSuccess?.(taskId, !!reactionText || wasSafetyFlag);
-      }
+  const mutation = useMutation({
+    mutationFn: ({ taskId, payload }: { taskId: string; payload: ExplainTaskPayload }) =>
+      tasksService.explain(taskId, payload),
+    onSuccess: (response, { taskId }) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      const reactionText = response.mentorReaction ?? null;
+      const wasSafetyFlag = response.safetyFlag ?? false;
+      if (reactionText) setMentorReaction(reactionText);
+      if (wasSafetyFlag) setSafetyFlag(true);
+      onSuccess?.(taskId, !!reactionText || wasSafetyFlag);
     },
-    [onSuccess],
+    onError: async (_err, { taskId, payload }) => {
+      await enqueueExplain(taskId, payload);
+      onSuccess?.(taskId, false);
+    },
+  });
+
+  const explain = useCallback(
+    (taskId: string, payload: ExplainTaskPayload) => {
+      mutation.mutate({ taskId, payload });
+    },
+    [mutation],
   );
 
   const clearReaction = useCallback(() => {
@@ -38,5 +40,11 @@ export function useExplainTask(
     setSafetyFlag(false);
   }, []);
 
-  return { explain, submitting, mentorReaction, safetyFlag, clearReaction };
+  return {
+    explain,
+    submitting: mutation.isPending,
+    mentorReaction,
+    safetyFlag,
+    clearReaction,
+  };
 }

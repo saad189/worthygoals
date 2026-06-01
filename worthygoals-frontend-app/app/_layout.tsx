@@ -15,6 +15,8 @@ import CustomSplashScreen from "./custom-splash-screen";
 import { AuthProvider, LoaderProvider, ToastProvider, useAuth } from "@/hooks";
 import Background from "@/components/SubComponents/Background";
 import { initSentry, SentryWrap, POSTHOG_KEY } from "@/services/observability";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { queryClient, asyncStoragePersister } from "@/core/queryClient";
 
 initSentry();
 
@@ -166,19 +168,24 @@ function RootLayoutNav() {
   const navTheme = buildNavTheme(scheme);
 
   return (
-    <PostHogProvider apiKey={POSTHOG_KEY} options={{ host: 'https://us.i.posthog.com' }}>
-      <ThemeProvider value={navTheme}>
-        <RootSiblingParent>
-          <ToastProvider>
-            <AuthProvider>
-              <LoaderProvider>
-                <Stacks />
-              </LoaderProvider>
-            </AuthProvider>
-          </ToastProvider>
-        </RootSiblingParent>
-      </ThemeProvider>
-    </PostHogProvider>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister: asyncStoragePersister }}
+    >
+      <PostHogProvider apiKey={POSTHOG_KEY} options={{ host: 'https://us.i.posthog.com' }}>
+        <ThemeProvider value={navTheme}>
+          <RootSiblingParent>
+            <ToastProvider>
+              <AuthProvider>
+                <LoaderProvider>
+                  <Stacks />
+                </LoaderProvider>
+              </AuthProvider>
+            </ToastProvider>
+          </RootSiblingParent>
+        </ThemeProvider>
+      </PostHogProvider>
+    </PersistQueryClientProvider>
   );
 }
 

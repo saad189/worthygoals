@@ -1,35 +1,32 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { tasksService } from '@/services/tasks.service';
 import { TaskItem, TaskStatus } from '@/models';
 
 export function useTasks(goalId: string | null) {
-  const [tasks, setTasks] = useState<TaskItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetch = useCallback(async () => {
-    if (!goalId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await tasksService.list(goalId);
-      setTasks(data);
-    } catch {
-      setError('Failed to load tasks');
-    } finally {
-      setLoading(false);
-    }
-  }, [goalId]);
+  const query = useQuery({
+    queryKey: ['tasks', goalId],
+    queryFn: () => tasksService.list(goalId!),
+    enabled: !!goalId,
+    initialData: [] as TaskItem[],
+  });
 
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
+  const optimisticUpdateStatus = useCallback(
+    (taskId: string, status: TaskStatus) => {
+      queryClient.setQueryData(['tasks', goalId], (prev: TaskItem[] = []) =>
+        prev.map((t) => (t.id === taskId ? { ...t, status } : t)),
+      );
+    },
+    [queryClient, goalId],
+  );
 
-  const optimisticUpdateStatus = useCallback((taskId: string, status: TaskStatus) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, status } : t)),
-    );
-  }, []);
-
-  return { tasks, loading, error, refetch: fetch, optimisticUpdateStatus };
+  return {
+    tasks: query.data,
+    loading: query.isLoading,
+    error: query.isError ? 'Failed to load tasks' : null,
+    refetch: () => { query.refetch(); },
+    optimisticUpdateStatus,
+  };
 }
