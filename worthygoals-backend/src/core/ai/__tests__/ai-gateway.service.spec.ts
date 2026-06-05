@@ -26,16 +26,13 @@ const makeMockProvider = (name: string, available = true, impl?: any) => ({
   available,
   defaultModel: name === 'openai' ? 'gpt-4o-mini' : 'claude-3-5-haiku-20241022',
   chat: impl ?? jest.fn().mockResolvedValue(fakeResponse),
-  chatStream: jest.fn().mockImplementation(
-    async (
-      _params: any,
-      onChunk: (c: string) => void,
-    ) => {
+  chatStream: jest
+    .fn()
+    .mockImplementation(async (_params: any, onChunk: (c: string) => void) => {
       onChunk('chunk1');
       onChunk('chunk2');
       return { ...fakeResponse, text: 'chunk1chunk2' };
-    },
-  ),
+    }),
 });
 
 describe('AiGatewayService', () => {

@@ -19,7 +19,7 @@ import {
 import { PersonalityService } from 'src/core/personalities/personality.service';
 import { MemoryService } from 'src/core/memory/memory.service';
 
-const COST_PER_MILLION: Record<string, { in: number; out: number }> = {
+const DEFAULT_COST_PER_MILLION: Record<string, { in: number; out: number }> = {
   'gpt-4o-mini': { in: 0.15, out: 0.6 },
   'gpt-4o': { in: 5.0, out: 15.0 },
   'claude-3-5-haiku-20241022': { in: 0.8, out: 4.0 },
@@ -27,20 +27,11 @@ const COST_PER_MILLION: Record<string, { in: number; out: number }> = {
   'claude-3-haiku-20240307': { in: 0.25, out: 1.25 },
 };
 
-function computeCostUsd(
-  model: string,
-  tokensIn: number | null,
-  tokensOut: number | null,
-): number | null {
-  const rates = COST_PER_MILLION[model];
-  if (!rates || tokensIn === null || tokensOut === null) return null;
-  return (tokensIn * rates.in + tokensOut * rates.out) / 1_000_000;
-}
-
 @Injectable()
 export class AiGatewayService {
   private readonly logger = new Logger(AiGatewayService.name);
   private readonly breaker = new CircuitBreaker();
+  private readonly costPerMillion: Record<string, { in: number; out: number }>;
 
   constructor(
     private readonly config: ConfigService,
@@ -55,7 +46,24 @@ export class AiGatewayService {
     private readonly driftRepo: Repository<DriftSample>,
     @Optional() private readonly personalityService?: PersonalityService,
     @Optional() private readonly memoryService?: MemoryService,
-  ) {}
+  ) {
+    const raw = this.config.get<string>('AI_MODEL_COSTS_JSON');
+    if (raw) {
+      try {
+        this.costPerMillion = {
+          ...DEFAULT_COST_PER_MILLION,
+          ...JSON.parse(raw),
+        };
+      } catch {
+        this.logger.warn(
+          'AI_MODEL_COSTS_JSON is not valid JSON — using defaults',
+        );
+        this.costPerMillion = DEFAULT_COST_PER_MILLION;
+      }
+    } else {
+      this.costPerMillion = DEFAULT_COST_PER_MILLION;
+    }
+  }
 
   async chat(req: GatewayChatRequest): Promise<GatewayChatResponse> {
     return this.chatInternal(req);
@@ -104,9 +112,10 @@ export class AiGatewayService {
 
     if (primary.available && this.breaker.isAvailable(primary.name)) {
       try {
-        result = onChunk && primary.chatStream
-          ? await primary.chatStream(params, onChunk)
-          : await primary.chat(params);
+        result =
+          onChunk && primary.chatStream
+            ? await primary.chatStream(params, onChunk)
+            : await primary.chat(params);
         this.breaker.recordSuccess(primary.name);
       } catch (err: any) {
         this.logger.warn(
@@ -122,9 +131,10 @@ export class AiGatewayService {
       this.breaker.isAvailable(fallback.name)
     ) {
       try {
-        result = onChunk && fallback.chatStream
-          ? await fallback.chatStream(params, onChunk)
-          : await fallback.chat(params);
+        result =
+          onChunk && fallback.chatStream
+            ? await fallback.chatStream(params, onChunk)
+            : await fallback.chat(params);
         this.breaker.recordSuccess(fallback.name);
         usedProvider = fallback;
       } catch (err: any) {
@@ -139,11 +149,12 @@ export class AiGatewayService {
     }
 
     const latencyMs = Date.now() - t0;
-    const costUsd = computeCostUsd(
-      result.model,
-      result.tokensIn,
-      result.tokensOut,
-    );
+    const costRates = this.costPerMillion[result.model];
+    const costUsd =
+      costRates && result.tokensIn !== null && result.tokensOut !== null
+        ? (result.tokensIn * costRates.in + result.tokensOut * costRates.out) /
+          1_000_000
+        : null;
 
     const call = this.aiCallRepo.create({
       userId: req.userId,

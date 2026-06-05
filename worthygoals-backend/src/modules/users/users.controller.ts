@@ -15,7 +15,8 @@ import {
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { GdprService } from './gdpr.service';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ResponseUserDto } from './dto/response-user.dto';
 import { JwtAuthGuard } from 'src/common/guards';
 
@@ -24,7 +25,10 @@ import { JwtAuthGuard } from 'src/common/guards';
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly gdprService: GdprService,
+  ) {}
 
   @Get()
   async findAll() {
@@ -35,6 +39,24 @@ export class UsersController {
   getProfile(@Request() req): Promise<ResponseUserDto> {
     if (!req.user) throw new NotFoundException('User not Logged In');
     return this.usersService.getUserProfile(req.user.sub);
+  }
+
+  @Post('me/data-export')
+  @ApiOperation({ summary: 'GDPR: export all data for the authenticated user' })
+  async exportMyData(@Request() req): Promise<Record<string, unknown>> {
+    if (!req.user) throw new NotFoundException('User not Logged In');
+    return this.gdprService.exportData(req.user.sub);
+  }
+
+  @Delete('me')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary:
+      'GDPR: permanently delete the authenticated user account and all associated data',
+  })
+  async deleteMyAccount(@Request() req): Promise<void> {
+    if (!req.user) throw new NotFoundException('User not Logged In');
+    await this.gdprService.deleteAccount(req.user.sub);
   }
 
   @Get(':id')
