@@ -166,7 +166,9 @@ describe('MessagesGateway — safety gate', () => {
         text: 'How do I stay consistent?',
       });
 
-      const chunkEvents = emittedEvents.filter((e) => e.event === 'messageChunk');
+      const chunkEvents = emittedEvents.filter(
+        (e) => e.event === 'messageChunk',
+      );
       expect(chunkEvents).toHaveLength(2);
       expect(chunkEvents[0].data).toEqual({
         conversationId: CONV_ID,

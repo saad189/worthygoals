@@ -1,11 +1,22 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity('drift_samples')
 export class DriftSample {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'personality_id', type: 'varchar', length: 64, nullable: true })
+  @Column({
+    name: 'personality_id',
+    type: 'varchar',
+    length: 64,
+    nullable: true,
+  })
   personalityId: string | null;
 
   @Column({ type: 'varchar', length: 64, nullable: true })
