@@ -39,10 +39,14 @@ export async function enqueueExplain(
   await writeQueue(queue);
 }
 
-/** Drains the outbox — call on app foreground / network reconnect. */
-export async function drainOutbox(): Promise<void> {
+/**
+ * Drains the outbox — wired to app start + foreground via useOutboxDrain.
+ * Returns the number of entries successfully synced so callers can
+ * invalidate stale queries only when something actually changed.
+ */
+export async function drainOutbox(): Promise<number> {
   const queue = await readQueue();
-  if (!queue.length) return;
+  if (!queue.length) return 0;
 
   const remaining: OutboxEntry[] = [];
   for (const entry of queue) {
@@ -57,4 +61,5 @@ export async function drainOutbox(): Promise<void> {
     }
   }
   await writeQueue(remaining);
+  return queue.length - remaining.length;
 }
