@@ -1,11 +1,13 @@
-// Sentry must be initialized before any other imports
+// Sentry is optional: only initialized when SENTRY_DSN is set (any platform's
+// env/secrets mechanism). The app must boot and run cleanly without it.
 import * as Sentry from '@sentry/node';
-Sentry.init({
-  dsn: process.env.SENTRY_DSN, // TODO: set via `fly secrets set SENTRY_DSN=<dsn>`
-  environment: process.env.NODE_ENV ?? 'local',
-  tracesSampleRate: process.env.NODE_ENV === 'prod' ? 0.2 : 1.0,
-  enabled: !!process.env.SENTRY_DSN,
-});
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV ?? 'local',
+    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
+  });
+}
 
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
