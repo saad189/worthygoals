@@ -1,22 +1,32 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import {
   Account,
+  AiCall,
   Conversation,
   Goal,
+  MemoryDigest,
+  MemoryEmbedding,
   Message,
+  NotificationLog,
+  PushToken,
   Task,
   TaskCompletion,
   TaskExplanation,
   User,
+  UserPersonality,
 } from 'src/database/models';
+import { Media } from '../media/media.entity';
+import { AWSCognitoService } from '../auth/aws-cognito.service';
 
 @Injectable()
 export class GdprService {
   private readonly logger = new Logger(GdprService.name);
 
   constructor(
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     @InjectRepository(Account)
@@ -33,6 +43,21 @@ export class GdprService {
     private readonly conversationRepo: Repository<Conversation>,
     @InjectRepository(Message)
     private readonly messageRepo: Repository<Message>,
+    @InjectRepository(UserPersonality)
+    private readonly userPersonalityRepo: Repository<UserPersonality>,
+    @InjectRepository(MemoryDigest)
+    private readonly memoryDigestRepo: Repository<MemoryDigest>,
+    @InjectRepository(MemoryEmbedding)
+    private readonly memoryEmbeddingRepo: Repository<MemoryEmbedding>,
+    @InjectRepository(PushToken)
+    private readonly pushTokenRepo: Repository<PushToken>,
+    @InjectRepository(NotificationLog)
+    private readonly notificationLogRepo: Repository<NotificationLog>,
+    @InjectRepository(AiCall)
+    private readonly aiCallRepo: Repository<AiCall>,
+    @InjectRepository(Media)
+    private readonly mediaRepo: Repository<Media>,
+    private readonly cognitoService: AWSCognitoService,
   ) {}
 
   async exportData(sub: string): Promise<Record<string, unknown>> {
@@ -77,6 +102,35 @@ export class GdprService {
         : Promise.resolve([]),
     ]);
 
+    const [
+      personalities,
+      memoryDigests,
+      memoryEmbeddings,
+      pushTokens,
+      notificationLogs,
+      aiCalls,
+      media,
+    ] = await Promise.all([
+      this.userPersonalityRepo.find({ where: { userId: user.id } }),
+      this.memoryDigestRepo.find({ where: { userId: user.id } }),
+      this.memoryEmbeddingRepo
+        .createQueryBuilder('me')
+        .select([
+          'me.id',
+          'me.sourceType',
+          'me.sourceId',
+          'me.embeddingText',
+          'me.personalityId',
+          'me.createdAt',
+        ])
+        .where('me.userId = :userId', { userId: user.id })
+        .getMany(),
+      this.pushTokenRepo.find({ where: { userId: user.id } }),
+      this.notificationLogRepo.find({ where: { userId: user.id } }),
+      this.aiCallRepo.find({ where: { userId: user.id } }),
+      this.mediaRepo.find({ where: { userId: user.id } }),
+    ]);
+
     return {
       exportedAt: new Date().toISOString(),
       profile: {
@@ -103,14 +157,49 @@ export class GdprService {
         ...c,
         messages: messages.filter((m) => m.conversationId === c.id),
       })),
+      personalities,
+      memoryDigests,
+      memorySnippets: memoryEmbeddings,
+      pushTokens,
+      notificationLogs,
+      aiCalls,
+      media,
     };
   }
 
   async deleteAccount(sub: string): Promise<void> {
     const user = await this.findBySub(sub);
-    // Hard delete — cascades to all user-owned data. Account row cascades via
-    // the OneToOne relation with onDelete: 'CASCADE' on the Account → User side.
-    await this.userRepo.remove(user);
+
+    await this.dataSource.transaction(async (manager) => {
+      // These tables carry a userId but no FK to users, so the
+      // users-row cascade never reaches them — purge explicitly.
+      await manager.delete(MemoryEmbedding, { userId: user.id });
+      await manager.delete(MemoryDigest, { userId: user.id });
+      await manager.delete(PushToken, { userId: user.id });
+      await manager.delete(NotificationLog, { userId: user.id });
+      await manager.delete(AiCall, { userId: user.id });
+
+      // The FK cascade runs accounts → users → owned data, so the account
+      // row must be the deletion root; removing only the user would leave
+      // the accounts row (email + sub) behind.
+      if (user.account) {
+        await manager.remove(user.account);
+      } else {
+        await manager.remove(user);
+      }
+    });
+
+    // The Cognito identity is personal data too. DB deletion already
+    // succeeded, so a Cognito failure must not roll it back — log loudly
+    // for manual follow-up instead.
+    try {
+      await this.cognitoService.remove(sub);
+    } catch (error) {
+      this.logger.error(
+        `GDPR: DB data deleted but Cognito account removal FAILED for sub ${sub} — delete it manually. ${error.message}`,
+      );
+    }
+
     this.logger.log(`GDPR account deletion completed for user ${user.id}`);
   }
 
