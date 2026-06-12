@@ -123,6 +123,32 @@ describe('AiGatewayService', () => {
     expect(mockCallRepo.save).toHaveBeenCalled();
   });
 
+  it('computes costUsd via prefix match when the provider returns a versioned model id', async () => {
+    await build();
+    (mockOpenai.chat as jest.Mock).mockResolvedValue({
+      ...fakeResponse,
+      model: 'gpt-4o-mini-2024-07-18',
+    });
+    await service.chat({ userId: 1, feature: 'chat', messages: MESSAGES });
+    const created = mockCallRepo.create.mock.calls[0][0];
+    // gpt-4o-mini rates: 10 in × $0.15/M + 5 out × $0.60/M
+    expect(created.costUsd).toBeCloseTo(
+      (10 * 0.15 + 5 * 0.6) / 1_000_000,
+      12,
+    );
+  });
+
+  it('logs costUsd as null for a model with no configured rates', async () => {
+    await build();
+    (mockOpenai.chat as jest.Mock).mockResolvedValue({
+      ...fakeResponse,
+      model: 'some-unknown-model',
+    });
+    await service.chat({ userId: 1, feature: 'chat', messages: MESSAGES });
+    const created = mockCallRepo.create.mock.calls[0][0];
+    expect(created.costUsd).toBeNull();
+  });
+
   it('throws 402 when quota is exceeded', async () => {
     await build();
     (mockQuota.checkAndEnforce as jest.Mock).mockRejectedValue(

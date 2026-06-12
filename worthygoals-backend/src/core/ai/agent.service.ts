@@ -35,6 +35,12 @@ export class AgentService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
+    if (!this.personalityService) {
+      // M-3: optional for tests only — a missing wiring must be loud.
+      this.logger.warn(
+        'PersonalityService not injected — mentor personality mappings cannot be validated',
+      );
+    }
     await this.validatePersonalityMappings();
   }
 

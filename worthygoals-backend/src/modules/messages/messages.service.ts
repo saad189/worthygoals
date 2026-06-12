@@ -27,7 +27,13 @@ export class MessagesService {
     private readonly conversationRepository: Repository<Conversation>,
     private readonly usersService: UsersService,
     @Optional() private readonly memoryService?: MemoryService,
-  ) {}
+  ) {
+    if (!this.memoryService) {
+      this.logger.warn(
+        'MemoryService not injected — chat messages will not be indexed into memory',
+      );
+    }
+  }
 
   async list(params: {
     conversationId: string;

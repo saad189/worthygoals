@@ -7,6 +7,10 @@ import { judgeOutput } from './judge';
 const TONE_THRESHOLD = 7.0;
 const DRY_RUN = process.argv.includes('--dry-run');
 const VERBOSE = process.argv.includes('--verbose');
+// --personality <id>: run only one personality's golden files (cheap re-runs while tuning)
+const personalityFlagIdx = process.argv.indexOf('--personality');
+const PERSONALITY_FILTER =
+  personalityFlagIdx !== -1 ? process.argv[personalityFlagIdx + 1] : null;
 
 interface GoldenCase {
   id: string;
@@ -24,7 +28,8 @@ interface GoldenFile {
 interface PersonalityYaml {
   id: string;
   name: string;
-  voice: { tone: string };
+  description?: string;
+  voice: { tone: string; vocabulary?: string[] };
   events: Record<string, { system_prompt: string }>;
   routing: { preferred_model: string; temperature: number; max_tokens: number };
 }
@@ -64,7 +69,14 @@ function loadGoldenFiles(): GoldenFile[] {
 
 async function run(): Promise<void> {
   const personalities = loadPersonalities();
-  const goldenFiles = loadGoldenFiles();
+  let goldenFiles = loadGoldenFiles();
+  if (PERSONALITY_FILTER) {
+    goldenFiles = goldenFiles.filter((f) => f.personality === PERSONALITY_FILTER);
+    if (!goldenFiles.length) {
+      console.error(`[eval] No golden files for personality "${PERSONALITY_FILTER}"`);
+      process.exit(1);
+    }
+  }
   const totalCases = goldenFiles.reduce((s, f) => s + f.cases.length, 0);
 
   console.log(`\n[eval] ${goldenFiles.length} files · ${totalCases} cases · threshold=${TONE_THRESHOLD}`);
@@ -137,6 +149,8 @@ async function run(): Promise<void> {
         openai,
         personalityName: personality.name,
         voiceTone: personality.voice.tone,
+        personalityDescription: personality.description,
+        vocabulary: personality.voice.vocabulary,
         reference: c.reference,
         actual,
         userMessage: c.user,

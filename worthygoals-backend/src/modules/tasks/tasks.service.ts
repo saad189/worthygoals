@@ -44,10 +44,22 @@ export class TasksService {
     @InjectRepository(Goal)
     private readonly goalRepo: Repository<Goal>,
     private readonly usersService: UsersService,
+    // M-3: the crisis classifier must never be silently absent — required.
+    private readonly safetyService: SafetyService,
     @Optional() private readonly aiGateway?: AiGatewayService,
-    @Optional() private readonly safetyService?: SafetyService,
     @Optional() private readonly memoryService?: MemoryService,
-  ) {}
+  ) {
+    if (!this.aiGateway) {
+      this.logger.warn(
+        'AiGatewayService not injected — mentor reactions disabled',
+      );
+    }
+    if (!this.memoryService) {
+      this.logger.warn(
+        'MemoryService not injected — completion/explanation indexing disabled',
+      );
+    }
+  }
 
   async create(sub: string, dto: CreateTaskDto): Promise<Task> {
     const user = await this.resolveUser(sub);
@@ -276,7 +288,7 @@ export class TasksService {
   ): Promise<void> {
     if (!personalityId) return;
 
-    if (this.safetyService?.isCrisisSignal(opts.safetyText)) {
+    if (this.safetyService.isCrisisSignal(opts.safetyText)) {
       result.mentorReaction = this.safetyService.getCrisisResponse();
       result.safetyFlag = true;
       return;
