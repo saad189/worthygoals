@@ -115,5 +115,4 @@ export class AuthService {
       throw new HttpException(error.message, error.status);
     }
   }
-
 }
