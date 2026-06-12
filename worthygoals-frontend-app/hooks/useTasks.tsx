@@ -10,7 +10,9 @@ export function useTasks(goalId: string | null) {
     queryKey: ['tasks', goalId],
     queryFn: () => tasksService.list(goalId!),
     enabled: !!goalId,
-    initialData: [] as TaskItem[],
+    // placeholderData, not initialData — initialData counts as fresh cache
+    // and suppresses the first fetch for the whole staleTime window.
+    placeholderData: [] as TaskItem[],
   });
 
   const optimisticUpdateStatus = useCallback(
@@ -23,7 +25,7 @@ export function useTasks(goalId: string | null) {
   );
 
   return {
-    tasks: query.data,
+    tasks: query.data ?? [],
     loading: query.isLoading,
     error: query.isError ? 'Failed to load tasks' : null,
     refetch: () => { query.refetch(); },

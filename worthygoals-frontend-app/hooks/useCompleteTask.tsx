@@ -17,6 +17,8 @@ export function useCompleteTask(
     onSuccess: (response, { taskId }) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      // completions with mood ≥ 🙂 create board win cards
+      queryClient.invalidateQueries({ queryKey: ['board'] });
       const reactionText = response.mentorReaction ?? null;
       const wasSafetyFlag = response.safetyFlag ?? false;
       if (reactionText) setMentorReaction(reactionText);

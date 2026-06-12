@@ -17,8 +17,25 @@ import Background from "@/components/SubComponents/Background";
 import { initSentry, SentryWrap, POSTHOG_KEY } from "@/services/observability";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { queryClient, asyncStoragePersister } from "@/core/queryClient";
+import { useOutboxDrain } from "@/hooks/useOutboxDrain";
 
 initSentry();
+
+// PostHog is optional — without a key, render children with no provider.
+function AnalyticsProvider({ children }: { children: React.ReactNode }) {
+  if (!POSTHOG_KEY) return <>{children}</>;
+  return (
+    <PostHogProvider apiKey={POSTHOG_KEY} options={{ host: 'https://us.i.posthog.com' }}>
+      {children}
+    </PostHogProvider>
+  );
+}
+
+// Flushes the offline task outbox; must live inside the query provider.
+function OutboxDrainer() {
+  useOutboxDrain();
+  return null;
+}
 
 /**
  * Build a React Navigation theme that maps WG semantic tokens
@@ -172,7 +189,8 @@ function RootLayoutNav() {
       client={queryClient}
       persistOptions={{ persister: asyncStoragePersister }}
     >
-      <PostHogProvider apiKey={POSTHOG_KEY} options={{ host: 'https://us.i.posthog.com' }}>
+      <OutboxDrainer />
+      <AnalyticsProvider>
         <ThemeProvider value={navTheme}>
           <RootSiblingParent>
             <ToastProvider>
@@ -184,7 +202,7 @@ function RootLayoutNav() {
             </ToastProvider>
           </RootSiblingParent>
         </ThemeProvider>
-      </PostHogProvider>
+      </AnalyticsProvider>
     </PersistQueryClientProvider>
   );
 }
