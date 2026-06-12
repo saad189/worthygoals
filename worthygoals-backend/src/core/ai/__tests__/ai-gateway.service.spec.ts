@@ -132,10 +132,7 @@ describe('AiGatewayService', () => {
     await service.chat({ userId: 1, feature: 'chat', messages: MESSAGES });
     const created = mockCallRepo.create.mock.calls[0][0];
     // gpt-4o-mini rates: 10 in × $0.15/M + 5 out × $0.60/M
-    expect(created.costUsd).toBeCloseTo(
-      (10 * 0.15 + 5 * 0.6) / 1_000_000,
-      12,
-    );
+    expect(created.costUsd).toBeCloseTo((10 * 0.15 + 5 * 0.6) / 1_000_000, 12);
   });
 
   it('logs costUsd as null for a model with no configured rates', async () => {
