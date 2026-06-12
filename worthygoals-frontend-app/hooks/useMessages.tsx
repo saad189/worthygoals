@@ -8,7 +8,9 @@ import {
   emitSendMessage,
 } from "@/helpers/messagesSocket";
 
-const TYPING_TIMEOUT_MS = 4000;
+// Failsafe only — the indicator is cleared by the mentor's messageCreated.
+// Must comfortably exceed worst-case AI generation latency.
+const TYPING_TIMEOUT_MS = 30000;
 
 function upsertById(items: ApiMessage[], next: ApiMessage): ApiMessage[] {
   const idx = items.findIndex((m) => m.id === next.id);
@@ -132,7 +134,7 @@ export function useMessages(conversationId?: string) {
               if (!msg || msg.conversationId !== conversationId) return;
 
               // Mentor message arriving clears the typing indicator.
-              if (msg.role === "assistant") {
+              if (msg.role === "mentor") {
                 clearTypingTimeout();
                 setIsMentorTyping(false);
               }
