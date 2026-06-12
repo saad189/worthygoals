@@ -1,13 +1,7 @@
 import {
   Body,
   Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
   Post,
-  Query,
   UseGuards,
   Request,
   BadRequestException,
@@ -28,24 +22,6 @@ import { JwtAuthGuard } from 'src/common/guards';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-
-  @UseGuards(JwtAuthGuard)
-  @Get('all')
-  async findAll() {
-    return this.authService.findAll();
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('email')
-  async findByEmail(@Query('email') email: string) {
-    return this.authService.findOne(email, false);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get(':sub')
-  async findOne(@Param('sub') sub: string) {
-    return this.authService.findOne(sub, true);
-  }
 
   @Post('login')
   async login(@Body() auth: LoginAuthDto) {
@@ -92,13 +68,5 @@ export class AuthController {
   @Post('change-password')
   async confirmChangePassword(@Body() confirmPassDto: ConfirmPasswordDto) {
     return this.authService.confirmForgotPassword(confirmPassDto);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Delete(':email')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('email') email: string) {
-    await this.authService.remove(email);
-    return;
   }
 }

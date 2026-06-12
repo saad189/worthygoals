@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
   IsNotEmpty,
+  IsString,
   Validate,
   IsStrongPassword,
 } from 'class-validator';
@@ -80,6 +81,8 @@ export class ConfirmSignUpDto extends ConfirmationCodeDto {
     description: 'The confirmation code received by the user',
     example: '123456',
   })
+  @IsNotEmpty()
+  @IsString()
   code: string;
 }
 

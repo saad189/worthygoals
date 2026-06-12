@@ -38,10 +38,6 @@ export class UsersService {
     private readonly roleRepository: Repository<Role>,
   ) {}
 
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find();
-  }
-
   async findByUserIds(userIds: number[]): Promise<User[]> {
     try {
       if (!userIds.length)
@@ -78,24 +74,6 @@ export class UsersService {
     return this.userRepository.findOne({ where: { account: { sub } } });
   }
 
-  private async findUserByEmail(email: string): Promise<User> {
-    try {
-      if (!email) throw new BadRequestException('Email must be provided.');
-
-      const user = await this.userRepository.findOne({ where: { email } });
-      console.log({ user, email });
-      if (!user)
-        throw new NotFoundException(`User with email: ${email} not found.`);
-
-      return user;
-    } catch (error) {
-      this.logger.log(
-        `${UsersService.name}:${this.findUserByEmail.name}: ${JSON.stringify(error.message)}`,
-      );
-      throw new HttpException(error.message, error.status);
-    }
-  }
-
   private async findUserByIdentity(identity: string): Promise<User> {
     try {
       if (!identity)
@@ -111,7 +89,7 @@ export class UsersService {
       return user;
     } catch (error) {
       this.logger.log(
-        `${UsersService.name}:${this.findUserByEmail.name}: ${JSON.stringify(error.message)}`,
+        `${UsersService.name}:${this.findUserByIdentity.name}: ${JSON.stringify(error.message)}`,
       );
       throw new HttpException(error.message, error.status);
     }
@@ -221,12 +199,12 @@ export class UsersService {
     }
   }
 
-  async update(
-    id: number,
+  async updateProfile(
+    sub: string,
     updateUserDto: UpdateUserDto,
   ): Promise<ResponseUserDto> {
     try {
-      const user = await this.findOne(id);
+      const user = await this.findUserByIdentity(sub);
 
       this.userRepository.merge(user, updateUserDto);
       const updatedUser = await this.userRepository.save(user);
@@ -234,32 +212,7 @@ export class UsersService {
       return this.getResponseDto(updatedUser);
     } catch (error) {
       this.logger.log(
-        `${UsersService.name}:${this.update.name}: ${JSON.stringify(error.message)}`,
-      );
-      throw new HttpException(error.message, error.status);
-    }
-  }
-
-  async remove(id: number): Promise<void> {
-    try {
-      const user = await this.findOne(id);
-      await this.userRepository.remove(user);
-      // Add code for auth removal too.
-    } catch (error) {
-      this.logger.log(
-        `${UsersService.name}:${this.remove.name}: ${JSON.stringify(error.message)}`,
-      );
-      throw new HttpException(error.message, error.status);
-    }
-  }
-
-  async removeWithIdentity(identity: string): Promise<void> {
-    try {
-      const user = await this.findUserByEmail(identity);
-      await this.userRepository.remove(user);
-    } catch (error) {
-      this.logger.log(
-        `${UsersService.name}:${this.removeWithIdentity.name}: ${JSON.stringify(error.message)}`,
+        `${UsersService.name}:${this.updateProfile.name}: ${JSON.stringify(error.message)}`,
       );
       throw new HttpException(error.message, error.status);
     }

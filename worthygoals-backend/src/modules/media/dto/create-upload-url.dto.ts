@@ -3,6 +3,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   Max,
   MaxLength,
   Min,
@@ -16,6 +17,9 @@ export class CreateUploadUrlDto {
 
   @IsString()
   @IsNotEmpty()
+  @Matches(/^image\/(jpeg|png|webp|gif|heic|heif)$/, {
+    message: 'contentType must be an image MIME type',
+  })
   contentType!: string;
 
   @IsOptional()

@@ -3,8 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
-  Param,
+  Put,
   Delete,
   HttpCode,
   Request,
@@ -30,15 +29,20 @@ export class UsersController {
     private readonly gdprService: GdprService,
   ) {}
 
-  @Get()
-  async findAll() {
-    return this.usersService.findAll();
-  }
-
   @Get('profile')
   getProfile(@Request() req): Promise<ResponseUserDto> {
     if (!req.user) throw new NotFoundException('User not Logged In');
     return this.usersService.getUserProfile(req.user.sub);
+  }
+
+  @Put('profile')
+  @ApiOperation({ summary: 'Update the authenticated user profile' })
+  updateProfile(
+    @Request() req,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<ResponseUserDto> {
+    if (!req.user) throw new NotFoundException('User not Logged In');
+    return this.usersService.updateProfile(req.user.sub, updateUserDto);
   }
 
   @Post('me/data-export')
@@ -59,28 +63,11 @@ export class UsersController {
     await this.gdprService.deleteAccount(req.user.sub);
   }
 
-  @Get(':id')
-  async findOne(@Param('id') id: number) {
-    return this.usersService.findOne(id);
-  }
-
   @Post()
   async create(@Request() req, @Body() createUserDto: Partial<CreateUserDto>) {
     return this.usersService.createForAccount({
       accountSub: req.user.sub,
       dto: createUserDto as CreateUserDto,
     });
-  }
-
-  @Patch(':id')
-  async update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
-  }
-
-  @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: number) {
-    await this.usersService.remove(id);
-    return;
   }
 }
