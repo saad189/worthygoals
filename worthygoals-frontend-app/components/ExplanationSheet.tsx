@@ -50,7 +50,10 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
     const showingCrisis = !!safetyFlag;
 
     React.useImperativeHandle(ref, () => ({
-      open: () => sheetRef.current?.expand(),
+      open: () => {
+        setReason(null);
+        sheetRef.current?.expand();
+      },
       close: () => sheetRef.current?.close(),
     }));
 
