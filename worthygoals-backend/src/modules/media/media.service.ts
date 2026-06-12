@@ -59,7 +59,9 @@ export class MediaService {
     const user = await this.usersService.findByAccountSub(sub);
     if (!user) throw new ServiceUnavailableException('User not found');
 
-    const ext = dto.fileName.split('.').pop()?.toLowerCase() ?? 'jpg';
+    const rawExt = dto.fileName.split('.').pop()?.toLowerCase() ?? 'jpg';
+    // Strip anything that could break out of the drafts/<userId>/ key prefix.
+    const ext = rawExt.replace(/[^a-z0-9]/g, '') || 'jpg';
     const s3Key = `drafts/${user.id}/${Date.now()}.${ext}`;
 
     const media = this.mediaRepo.create({
