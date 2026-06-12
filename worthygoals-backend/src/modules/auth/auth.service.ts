@@ -1,25 +1,19 @@
 import {
   BadRequestException,
   HttpException,
-  HttpStatus,
   Injectable,
   Logger,
-  NotFoundException,
 } from '@nestjs/common';
 
 import { ConfirmPasswordDto, SignUpAuthDto } from './dto/sign-up.dto';
 import { AuthTokens, LoginAuthDto, RefreshTokenDto } from './dto/sign-in.dto';
 import { AWSCognitoService } from './aws-cognito.service';
-import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class AuthService {
   private logger = new Logger(AuthService.name);
 
-  constructor(
-    private readonly awsService: AWSCognitoService,
-    private readonly userService: UsersService,
-  ) {}
+  constructor(private readonly awsService: AWSCognitoService) {}
 
   async signUpUser(auth: SignUpAuthDto): Promise<any> {
     try {
@@ -67,32 +61,6 @@ export class AuthService {
         `${AuthService.name}:${this.logoutUser.name}: ${JSON.stringify(error.message)}`,
       );
       throw new HttpException(error.message, error.status);
-    }
-  }
-
-  async findAll(): Promise<any[]> {
-    try {
-      const response = await this.awsService.findAll();
-      return response;
-    } catch (error) {
-      this.logger.log(
-        `${AuthService.name}:${this.findAll.name}: ${JSON.stringify(error.message)}`,
-      );
-      throw new HttpException(error.message, error.status);
-    }
-  }
-
-  async findOne(identity: string, isSub: boolean): Promise<any> {
-    try {
-      const response = await this.awsService.findOne(identity);
-      return response;
-    } catch (error) {
-      this.logger.log(
-        `${AuthService.name}:${this.findOne.name}: ${JSON.stringify(error.message)}`,
-      );
-      throw new NotFoundException(
-        `User with ${isSub ? 'sub' : 'email'}: ${identity} not found.`,
-      );
     }
   }
 
@@ -148,15 +116,4 @@ export class AuthService {
     }
   }
 
-  async remove(identity: string): Promise<void> {
-    try {
-      await this.awsService.remove(identity);
-      await this.userService.removeWithIdentity(identity);
-    } catch (error) {
-      this.logger.log(
-        `${AuthService.name}:${this.remove.name}: ${JSON.stringify(error.message)}`,
-      );
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
 }

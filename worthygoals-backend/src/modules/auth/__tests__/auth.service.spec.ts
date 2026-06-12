@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from '../auth.service';
 import { AWSCognitoService } from '../aws-cognito.service';
-import { UsersService } from '../../users/users.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -11,7 +10,6 @@ describe('AuthService', () => {
       providers: [
         AuthService,
         { provide: AWSCognitoService, useValue: {} },
-        { provide: UsersService, useValue: {} },
       ],
     }).compile();
 
