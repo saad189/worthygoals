@@ -67,6 +67,18 @@ function ChatViewScreen() {
     chatListRef.current?.scrollToEnd({ animated });
   };
 
+  // Keep incoming messages (mentor replies in particular) and the typing
+  // indicator in view — onContentSizeChange does the actual scroll.
+  const lastMessageId = apiMessages?.length
+    ? apiMessages[apiMessages.length - 1].id
+    : null;
+  useEffect(() => {
+    if (lastMessageId) shouldScrollToBottomRef.current = true;
+  }, [lastMessageId]);
+  useEffect(() => {
+    if (isMentorTyping) shouldScrollToBottomRef.current = true;
+  }, [isMentorTyping]);
+
   const updateChat = () => {
     setChatDetail((prev) => prev);
   };
