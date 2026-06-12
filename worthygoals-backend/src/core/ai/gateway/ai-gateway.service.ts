@@ -63,6 +63,19 @@ export class AiGatewayService {
     } else {
       this.costPerMillion = DEFAULT_COST_PER_MILLION;
     }
+
+    // M-3: these are @Optional() for test convenience but must always be
+    // wired in production — surface a missing module import at boot.
+    if (!this.personalityService) {
+      this.logger.warn(
+        'PersonalityService not injected — persona prompts will be skipped on every chat call',
+      );
+    }
+    if (!this.memoryService) {
+      this.logger.warn(
+        'MemoryService not injected — [Memory Context] will be skipped on every chat call',
+      );
+    }
   }
 
   async chat(req: GatewayChatRequest): Promise<GatewayChatResponse> {
@@ -149,7 +162,7 @@ export class AiGatewayService {
     }
 
     const latencyMs = Date.now() - t0;
-    const costRates = this.costPerMillion[result.model];
+    const costRates = this.resolveCostRates(result.model);
     const costUsd =
       costRates && result.tokensIn !== null && result.tokensOut !== null
         ? (result.tokensIn * costRates.in + result.tokensOut * costRates.out) /
@@ -179,6 +192,25 @@ export class AiGatewayService {
       tokensIn: result.tokensIn,
       tokensOut: result.tokensOut,
     };
+  }
+
+  /**
+   * Providers return the API's versioned model id (e.g. gpt-4o-2024-08-06),
+   * so an exact lookup against the bare keys in the cost map would miss and
+   * silently log costUsd = null. Fall back to the longest matching prefix.
+   */
+  private resolveCostRates(
+    model: string,
+  ): { in: number; out: number } | undefined {
+    if (this.costPerMillion[model]) return this.costPerMillion[model];
+    const prefix = Object.keys(this.costPerMillion)
+      .filter((key) => model.startsWith(key))
+      .sort((a, b) => b.length - a.length)[0];
+    if (!prefix) {
+      this.logger.warn(`No cost rates configured for model "${model}"`);
+      return undefined;
+    }
+    return this.costPerMillion[prefix];
   }
 
   private resolveActiveProvider(): IChatProvider {
@@ -212,7 +244,15 @@ export class AiGatewayService {
   private async injectPersonality(
     req: GatewayChatRequest,
   ): Promise<ChatMessage[]> {
-    if (!req.personalityId || !this.personalityService) {
+    if (!req.personalityId) {
+      return req.messages;
+    }
+    if (!this.personalityService) {
+      // M-3: a personality was requested but the service isn't wired —
+      // never degrade silently on the chat path.
+      this.logger.error(
+        `personalityId "${req.personalityId}" requested but PersonalityService is not injected — responding without persona`,
+      );
       return req.messages;
     }
 
