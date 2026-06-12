@@ -56,7 +56,18 @@ class UserService {
 
     async updateProfile(profileData: UserModel): Promise<UserModel> {
         try {
-            const { data } = await this.apiService.put<UserModel>(`${this.userEndPoint}/profile`, { ...profileData, id: profileData.id });
+            // Send only UpdateUserDto fields — the backend ValidationPipe
+            // (forbidNonWhitelisted) rejects extras like id/role/age.
+            const allowed = [
+                'email', 'firstName', 'lastName', 'dateOfBirth',
+                'gender', 'latitude', 'longitude',
+            ] as const;
+            const payload: Record<string, unknown> = {};
+            for (const key of allowed) {
+                const value = (profileData as unknown as Record<string, unknown>)[key];
+                if (value !== undefined) payload[key] = value;
+            }
+            const { data } = await this.apiService.put<UserModel>(`${this.userEndPoint}/profile`, payload);
             await setUserInStorage(data);
             return data;
         } catch (error: any) {
