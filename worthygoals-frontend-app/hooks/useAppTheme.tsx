@@ -21,7 +21,9 @@
  *   <View style={{ backgroundColor: colors.background, padding: space['4'] }} />
  */
 
-import { useColorScheme } from 'react-native';
+// Use the app-level hook (pinned to 'light' for V1) rather than react-native's
+// OS-following one, so forcing warm-light happens in exactly one place (E-3).
+import { useColorScheme } from '@/components/useColorScheme';
 import { Colors, AppColors } from '@/constants/Colors';
 import {
   FontFamily,
