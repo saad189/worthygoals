@@ -3,6 +3,7 @@ import Button from '@/components/SubComponents/Button';
 import Header from '@/components/SubComponents/Header';
 import Logo from '@/components/SubComponents/Logo';
 import SlidingText from '@/components/SubComponents/SlidingText';
+import { APP_NAME } from '@/constants/Brand';
 import { ROUTE_NAMES } from '@/constants/Routes';
 import { ParamListBase } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -21,7 +22,7 @@ export default function StartScreen() {
     return (
         <Background style={styles.container} >
             <Logo isWhite={true} />
-            <Header>Evolve Membership</Header>
+            <Header>{`${APP_NAME} Membership`}</Header>
             <Button
                 style={styles.button}
                 mode="contained"

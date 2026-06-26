@@ -3,3 +3,4 @@ export * from './Colors';   // Colors (semantic, light + dark) + AppColors type
 export * from './Routes';
 export * from './Config';
 export * from './Storage';
+export * from './Brand';

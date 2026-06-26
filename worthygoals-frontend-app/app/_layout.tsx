@@ -5,6 +5,7 @@ import { Redirect, Stack, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
 import "react-native-reanimated";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { View } from "react-native";
 import { RootSiblingParent } from "react-native-root-siblings";
 import { PostHogProvider } from "posthog-react-native";
@@ -100,9 +101,14 @@ function RootLayout() {
   }
 
   return (
-    <Background style={{ flex: 1 }}>
-      {isSplashVisible || !loaded ? <CustomSplashScreen /> : <RootLayoutNav />}
-    </Background>
+    // GestureHandlerRootView must wrap the whole tree: @gorhom/bottom-sheet
+    // (CompletionSheet / ExplanationSheet) drives gesture handlers in the main
+    // navigation tree, which crash without a root provider (E-1).
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Background style={{ flex: 1 }}>
+        {isSplashVisible || !loaded ? <CustomSplashScreen /> : <RootLayoutNav />}
+      </Background>
+    </GestureHandlerRootView>
   );
 }
 

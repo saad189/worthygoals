@@ -16,6 +16,7 @@ import Skeleton from "@/components/Common/Skeleton";
 import WeeklyDatePicker from "@/components/CalenderView";
 import BorderGradient from "@/components/Common/BorderGradient";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { APP_NAME } from "@/constants/Brand";
 import useDashboard from "@/hooks/useDashboard";
 import { GoalSummary } from "@/services/dashboard.service";
 
@@ -187,7 +188,7 @@ const DashboardScreen = () => {
         }
       >
         <View style={{ alignSelf: "flex-start" }}>
-          <Header>Welcome to Evolve</Header>
+          <Header>{`Welcome to ${APP_NAME}`}</Header>
         </View>
 
         <WeeklyDatePicker />
