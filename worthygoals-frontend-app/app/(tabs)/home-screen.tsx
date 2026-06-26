@@ -39,7 +39,7 @@ const categoryBorderColor = (
 };
 
 const DashboardScreen = () => {
-  const { colors } = useAppTheme();
+  const { colors, fonts } = useAppTheme();
   const { data, loading, refreshing, refresh } = useDashboard();
 
   const goals = data?.goals ?? [];
@@ -54,7 +54,7 @@ const DashboardScreen = () => {
     () =>
       StyleSheet.create({
         todayText: {
-          fontFamily: "Outfit",
+          fontFamily: fonts.sans,
           fontSize: 20,
           color: colors.primary,
           fontWeight: "500",
@@ -143,7 +143,7 @@ const DashboardScreen = () => {
           fontWeight: "500",
         },
       }),
-    [colors]
+    [colors, fonts]
   );
 
   const maxWeek = Math.max(...weekCompletions, 1);

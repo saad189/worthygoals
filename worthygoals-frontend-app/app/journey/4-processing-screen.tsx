@@ -5,6 +5,7 @@ import LoaderComponent from "@/components/SubComponents/Loader";
 import Logo from "@/components/SubComponents/Logo";
 import Paragraph from "@/components/SubComponents/Paragraph";
 import SlidingText from "@/components/SubComponents/SlidingText";
+import { FontFamily } from "@/constants/tokens";
 import { ROUTE_NAMES } from "@/constants/Routes";
 import { ParamListBase } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -70,7 +71,7 @@ const staticStyles = StyleSheet.create({
         fontSize: 25,
     },
     header: {
-        fontFamily: 'Outfit',
+        fontFamily: FontFamily.sans,
         fontSize: 33,
         fontWeight: '500',
         width: '100%',
