@@ -16,7 +16,7 @@ export class TaskExplanation {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 36 })
+  @Column({ type: 'uuid' })
   taskId!: string;
 
   @Column({ type: 'enum', enum: ExplanationReason })

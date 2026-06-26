@@ -40,7 +40,7 @@ export class User {
   @Column({ nullable: true })
   lastName: string;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   dateOfBirth: string;
 
   @Column({ type: 'char', length: 1, nullable: true })

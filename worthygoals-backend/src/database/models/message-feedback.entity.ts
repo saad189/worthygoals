@@ -43,6 +43,6 @@ export class MessageFeedback {
   @Column({ type: 'text', nullable: true })
   comment!: string | null;
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 }

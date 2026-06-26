@@ -4,6 +4,11 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Full Postgres schema init including pgvector.
  * Replaces the MySQL migration set for fresh Postgres installs.
  * Closes H-4: vector search is now an ANN query via pgvector, not O(n) JS.
+ *
+ * UUID alignment: all entity PKs declared with @PrimaryGeneratedColumn('uuid')
+ * and FK/ref columns declared @Column({ type: 'uuid' }) are native UUID here.
+ * Soft references the entities still model as varchar(36) (parentTaskId,
+ * memoryPictureId, memory_embeddings.sourceId) stay VARCHAR(36) on purpose.
  */
 export class PostgresInit1768700000000 implements MigrationInterface {
   name = 'PostgresInit1768700000000';
@@ -26,13 +31,13 @@ export class PostgresInit1768700000000 implements MigrationInterface {
     // ── conversations (needed before messages) ────────────────────────────────
     await queryRunner.query(`
       CREATE TABLE conversations (
-        id              VARCHAR(36)   NOT NULL PRIMARY KEY,
+        id              UUID          NOT NULL PRIMARY KEY,
         "userId"        INT           NOT NULL,
         "mentorId"      INT           NOT NULL,
         status          VARCHAR(16)   NOT NULL DEFAULT 'active',
         title           VARCHAR(180)  NULL,
         "lastMessageAt" TIMESTAMPTZ   NULL,
-        "lastMessageId" VARCHAR(255)  NULL,
+        "lastMessageId" UUID          NULL,
         metadata        JSONB         NULL,
         "createdAt"     TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
         "updatedAt"     TIMESTAMPTZ   NOT NULL DEFAULT NOW()
@@ -80,7 +85,7 @@ export class PostgresInit1768700000000 implements MigrationInterface {
         "totalSessions"      INT          NOT NULL DEFAULT 0,
         "sortOrder"          INT          NOT NULL DEFAULT 0,
         "modelConfig"        JSONB        NULL,
-        personality_id       VARCHAR(64)  NULL,
+        "personalityId"      VARCHAR(64)  NULL,
         "createdAt"          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
         "updatedAt"          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
         CONSTRAINT uq_mentors_slug UNIQUE (slug)
@@ -106,14 +111,14 @@ export class PostgresInit1768700000000 implements MigrationInterface {
       `CREATE INDEX idx_mentors_sort_order ON mentors ("sortOrder")`,
     );
     await queryRunner.query(
-      `CREATE INDEX idx_mentors_personality_id ON mentors (personality_id)`,
+      `CREATE INDEX idx_mentors_personality_id ON mentors ("personalityId")`,
     );
 
     // ── messages ──────────────────────────────────────────────────────────────
     await queryRunner.query(`
       CREATE TABLE messages (
-        id                  VARCHAR(36)  NOT NULL PRIMARY KEY,
-        "conversationId"    VARCHAR(255) NOT NULL,
+        id                  UUID         NOT NULL PRIMARY KEY,
+        "conversationId"    UUID         NOT NULL,
         role                VARCHAR(16)  NOT NULL,
         "userId"            INT          NULL,
         "mentorId"          INT          NULL,
@@ -121,7 +126,7 @@ export class PostgresInit1768700000000 implements MigrationInterface {
         text                TEXT         NULL,
         content             JSONB        NULL,
         "clientMessageId"   VARCHAR(64)  NULL,
-        "replyToMessageId"  VARCHAR(255) NULL,
+        "replyToMessageId"  UUID         NULL,
         "tokensIn"          INT          NULL,
         "tokensOut"         INT          NULL,
         "safetyFlags"       JSONB        NULL,
@@ -151,8 +156,8 @@ export class PostgresInit1768700000000 implements MigrationInterface {
     // ── message_attachments ───────────────────────────────────────────────────
     await queryRunner.query(`
       CREATE TABLE message_attachments (
-        id                VARCHAR(36)  NOT NULL PRIMARY KEY,
-        "messageId"       VARCHAR(255) NOT NULL,
+        id                UUID         NOT NULL PRIMARY KEY,
+        "messageId"       UUID         NOT NULL,
         type              VARCHAR(16)  NOT NULL,
         "storageProvider" VARCHAR(16)  NOT NULL,
         "objectKey"       VARCHAR(512) NOT NULL,
@@ -172,8 +177,8 @@ export class PostgresInit1768700000000 implements MigrationInterface {
     // ── message_feedback ──────────────────────────────────────────────────────
     await queryRunner.query(`
       CREATE TABLE message_feedback (
-        id          VARCHAR(36)  NOT NULL PRIMARY KEY,
-        "messageId" VARCHAR(255) NOT NULL,
+        id          UUID         NOT NULL PRIMARY KEY,
+        "messageId" UUID         NOT NULL,
         "userId"    INT          NOT NULL,
         rating      SMALLINT     NOT NULL,
         tags        JSONB        NULL,
@@ -191,11 +196,11 @@ export class PostgresInit1768700000000 implements MigrationInterface {
     // ── conversation_summaries ────────────────────────────────────────────────
     await queryRunner.query(`
       CREATE TABLE conversation_summaries (
-        id               VARCHAR(36)  NOT NULL PRIMARY KEY,
-        "conversationId" VARCHAR(255) NOT NULL,
+        id               UUID         NOT NULL PRIMARY KEY,
+        "conversationId" UUID         NOT NULL,
         "summaryType"    VARCHAR(16)  NOT NULL,
-        "fromMessageId"  VARCHAR(255) NOT NULL,
-        "toMessageId"    VARCHAR(255) NOT NULL,
+        "fromMessageId"  UUID         NOT NULL,
+        "toMessageId"    UUID         NOT NULL,
         "summaryText"    TEXT         NOT NULL,
         "summaryEmotions" JSONB       NULL,
         "summaryTopics"  JSONB        NULL,
@@ -215,12 +220,12 @@ export class PostgresInit1768700000000 implements MigrationInterface {
     // ── conversation_memory_items ─────────────────────────────────────────────
     await queryRunner.query(`
       CREATE TABLE conversation_memory_items (
-        id               VARCHAR(36)  NOT NULL PRIMARY KEY,
-        "conversationId" VARCHAR(255) NOT NULL,
+        id               UUID         NOT NULL PRIMARY KEY,
+        "conversationId" UUID         NOT NULL,
         key              VARCHAR(64)  NOT NULL,
         value            JSONB        NOT NULL,
         confidence       FLOAT        NULL,
-        "sourceMessageId" VARCHAR(255) NULL,
+        "sourceMessageId" UUID        NULL,
         "createdAt"      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
         "updatedAt"      TIMESTAMPTZ  NOT NULL DEFAULT NOW()
       )
@@ -233,7 +238,7 @@ export class PostgresInit1768700000000 implements MigrationInterface {
     await queryRunner.query(`
       CREATE TABLE accounts (
         id            SERIAL PRIMARY KEY,
-        sub           VARCHAR(255) NOT NULL,
+        sub           UUID         NOT NULL,
         email         VARCHAR(255) NOT NULL,
         "isSignUp"    BOOLEAN      NULL DEFAULT FALSE,
         "dateAdded"   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -319,7 +324,7 @@ export class PostgresInit1768700000000 implements MigrationInterface {
     // ── goals ─────────────────────────────────────────────────────────────────
     await queryRunner.query(`
       CREATE TABLE goals (
-        id            VARCHAR(36)    NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+        id            UUID           NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
         "userId"      INT            NOT NULL,
         "mentorId"    INT            NULL,
         title         VARCHAR(255)   NOT NULL,
@@ -347,8 +352,8 @@ export class PostgresInit1768700000000 implements MigrationInterface {
     // ── tasks ─────────────────────────────────────────────────────────────────
     await queryRunner.query(`
       CREATE TABLE tasks (
-        id                VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-        "goalId"          VARCHAR(36) NOT NULL,
+        id                UUID         NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+        "goalId"          UUID         NOT NULL,
         title             VARCHAR(255) NOT NULL,
         description       TEXT         NULL,
         status            VARCHAR(16)  NOT NULL DEFAULT 'pending',
@@ -373,12 +378,12 @@ export class PostgresInit1768700000000 implements MigrationInterface {
     // ── task_completions (includes mentor_reaction from S16) ──────────────────
     await queryRunner.query(`
       CREATE TABLE task_completions (
-        id                VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-        "taskId"          VARCHAR(36) NOT NULL,
+        id                UUID        NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+        "taskId"          UUID        NOT NULL,
         "moodScore"       SMALLINT    NOT NULL,
         reflection        TEXT        NULL,
         "memoryPictureId" VARCHAR(36) NULL,
-        mentor_reaction   TEXT        NULL,
+        "mentorReaction"  TEXT        NULL,
         "createdAt"       TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
@@ -389,8 +394,8 @@ export class PostgresInit1768700000000 implements MigrationInterface {
     // ── task_explanations ─────────────────────────────────────────────────────
     await queryRunner.query(`
       CREATE TABLE task_explanations (
-        id         VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-        "taskId"   VARCHAR(36) NOT NULL,
+        id         UUID        NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+        "taskId"   UUID        NOT NULL,
         reason     VARCHAR(32) NOT NULL,
         "freeText" TEXT        NULL,
         "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -403,7 +408,7 @@ export class PostgresInit1768700000000 implements MigrationInterface {
     // ── media ─────────────────────────────────────────────────────────────────
     await queryRunner.query(`
       CREATE TABLE media (
-        id            VARCHAR(36)  NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+        id            UUID         NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
         "userId"      INT          NOT NULL,
         "s3Key"       VARCHAR(512) NOT NULL,
         "contentType" VARCHAR(255) NULL,
@@ -466,7 +471,7 @@ export class PostgresInit1768700000000 implements MigrationInterface {
     // ── memory_embeddings (pgvector column replaces embeddingJson) ────────────
     await queryRunner.query(`
       CREATE TABLE memory_embeddings (
-        id              VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+        id              UUID        NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
         "userId"        INT         NOT NULL,
         "sourceType"    VARCHAR(32) NOT NULL,
         "sourceId"      VARCHAR(36) NULL,
@@ -487,7 +492,7 @@ export class PostgresInit1768700000000 implements MigrationInterface {
     // ── memory_digests ────────────────────────────────────────────────────────
     await queryRunner.query(`
       CREATE TABLE memory_digests (
-        id              VARCHAR(36)  NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+        id              UUID         NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
         "userId"        INT          NOT NULL,
         "personalityId" VARCHAR(64)  NOT NULL,
         "digestText"    TEXT         NOT NULL,
@@ -503,7 +508,7 @@ export class PostgresInit1768700000000 implements MigrationInterface {
     // ── push_tokens ───────────────────────────────────────────────────────────
     await queryRunner.query(`
       CREATE TABLE push_tokens (
-        id          VARCHAR(36)  NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+        id          UUID         NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
         "userId"    INT          NOT NULL,
         token       VARCHAR(512) NOT NULL,
         platform    VARCHAR(16)  NOT NULL DEFAULT 'expo',
@@ -521,7 +526,7 @@ export class PostgresInit1768700000000 implements MigrationInterface {
     // ── notification_logs ─────────────────────────────────────────────────────
     await queryRunner.query(`
       CREATE TABLE notification_logs (
-        id          VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+        id          UUID        NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
         "userId"    INT         NOT NULL,
         kind        VARCHAR(32) NOT NULL,
         "sentDate"  VARCHAR(10) NOT NULL,
@@ -537,7 +542,7 @@ export class PostgresInit1768700000000 implements MigrationInterface {
     // ── notification_copy_cache ───────────────────────────────────────────────
     await queryRunner.query(`
       CREATE TABLE notification_copy_cache (
-        id              VARCHAR(36) NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+        id              UUID        NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
         "personalityId" VARCHAR(32) NOT NULL,
         event           VARCHAR(48) NOT NULL,
         day             VARCHAR(10) NOT NULL,

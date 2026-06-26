@@ -89,10 +89,10 @@ export class Message {
   @Column({ type: 'json', nullable: true })
   safetyFlags!: Record<string, any> | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   archivedAt!: Date | null;
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 
   @OneToMany(() => MessageAttachment, (a) => a.message)

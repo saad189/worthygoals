@@ -48,7 +48,7 @@ export class Goal {
   @Column({ type: 'text', nullable: true })
   failureText?: string;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   deadline?: Date;
 
   @Column({ type: 'json', nullable: true })

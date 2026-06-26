@@ -48,7 +48,7 @@ export class Conversation {
   @Column({ type: 'varchar', length: 180, nullable: true })
   title!: string | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   lastMessageAt!: Date | null;
 
   @Column({ type: 'uuid', nullable: true })
@@ -57,10 +57,10 @@ export class Conversation {
   @Column({ type: 'json', nullable: true })
   metadata!: Record<string, any> | null;
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'datetime' })
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt!: Date;
 
   // Relations

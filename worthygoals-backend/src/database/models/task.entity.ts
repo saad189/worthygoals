@@ -22,7 +22,7 @@ export class Task {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 36 })
+  @Column({ type: 'uuid' })
   goalId!: string;
 
   @Column({ length: 255 })
@@ -34,7 +34,7 @@ export class Task {
   @Column({ type: 'enum', enum: TaskStatus, default: TaskStatus.PENDING })
   status!: TaskStatus;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   dueDate?: Date;
 
   @Column({

@@ -1,9 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "prepare": "husky"
-  },
-  "devDependencies": {
-    "husky": "^9.1.7"
+    "start:be": "bash scripts/dev.sh",
+    "start:fe": "cd worthygoals-frontend-app && npx expo start"
   }
 }

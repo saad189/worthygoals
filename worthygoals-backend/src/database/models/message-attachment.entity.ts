@@ -50,6 +50,6 @@ export class MessageAttachment {
   @Column({ type: 'varchar', length: 128, nullable: true })
   checksumSha256!: string | null;
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 }

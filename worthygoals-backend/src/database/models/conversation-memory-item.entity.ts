@@ -35,9 +35,9 @@ export class ConversationMemoryItem {
   @Column({ type: 'uuid', nullable: true })
   sourceMessageId!: string | null;
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'datetime' })
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt!: Date;
 }

@@ -58,6 +58,6 @@ export class ConversationSummary {
   @Column({ type: 'varchar', length: 32, nullable: true })
   promptVersion!: string | null;
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 }

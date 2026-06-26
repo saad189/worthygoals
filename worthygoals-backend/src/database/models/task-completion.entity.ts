@@ -15,11 +15,11 @@ export class TaskCompletion {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 36 })
+  @Column({ type: 'uuid' })
   taskId!: string;
 
   /** 1–4: 😣 😐 🙂 🔥 */
-  @Column({ type: 'tinyint' })
+  @Column({ type: 'smallint' })
   moodScore!: number;
 
   @Column({ type: 'text', nullable: true })
