@@ -24,20 +24,6 @@ const { width } = Dimensions.get("window");
 
 const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
 
-const categoryBorderColor = (
-  category: string,
-  colors: ReturnType<typeof useAppTheme>["colors"]
-) => {
-  switch (category.toLowerCase()) {
-    case "knowledge":
-      return colors.goalCategoryBlue;
-    case "spiritual":
-      return colors.goalCategoryPurple;
-    default:
-      return colors.goalCategoryPink;
-  }
-};
-
 const DashboardScreen = () => {
   const { colors, fonts } = useAppTheme();
   const { data, loading, refreshing, refresh } = useDashboard();
@@ -151,10 +137,8 @@ const DashboardScreen = () => {
   const renderGoalCard = (goal: GoalSummary, i: number) => (
     <BorderGradient
       borderWidth={2}
-      colors={[
-        categoryBorderColor(goal.category, colors),
-        colors.gradientTerminal,
-      ]}
+      // Discipline categories retired (Q1) — single neutral brand accent.
+      colors={[colors.primary, colors.gradientTerminal]}
       key={goal.id}
       start={{ x: i % 2 === 0 ? 1 : 0, y: i % 2 === 0 ? 1 : 0 }}
       end={{ x: i % 2 === 1 ? 1 : 0, y: i % 2 === 0 ? 1 : 0 }}

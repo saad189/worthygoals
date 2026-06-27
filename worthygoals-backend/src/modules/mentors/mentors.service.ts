@@ -8,6 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Mentor } from 'src/database/models';
+import { MentorVisibility } from 'src/common/constants';
 import { CreateMentorDto } from './dto/create-mentor.dto';
 import { UpdateMentorDto } from './dto/update-mentor.dto';
 
@@ -100,7 +101,12 @@ export class MentorsService {
   }
 
   async findAll(include?: string | string[]): Promise<Mentor[]> {
+    // Roster only surfaces the live, public personalities. Retired mentors
+    // (e.g. legacy discipline specialists) stay resolvable by id but are
+    // hidden from the list. Order matches the seeder's sortOrder.
     return this.mentorRepository.find({
+      where: { isActive: true, visibility: MentorVisibility.PUBLIC },
+      order: { sortOrder: 'ASC' },
       relations: this.buildRelations(include),
     });
   }

@@ -6,6 +6,8 @@ export const ROUTE_NAMES = {
     CHAT_LIST_SCREEN: "chat-list-screen",
     MENTORS_LIST_SCREEN: "mentors-list-screen",
     TODO_LIST_SCREEN: "todo-list-screen",
+    FEED_SCREEN: "feed-screen",
+    ME_SCREEN: "me-screen",
     INSPIRATION: {
       self: "inspiration",
       DEFAULT_SCREEN: "default-screen",
