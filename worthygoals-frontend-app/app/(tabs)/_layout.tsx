@@ -1,7 +1,7 @@
 import React from "react";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { Link, Tabs } from "expo-router";
-import { Dimensions, Platform, Pressable } from "react-native";
+import { Tabs } from "expo-router";
+import { Dimensions, Platform } from "react-native";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import { useClientOnlyValue } from "@/components/useClientOnlyValue";
@@ -14,7 +14,7 @@ function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>["name"];
   color: string;
 }) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+  return <FontAwesome size={26} style={{ marginBottom: -3 }} {...props} />;
 }
 
 const { height } = Dimensions.get("window");
@@ -23,6 +23,9 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
   return (
     <Tabs
+      // Hi-Fi tab set (Q4): today · goals · team · feed · me.
+      // Chat is intentionally NOT a top-level tab — conversation lives inside a
+      // mentor (team → mentor) and inside failure/status flows.
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         tabBarStyle: {
@@ -48,31 +51,18 @@ export default function TabLayout() {
         name={ROUTE_NAMES.TABS.HOME_SCREEN}
         options={{
           headerShown: false,
-          title: "Home",
-          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    color={Colors[colorScheme ?? "light"].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
+          title: "today",
+          tabBarIcon: ({ color }) => <TabBarIcon name="sun-o" color={color} />,
         }}
       />
+
       <Tabs.Screen
-        name={ROUTE_NAMES.TABS.CHAT_LIST_SCREEN}
+        name={ROUTE_NAMES.TABS.TODO_LIST_SCREEN}
         options={{
           headerShown: false,
-          title: "Chat",
+          title: "goals",
           tabBarIcon: ({ color }) => (
-            <TabBarIcon name="comments" color={color} />
+            <TabBarIcon name="bullseye" color={color} />
           ),
         }}
       />
@@ -81,31 +71,37 @@ export default function TabLayout() {
         name={ROUTE_NAMES.TABS.MENTORS_LIST_SCREEN}
         options={{
           headerShown: false,
-          title: "Mentors",
+          title: "team",
           tabBarIcon: ({ color }) => <TabBarIcon name="users" color={color} />,
         }}
       />
 
       <Tabs.Screen
-        name={ROUTE_NAMES.TABS.TODO_LIST_SCREEN}
+        name={ROUTE_NAMES.TABS.FEED_SCREEN}
         options={{
           headerShown: false,
-          title: "To-do",
+          title: "feed",
           tabBarIcon: ({ color }) => (
-            <TabBarIcon name="check-square" color={color} />
+            <TabBarIcon name="th-large" color={color} />
           ),
         }}
       />
-      {/* <Tabs.Screen
-        name={ROUTE_NAMES.TABS.INSPIRATION.self}
+
+      <Tabs.Screen
+        name={ROUTE_NAMES.TABS.ME_SCREEN}
         options={{
           headerShown: false,
-          title: "Inspiration",
-          tabBarIcon: ({ color }) => (
-            <TabBarIcon name="hacker-news" color={color} />
-          ),
+          title: "me",
+          tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
         }}
-      /> */}
+      />
+
+      {/* Chat list is no longer a top-level tab (Q4). Keep the route registered
+          but off the bar so any lingering deep-link still resolves. */}
+      <Tabs.Screen
+        name={ROUTE_NAMES.TABS.CHAT_LIST_SCREEN}
+        options={{ href: null, headerShown: false }}
+      />
     </Tabs>
   );
 }
