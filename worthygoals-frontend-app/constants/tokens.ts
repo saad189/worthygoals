@@ -29,6 +29,11 @@ export const Palette = {
   inkMutedDark: '#6B6560', // muted on dark
   inkFaintDark: '#2D2926', // very faint on dark — dividers
 
+  // ── Per-mentor identity colours (Hi-Fi §1) ─────────────────
+  // Each personality has its own colour: Marcus = ink, Lyra = slate-blue,
+  // Goggs = rust. Drives MentorAvatar and the future useAppTheme(mentorId) accent.
+  mentorLyra:   '#6F86B3', // slate-blue — Lyra, the steady one
+
   // Accent shades
   accentLight:  '#E0633E', // lighter rust for hover/pressed states
   accentDark:   '#9E3319', // deeper rust
@@ -79,12 +84,12 @@ export const Palette = {
 // ── Typography ────────────────────────────────────────────────
 export const FontFamily = {
   /** All UI: headings, labels, body */
-  sans:        'Outfit',
-  /** Fallback for Geist (when web fonts are loaded) */
-  sansAlt:     'Geist',
-  /** Personality voice, long-form narrative */
+  sans:        'Geist',
+  /** Personality voice, long-form narrative (editorial display) */
   serif:       'Newsreader',
-  /** Code blocks, timestamps, data */
+  /** Italic serif — the Hi-Fi headline voice (separate registered family) */
+  serifItalic: 'Newsreader-Italic',
+  /** Code blocks, timestamps, eyebrows, structured data */
   mono:        'JetBrains Mono',
   /** System fallback chain */
   system:      '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',

@@ -72,6 +72,12 @@ SplashScreen.preventAutoHideAsync();
 
 function RootLayout() {
   const [loaded, error] = useFonts({
+    // Brand fonts (E-4) — registered family names match constants/tokens.ts FontFamily.
+    Geist: require("../assets/fonts/Geist.ttf"),
+    Newsreader: require("../assets/fonts/Newsreader.ttf"),
+    "Newsreader-Italic": require("../assets/fonts/Newsreader-Italic.ttf"),
+    "JetBrains Mono": require("../assets/fonts/JetBrainsMono.ttf"),
+    // Legacy — kept registered until the reskin sweep (U3–U8) removes the last refs.
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     Outfit: require("../assets/fonts/Outfit-VariableFont_wght.ttf"),
     ...FontAwesome.font,

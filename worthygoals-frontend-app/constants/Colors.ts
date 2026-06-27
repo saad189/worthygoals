@@ -88,6 +88,11 @@ export const Colors = {
     unreadDot:              Palette.successBase,
     durationBadgeText:      Palette.cyanBlue,
 
+    // ── Per-mentor identity (Hi-Fi §1) ─────────────────────────
+    mentorMarcus:          Palette.ink,
+    mentorLyra:            Palette.mentorLyra,
+    mentorGoggs:           Palette.accent,
+
     // ── Absolute ───────────────────────────────────────────────
     black:                 Palette.black,
     white:                 Palette.white,
@@ -168,6 +173,11 @@ export const Colors = {
     mentorNameColor:        Palette.warmGold,
     unreadDot:              Palette.successBase,
     durationBadgeText:      Palette.cyanBlue,
+
+    // ── Per-mentor identity (Hi-Fi §1) ─────────────────────────
+    mentorMarcus:          Palette.inkDark,
+    mentorLyra:            Palette.mentorLyra,
+    mentorGoggs:           Palette.accent,
 
     // ── Absolute ───────────────────────────────────────────────
     black:                 Palette.black,
