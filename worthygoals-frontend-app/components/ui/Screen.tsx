@@ -5,8 +5,8 @@
  * legacy dark-image `Background` for the re-architected screens (§F). Pure
  * tokens — no raw hex, no OS-dependent surface.
  */
-import React, { ReactNode } from 'react';
-import { ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
+import React, { ReactElement, ReactNode } from 'react';
+import { RefreshControlProps, ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
 import { SafeAreaView, Edge } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -22,6 +22,8 @@ type Props = {
   edges?: Edge[];
   style?: ViewStyle;
   contentStyle?: ViewStyle;
+  /** Pull-to-refresh control; only applied when `scroll` is true. */
+  refreshControl?: ReactElement<RefreshControlProps>;
 };
 
 export default function Screen({
@@ -32,6 +34,7 @@ export default function Screen({
   edges = ['top', 'bottom'],
   style,
   contentStyle,
+  refreshControl,
 }: Props) {
   const { colors, space } = useAppTheme();
 
@@ -50,6 +53,7 @@ export default function Screen({
           contentContainerStyle={[scroll && !center ? styles.grow : null, inner]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          refreshControl={refreshControl}
         >
           {children}
         </ScrollView>

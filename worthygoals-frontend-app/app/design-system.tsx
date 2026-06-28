@@ -7,7 +7,7 @@
  */
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import { Screen, Header, Card, Button, MentorAvatar, Text } from '@/components/ui';
+import { Screen, Header, Card, Button, MentorAvatar, ProgressRing, Text } from '@/components/ui';
 import { useAppTheme } from '@/hooks/useAppTheme';
 
 const MENTORS = [
@@ -49,6 +49,16 @@ export default function DesignSystemDemo() {
               </View>
             </View>
           </Card>
+        ))}
+      </View>
+
+      <Text variant="eyebrow" style={{ marginBottom: space['2'] }}>PROGRESS</Text>
+      <View style={{ flexDirection: 'row', gap: space['4'], marginBottom: space['6'] }}>
+        {[0, 0.66, 1].map((p) => (
+          <ProgressRing key={p} progress={p} size={68}>
+            <Text variant="title">{Math.round(p * 100)}</Text>
+            <Text variant="eyebrow">%</Text>
+          </ProgressRing>
         ))}
       </View>
 
