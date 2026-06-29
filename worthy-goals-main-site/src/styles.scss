@@ -1,0 +1,138 @@
+/* ============================================================
+   Worthy Goals — main marketing site
+   Global design tokens + shared base/utility styles.
+   Section- and card-specific styles live in their components.
+   ============================================================ */
+
+:root {
+  --paper: #F4EFE3;
+  --surface: #EFE9D8;
+  --ink: #1A1714;
+  --ink-70: rgba(26, 23, 20, 0.70);
+  --ink-55: rgba(26, 23, 20, 0.55);
+  --ink-40: rgba(26, 23, 20, 0.40);
+  --ink-12: rgba(26, 23, 20, 0.12);
+  --ink-08: rgba(26, 23, 20, 0.08);
+  --rust: #C04124;
+  --rust-ink: #A8341A;
+  --cream: #FBF7EE;
+
+  --sans: 'Geist', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+  --maxw: 1120px;
+  --gutter: clamp(20px, 5vw, 40px);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 18px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* subtle paper grain */
+  background-image: radial-gradient(rgba(26, 23, 20, 0.018) 1px, transparent 1px);
+  background-size: 3px 3px;
+}
+
+::selection { background: rgba(192, 65, 36, 0.20); }
+
+a { color: inherit; }
+img { max-width: 100%; display: block; }
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--rust);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;
+}
+
+/* ---------- layout ---------- */
+.wrap {
+  width: 100%;
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
+}
+
+section { padding-block: clamp(64px, 10vw, 120px); }
+
+/* ---------- typography ---------- */
+h1, h2, h3 { font-weight: 600; letter-spacing: -0.02em; line-height: 1.04; margin: 0; }
+h1 { font-size: clamp(42px, 7vw, 84px); }
+h2 { font-size: clamp(30px, 4.4vw, 52px); }
+h3 { font-size: clamp(20px, 2.4vw, 26px); letter-spacing: -0.01em; }
+
+.serif { font-family: var(--serif); font-weight: 400; }
+.serif-i { font-family: var(--serif); font-style: italic; font-weight: 400; }
+.lead { font-size: clamp(18px, 2.1vw, 22px); color: var(--ink-70); line-height: 1.5; }
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--rust-ink);
+  margin: 0 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.eyebrow::before {
+  content: "";
+  width: 26px;
+  height: 1px;
+  background: var(--rust);
+  opacity: 0.6;
+  display: inline-block;
+  flex: none;
+}
+
+/* ---------- buttons ---------- */
+.btn {
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 15px;
+  border: none;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 11px 20px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform .15s ease, background .2s ease, box-shadow .2s ease, color .2s ease, border-color .2s ease;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--rust); color: var(--cream); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04); }
+.btn-primary:hover { background: var(--rust-ink); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+.btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--ink-12); }
+.btn-ghost:hover { border-color: var(--ink-40); }
+
+/* ---------- reveal-on-scroll (driven by appReveal directive) ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity .7s cubic-bezier(.2, .7, .2, 1), transform .7s cubic-bezier(.2, .7, .2, 1);
+}
+.reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+}

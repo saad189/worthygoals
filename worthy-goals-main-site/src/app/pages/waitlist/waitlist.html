@@ -1,0 +1,150 @@
+<wg-nav-bar />
+
+<main id="top">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" aria-labelledby="hero-h">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow" appReveal>{{ hero.eyebrow }}</p>
+        <h1 id="hero-h" appReveal>{{ hero.headingLines[0] }}<br>{{ hero.headingLines[1] }}<span class="em">{{ hero.headingEm }}</span></h1>
+        <p class="lead hero-sub" appReveal>{{ hero.sub }}</p>
+
+        <div appReveal>
+          <wg-email-capture inputId="email-hero" [buttonLabel]="capture.heroButton" />
+        </div>
+
+        <div class="trust" appReveal>
+          <div class="avatars" aria-hidden="true">
+            @for (a of hero.trustAvatars; track a.initials) {
+              <span [style.background]="a.color">{{ a.initials }}</span>
+            }
+          </div>
+          <span>{{ hero.trustText }}</span>
+        </div>
+      </div>
+
+      <div class="stack" appReveal aria-label="Examples of mentor messages">
+        @for (msg of hero.messages; track msg.name) {
+          <wg-mentor-message-card [message]="msg" />
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROBLEM ============ -->
+  <section class="problem" aria-labelledby="prob-h">
+    <div class="wrap">
+      <p class="eyebrow" appReveal>{{ problem.eyebrow }}</p>
+      <p class="big serif" id="prob-h" appReveal>{{ problem.heading }}</p>
+      <ul class="problem-list">
+        @for (item of problem.items; track item.n) {
+          <li appReveal>
+            <span class="n">{{ item.n }}</span>
+            <span class="t"><b>{{ item.bold }}</b>{{ item.rest }}</span>
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ HOW IT WORKS ============ -->
+  <section aria-labelledby="how-h">
+    <div class="wrap">
+      <p class="eyebrow" appReveal>{{ how.eyebrow }}</p>
+      <h2 id="how-h" appReveal>
+        @for (line of how.headingLines; track line; let last = $last) {
+          {{ line }}@if (!last) {<br>}
+        }
+      </h2>
+      <div class="steps">
+        @for (step of how.steps; track step.num) {
+          <div appReveal><wg-step-card [step]="step" /></div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MENTORS ============ -->
+  <section class="mentors" aria-labelledby="men-h">
+    <div class="wrap">
+      <p class="eyebrow" appReveal>{{ mentors.eyebrow }}</p>
+      <h2 id="men-h" appReveal>
+        @for (line of mentors.headingLines; track line; let last = $last) {
+          {{ line }}@if (!last) {<br>}
+        }
+      </h2>
+      <div class="mentor-grid">
+        @for (mentor of mentors.cards; track mentor.name) {
+          <div appReveal class="mentor-grid-cell"><wg-mentor-card [mentor]="mentor" /></div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FAILURE, REFRAMED ============ -->
+  <section class="failure" aria-labelledby="fail-h">
+    <div class="wrap failure-grid">
+      <div appReveal>
+        <p class="eyebrow">{{ failure.eyebrow }}</p>
+        <h2 id="fail-h">{{ failure.headingBefore }}<span class="em">{{ failure.headingEm }}</span>{{ failure.headingAfter }}</h2>
+        <p class="lead failure-lead">{{ failure.lead }}</p>
+        <p class="serif-i failure-pull">{{ failure.pull }}</p>
+      </div>
+      <div class="miss-stack" appReveal aria-label="How mentors respond to a missed goal">
+        @for (r of failure.responses; track r.who) {
+          <wg-miss-card [response]="r" />
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BENEFITS ============ -->
+  <section class="benefits" aria-labelledby="ben-h">
+    <div class="wrap">
+      <p class="eyebrow" appReveal>{{ benefits.eyebrow }}</p>
+      <h2 id="ben-h" appReveal>
+        @for (line of benefits.headingLines; track line; let last = $last) {
+          {{ line }}@if (!last) {<br>}
+        }
+      </h2>
+      <div class="ben-grid">
+        @for (b of benefits.items; track b.title) {
+          <div appReveal><wg-benefit-card [benefit]="b" /></div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CTA BAND ============ -->
+  <section class="cta-band" id="join" aria-labelledby="cta-h">
+    <div class="wrap">
+      <p class="eyebrow" appReveal>{{ cta.eyebrow }}</p>
+      <h2 id="cta-h" appReveal>
+        @for (line of cta.headingLines; track line; let last = $last) {
+          {{ line }}@if (!last) {<br>}
+        }
+      </h2>
+      <p class="lead cta-lead" appReveal>{{ cta.lead }}</p>
+      <div appReveal>
+        <wg-email-capture inputId="email-cta" [buttonLabel]="cta.buttonLabel" [maxWidth]="520" />
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FAQ ============ -->
+  <section aria-labelledby="faq-h">
+    <div class="wrap">
+      <p class="eyebrow" appReveal>{{ faq.eyebrow }}</p>
+      <h2 id="faq-h" appReveal>{{ faq.heading }}</h2>
+      <div class="faq-list" appReveal>
+        @for (item of faq.items; track item.q) {
+          <wg-faq-item [item]="item" />
+        }
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<wg-site-footer />
