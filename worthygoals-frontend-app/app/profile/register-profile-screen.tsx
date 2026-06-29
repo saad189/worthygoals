@@ -170,8 +170,10 @@ export default function RegisterProfileScreen() {
       setUserProfile(createdProfile);
       showInfoMessage("Profile Completed!");
 
-      navigation.navigate(ROUTE_NAMES.TABS.self, {
-        screen: ROUTE_NAMES.TABS.HOME_SCREEN,
+      // New user → run the personality-match funnel (U4). The funnel's confirm
+      // screen resets into the tabs once a mentor + tone are chosen.
+      navigation.navigate(ROUTE_NAMES.JOURNEY.self, {
+        screen: ROUTE_NAMES.JOURNEY.INTRO_SCREEN,
       });
     } catch (error: any) {
       showErrorMessage(error.message);

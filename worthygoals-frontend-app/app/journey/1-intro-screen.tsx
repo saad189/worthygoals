@@ -1,58 +1,51 @@
-import Background from "@/components/SubComponents/Background";
-import Button from "@/components/SubComponents/Button";
-import Header from "@/components/SubComponents/Header";
-import ImageCardComponent from "@/components/SubComponents/ImageCard";
-import Logo from "@/components/SubComponents/Logo";
-import { ROUTE_NAMES } from "@/constants/Routes";
-import { ImageCard } from "@/models";
-import { ParamListBase } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { useNavigation } from "expo-router";
-import { Dimensions, StyleSheet } from "react-native";
-import { useAppTheme } from "@/hooks/useAppTheme";
+/**
+ * Journey ① · Intro — opens the personality-match funnel (Hi-Fi flow ①).
+ * Warm-light, primitives only. Sets the editorial register before the
+ * forced-choice tone test.
+ */
+import React from 'react';
+import { View } from 'react-native';
+import { useNavigation } from 'expo-router';
+import { ParamListBase } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+import { Button, Header, MentorAvatar, Screen, Text } from '@/components/ui';
+import { APP_NAME } from '@/constants/Brand';
+import { ROUTE_NAMES } from '@/constants/Routes';
+import { PERSONALITIES } from '@/constants/Personalities';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 export default function IntroScreen() {
-    const { colors } = useAppTheme();
-    const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
+  const { space } = useAppTheme();
+  const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
 
-    const cards: ImageCard[] = [
-        { title: 'Knowledge', imageUrl: require('@/assets/images/reading-books.png') },
-        { title: 'Power', imageUrl: require('@/assets/images/excercise-running.png') },
-        { title: 'Spiritual', imageUrl: require('@/assets/images/motivation-walking.png') },
-    ];
+  const start = () => navigation.navigate(ROUTE_NAMES.JOURNEY.TONE_TEST_SCREEN);
+  const skip = () =>
+    navigation.navigate(ROUTE_NAMES.JOURNEY.YOUR_TEAM_SCREEN, { hard: '0', answered: '0' } as never);
 
-    const onNext = () => {
-        navigation.navigate(ROUTE_NAMES.JOURNEY.self, { screen: ROUTE_NAMES.JOURNEY.SELECT_DISCIPLINE_SCREEN });
-    };
+  return (
+    <Screen>
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <Header
+          eyebrow={`${APP_NAME} · SETUP`}
+          title={"Let's find the voice\nyou can't ignore."}
+        />
+        <Text variant="muted" style={{ marginBottom: space['8'] }}>
+          Three coaches, one stake. Answer a few quick gut-checks and we'll match
+          you with the one you'll actually listen to.
+        </Text>
 
-    return (
-        <Background>
-            <Logo isWhite={true} />
-            <Header>What are we about?</Header>
+        <View style={{ flexDirection: 'row', gap: space['3'] }}>
+          {PERSONALITIES.map((p) => (
+            <MentorAvatar key={p.slug} mentor={p.slug} size={52} />
+          ))}
+        </View>
+      </View>
 
-            {cards.map((card, index) => (
-                <ImageCardComponent
-                    fontSize={20}
-                    extraStyles={[staticStyles.card, { backgroundColor: colors.black }]}
-                    card={card}
-                    key={index}
-                />
-            ))}
-
-            <Button mode="contained" onPress={onNext}>Next</Button>
-        </Background>
-    );
+      <View style={{ paddingBottom: space['4'] }}>
+        <Button label="Start" onPress={start} />
+        <Button label="Skip — just pick for me" variant="link" onPress={skip} />
+      </View>
+    </Screen>
+  );
 }
-
-const staticStyles = StyleSheet.create({
-    card: {
-        width: SCREEN_WIDTH * 0.8,
-        borderRadius: 20,
-        height: SCREEN_HEIGHT * 0.16,
-        overflow: 'hidden',
-        position: 'relative',
-        marginVertical: 10,
-    },
-});

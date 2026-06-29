@@ -4,3 +4,4 @@ export * from './Routes';
 export * from './Config';
 export * from './Storage';
 export * from './Brand';
+export * from './Personalities';
