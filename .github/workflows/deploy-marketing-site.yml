@@ -1,0 +1,53 @@
+name: Deploy marketing site → Firebase Hosting
+
+# Redeploys worthygoals.web.app on every push to develop that touches the
+# marketing site (or this workflow). Path-filtered so backend/app-only pushes
+# don't trigger a needless static redeploy.
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'worthy-goals-main-site/**'
+      - '.github/workflows/deploy-marketing-site.yml'
+  # allow manual redeploys from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build & deploy
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worthy-goals-main-site
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: worthy-goals-main-site/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (production)
+        run: npm run build
+
+      - name: Deploy to Firebase Hosting
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_WORTHY_GOALS }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-sa.json
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "::error::Missing secret FIREBASE_SERVICE_ACCOUNT_WORTHY_GOALS"
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          npx --yes firebase-tools deploy \
+            --only hosting:worthygoals \
+            --project worthy-goals-9b4dd \
+            --non-interactive \
+            --message "${GITHUB_SHA::7} via GitHub Actions"
+          rm -f "$GOOGLE_APPLICATION_CREDENTIALS"
