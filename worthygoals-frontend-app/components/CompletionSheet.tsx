@@ -5,7 +5,6 @@ import {
   Image,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -18,11 +17,14 @@ import BottomSheet, {
 import { MotiView } from 'moti';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
+import { Button, MentorAvatar, Text } from '@/components/ui';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { CompleteTaskPayload } from '@/models';
 import { mediaService } from '@/services/media.service';
+import { personaBySlug } from '@/constants/Personalities';
 import { triggerPersonalityHaptic, triggerSelectionHaptic } from '@/helpers/haptics';
 
+// Hi-Fi screen 09 (SUCCESS → REFLECT): mood + memory pic + in-voice reaction.
 const MOODS: { score: 1 | 2 | 3 | 4; emoji: string; label: string }[] = [
   { score: 1, emoji: '😣', label: 'Tough' },
   { score: 2, emoji: '😐', label: 'Okay' },
@@ -66,7 +68,10 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
     const [mediaId, setMediaId] = useState<string | null>(null);
     const [localCrisis, setLocalCrisis] = useState(false);
 
-    const snapPoints = useMemo(() => ['75%'], []);
+    const snapPoints = useMemo(() => ['78%'], []);
+
+    const persona = personaBySlug(personalityId ?? undefined);
+    const mentorName = persona?.name ?? 'Your mentor';
 
     const showingReaction = !submitting && !!mentorReaction && !safetyFlag && !localCrisis;
     const showingCrisis = safetyFlag || localCrisis;
@@ -158,24 +163,10 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
     };
 
     const s = StyleSheet.create({
-      content: {
-        flex: 1,
-        backgroundColor: colors.surface,
-      },
-      scroll: {
-        padding: space['5'],
-      },
-      title: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: colors.text,
-        marginBottom: space['1'],
-      },
-      subtitle: {
-        fontSize: 13,
-        color: colors.textMuted,
-        marginBottom: space['5'],
-      },
+      content: { flex: 1, backgroundColor: colors.surface },
+      scroll: { padding: space['5'], paddingBottom: space['6'] },
+      taskEyebrow: { marginTop: space['1'], marginBottom: space['5'] },
+      sectionLabel: { marginBottom: space['3'] },
       moodRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -187,10 +178,9 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
         paddingVertical: space['3'],
         marginHorizontal: 4,
         borderRadius: radius.md,
-        borderWidth: 2,
+        borderWidth: 1.5,
       },
-      moodEmoji: { fontSize: 24 },
-      moodLabel: { fontSize: 11, marginTop: 4 },
+      moodEmoji: { fontSize: 26 },
       input: {
         borderWidth: 1,
         borderRadius: radius.md,
@@ -203,54 +193,22 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
       photoRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: space['4'],
+        marginBottom: space['5'],
         gap: 10,
       },
-      photoThumb: {
-        width: 56,
-        height: 56,
-        borderRadius: radius.sm,
-      },
+      photoThumb: { width: 56, height: 56, borderRadius: radius.sm },
       photoBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: space['2'],
-        paddingHorizontal: space['3'],
+        paddingVertical: space['3'],
+        paddingHorizontal: space['4'],
         borderRadius: radius.md,
         borderWidth: 1,
         gap: 6,
       },
-      photoBtnText: {
-        fontSize: 13,
-        fontWeight: '500',
-      },
-      removeBtn: {
-        paddingVertical: space['2'],
-        paddingHorizontal: space['2'],
-      },
-      removeBtnText: {
-        fontSize: 12,
-      },
-      submitBtn: {
-        paddingVertical: space['4'],
-        borderRadius: radius.md,
-        alignItems: 'center',
-        marginBottom: space['3'],
-      },
-      submitText: {
-        fontSize: 15,
-        fontWeight: '700',
-      },
-      notOkayBtn: {
-        alignItems: 'center',
-        paddingVertical: space['2'],
-        marginBottom: space['2'],
-      },
-      notOkayText: {
-        fontSize: 12,
-        color: colors.textMuted,
-        textDecorationLine: 'underline',
-      },
+      removeBtn: { paddingVertical: space['2'], paddingHorizontal: space['2'] },
+      notOkayBtn: { alignItems: 'center', paddingVertical: space['3'], marginTop: space['2'] },
+      // ── In-voice reaction card ──
       reactionCard: {
         margin: space['5'],
         padding: space['4'],
@@ -259,38 +217,13 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
         borderColor: colors.border,
         backgroundColor: colors.canvas,
       },
-      reactionLabel: {
-        fontSize: 11,
-        fontWeight: '700',
-        letterSpacing: 1,
-        textTransform: 'uppercase',
-        color: colors.textMuted,
-        marginBottom: space['2'],
-      },
+      mentorRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: space['3'] },
       reactionText: {
-        fontSize: 15,
-        color: colors.text,
-        lineHeight: 22,
         fontStyle: 'italic',
+        lineHeight: 24,
         marginBottom: space['4'],
       },
-      crisisText: {
-        fontSize: 14,
-        color: colors.text,
-        lineHeight: 22,
-        marginBottom: space['4'],
-      },
-      doneBtn: {
-        paddingVertical: space['3'],
-        borderRadius: radius.md,
-        alignItems: 'center',
-        backgroundColor: colors.primary,
-      },
-      doneBtnText: {
-        fontSize: 15,
-        fontWeight: '700',
-        color: colors.textWhite,
-      },
+      crisisText: { lineHeight: 22, marginBottom: space['4'] },
     });
 
     const renderReactionView = () => (
@@ -300,22 +233,14 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
         transition={{ type: 'timing', duration: 350 }}
         style={s.reactionCard}
       >
-        <Text style={s.reactionLabel}>
-          {showingCrisis ? 'Resources' : 'Your mentor says'}
+        <View style={s.mentorRow}>
+          <MentorAvatar mentor={personalityId ?? 'marcus'} size={32} />
+          <Text variant="eyebrow">{showingCrisis ? 'Resources' : mentorName}</Text>
+        </View>
+        <Text variant={showingCrisis ? 'body' : 'display'} style={showingCrisis ? s.crisisText : s.reactionText}>
+          {showingCrisis ? CRISIS_RESOURCES : mentorReaction}
         </Text>
-        <Text style={showingCrisis ? s.crisisText : s.reactionText}>
-          {showingCrisis
-            ? CRISIS_RESOURCES
-            : mentorReaction}
-        </Text>
-        <TouchableOpacity
-          style={s.doneBtn}
-          onPress={onClose}
-          accessibilityLabel="Done"
-          accessibilityRole="button"
-        >
-          <Text style={s.doneBtnText}>Done</Text>
-        </TouchableOpacity>
+        <Button label="Close" onPress={onClose} />
       </MotiView>
     );
 
@@ -335,11 +260,14 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
             renderReactionView()
           ) : (
             <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-              <Text style={s.title}>Mark as Done</Text>
-              <Text style={s.subtitle} numberOfLines={1}>
-                {taskTitle ?? 'Task'}
+              <Text variant="display">Done.</Text>
+              <Text variant="eyebrow" style={s.taskEyebrow} numberOfLines={1}>
+                {(taskTitle ?? 'Task').toUpperCase()} · LOGGED
               </Text>
 
+              <Text variant="eyebrow" style={s.sectionLabel}>
+                How did it feel?
+              </Text>
               <View style={s.moodRow}>
                 {MOODS.map(({ score, emoji, label }) => {
                   const selected = mood === score;
@@ -349,8 +277,8 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
                       style={[
                         s.moodBtn,
                         {
-                          borderColor: selected ? colors.primary : colors.border,
-                          backgroundColor: selected ? colors.primarySubtle : colors.canvas,
+                          borderColor: selected ? colors.text : colors.border,
+                          backgroundColor: selected ? colors.canvas : colors.surface,
                         },
                       ]}
                       onPress={() => handleMoodPress(score)}
@@ -359,12 +287,48 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
                       accessibilityState={{ selected }}
                     >
                       <Text style={s.moodEmoji}>{emoji}</Text>
-                      <Text style={[s.moodLabel, { color: selected ? colors.primary : colors.textMuted }]}>
+                      <Text
+                        variant="label"
+                        color={selected ? 'text' : 'textMuted'}
+                        style={{ marginTop: 4, fontSize: 11 }}
+                      >
                         {label}
                       </Text>
                     </TouchableOpacity>
                   );
                 })}
+              </View>
+
+              <Text variant="eyebrow" style={s.sectionLabel}>
+                Memory · optional
+              </Text>
+              <View style={s.photoRow}>
+                {photoUri ? (
+                  <>
+                    <Image source={{ uri: photoUri }} style={s.photoThumb} />
+                    <TouchableOpacity style={s.removeBtn} onPress={removePhoto}>
+                      <Text variant="label" color="primary">
+                        Remove
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <TouchableOpacity
+                    style={[s.photoBtn, { borderColor: colors.border, backgroundColor: colors.canvas }]}
+                    onPress={pickAndUploadPhoto}
+                    disabled={photoUploading}
+                    accessibilityLabel="Attach a memory picture"
+                    accessibilityRole="button"
+                  >
+                    {photoUploading ? (
+                      <ActivityIndicator size="small" color={colors.textMuted} />
+                    ) : (
+                      <Text variant="label" color="textMuted">
+                        + Photo
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                )}
               </View>
 
               <TextInput
@@ -377,43 +341,12 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
                 maxLength={500}
               />
 
-              <View style={s.photoRow}>
-                {photoUri ? (
-                  <>
-                    <Image source={{ uri: photoUri }} style={s.photoThumb} />
-                    <TouchableOpacity style={s.removeBtn} onPress={removePhoto}>
-                      <Text style={[s.removeBtnText, { color: colors.primary }]}>Remove</Text>
-                    </TouchableOpacity>
-                  </>
-                ) : (
-                  <TouchableOpacity
-                    style={[s.photoBtn, { borderColor: colors.border, backgroundColor: colors.canvas }]}
-                    onPress={pickAndUploadPhoto}
-                    disabled={photoUploading}
-                  >
-                    {photoUploading ? (
-                      <ActivityIndicator size="small" color={colors.textMuted} />
-                    ) : (
-                      <Text style={[s.photoBtnText, { color: colors.textMuted }]}>+ Photo</Text>
-                    )}
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              <TouchableOpacity
-                style={[s.submitBtn, { backgroundColor: mood ? colors.primary : colors.border }]}
+              <Button
+                label="Mark it done"
                 onPress={handleSubmit}
+                loading={submitting}
                 disabled={!mood || submitting || photoUploading}
-                accessibilityLabel="Submit completion"
-                accessibilityRole="button"
-                accessibilityState={{ disabled: !mood || submitting || photoUploading }}
-              >
-                {submitting ? (
-                  <ActivityIndicator color={colors.textWhite} />
-                ) : (
-                  <Text style={[s.submitText, { color: colors.textWhite }]}>Submit</Text>
-                )}
-              </TouchableOpacity>
+              />
 
               <TouchableOpacity
                 style={s.notOkayBtn}
@@ -421,7 +354,9 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
                 accessibilityLabel="I'm not okay — get support resources"
                 accessibilityRole="button"
               >
-                <Text style={s.notOkayText}>I'm not okay</Text>
+                <Text variant="muted" style={{ textDecorationLine: 'underline' }}>
+                  I'm not okay
+                </Text>
               </TouchableOpacity>
             </ScrollView>
           )}

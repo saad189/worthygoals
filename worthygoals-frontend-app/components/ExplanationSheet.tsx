@@ -1,9 +1,7 @@
 import React, { forwardRef, useCallback, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -13,15 +11,33 @@ import BottomSheet, {
   BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
 import { MotiView } from 'moti';
+import { Button, MentorAvatar, Text } from '@/components/ui';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ExplainTaskPayload, ExplanationReason } from '@/models';
+import { personaBySlug, PersonalitySlug } from '@/constants/Personalities';
 import { triggerPersonalityHaptic, triggerSelectionHaptic } from '@/helpers/haptics';
 
-const REASONS: { value: ExplanationReason; label: string; description: string }[] = [
-  { value: 'couldnt', label: "Couldn't do it", description: 'Something blocked me' },
-  { value: 'forgot', label: 'Forgot', description: "It slipped my mind" },
-  { value: 'chose_not_to', label: 'Chose not to', description: 'I decided to skip it' },
+// Hi-Fi flow ④ · screen 10 (FAILURE → WHICH ONE?). Three verbs, three downstream
+// behaviours; "chose not to" is the honest one — it's accent-only (the same rust
+// as the stake in goal creation) and it triggers the seriousness check (screen 11).
+const REASONS: {
+  value: ExplanationReason;
+  label: string;
+  note: string;
+  accent?: boolean;
+}[] = [
+  { value: 'couldnt', label: "Couldn't", note: 'Body said no. A smaller version shows up next.' },
+  { value: 'forgot', label: 'Forgot', note: 'We move the reminder. Light ribbing.' },
+  { value: 'chose_not_to', label: 'Chose not to', note: 'The honest one.', accent: true },
 ];
+
+// In-voice line for the seriousness check, scaled to the matched mentor.
+const SERIOUSNESS_LINE: Record<PersonalitySlug, string> = {
+  lyra: "No judgment. But I won't keep nudging you toward something you've stopped wanting.",
+  marcus:
+    "No judgment. But I'm not going to keep buzzing your phone for something you don't want.",
+  goggs: "I'M NOT WASTING MY BREATH ON A GOAL YOU DON'T WANT. SO — DO YOU?",
+};
 
 interface Props {
   taskTitle?: string;
@@ -38,20 +54,29 @@ export interface ExplanationSheetHandle {
   close: () => void;
 }
 
+type Phase = 'pick' | 'serious';
+
 const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
   ({ taskTitle, personalityId, submitting, mentorReaction, safetyFlag, onSubmit, onClose }, ref) => {
     const { colors, space, radius } = useAppTheme();
     const sheetRef = useRef<BottomSheet>(null);
     const [reason, setReason] = useState<ExplanationReason | null>(null);
+    const [phase, setPhase] = useState<Phase>('pick');
 
-    const snapPoints = useMemo(() => ['65%'], []);
+    const snapPoints = useMemo(() => ['68%'], []);
 
-    const showingReaction = !submitting && !!mentorReaction && !safetyFlag;
+    const persona = personaBySlug(personalityId ?? undefined);
+    const mentorName = persona?.name ?? 'Your mentor';
+    const seriousLine = SERIOUSNESS_LINE[(persona?.slug ?? 'marcus') as PersonalitySlug];
+
     const showingCrisis = !!safetyFlag;
+    const showingReaction = !submitting && !!mentorReaction && !showingCrisis;
+    const showingSerious = phase === 'serious' && !showingReaction && !showingCrisis;
 
     React.useImperativeHandle(ref, () => ({
       open: () => {
         setReason(null);
+        setPhase('pick');
         sheetRef.current?.expand();
       },
       close: () => sheetRef.current?.close(),
@@ -71,56 +96,39 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
 
     const handleSubmit = () => {
       if (!reason) return;
+      // The deliberate skip earns a seriousness check before it's recorded.
+      if (reason === 'chose_not_to') {
+        triggerSelectionHaptic();
+        setPhase('serious');
+        return;
+      }
       triggerPersonalityHaptic(personalityId);
       onSubmit({ reason, personalityId: personalityId ?? undefined });
     };
 
+    // The three real outs on the seriousness check. All record the deliberate
+    // skip; "push harder" keeps the sheet for the mentor's reaction, the other
+    // two close out. (Pausing / archiving the goal itself is a backend lifecycle
+    // step that doesn't exist yet — see handoff.)
+    const handleSeriousCommit = (action: 'push' | 'pause' | 'let_go') => {
+      triggerPersonalityHaptic(personalityId);
+      onSubmit({ reason: 'chose_not_to', personalityId: personalityId ?? undefined });
+      if (action !== 'push') onClose();
+    };
+
     const s = StyleSheet.create({
-      content: {
-        flex: 1,
-        backgroundColor: colors.surface,
-      },
-      scroll: {
-        padding: space['5'],
-      },
-      title: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: colors.text,
-        marginBottom: space['1'],
-      },
-      subtitle: {
-        fontSize: 13,
-        color: colors.textMuted,
-        marginBottom: space['5'],
-      },
+      content: { flex: 1, backgroundColor: colors.surface },
+      scroll: { padding: space['5'], paddingBottom: space['6'] },
+      taskEyebrow: { marginTop: space['1'], marginBottom: space['5'] },
       option: {
-        flexDirection: 'row',
-        alignItems: 'center',
         padding: space['4'],
         borderRadius: radius.md,
-        borderWidth: 2,
+        borderWidth: 1.5,
         marginBottom: space['3'],
       },
-      optionLabel: {
-        fontSize: 15,
-        fontWeight: '600',
-      },
-      optionDesc: {
-        fontSize: 12,
-        marginTop: 2,
-      },
-      submitBtn: {
-        marginTop: space['2'],
-        paddingVertical: space['4'],
-        borderRadius: radius.md,
-        alignItems: 'center',
-      },
-      submitText: {
-        fontSize: 15,
-        fontWeight: '700',
-      },
-      reactionCard: {
+      hint: { textAlign: 'center', marginTop: space['1'] },
+      // ── In-voice mentor card (reaction · crisis · seriousness) ──
+      card: {
         margin: space['5'],
         padding: space['4'],
         borderRadius: radius.lg,
@@ -128,38 +136,11 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
         borderColor: colors.border,
         backgroundColor: colors.canvas,
       },
-      reactionLabel: {
-        fontSize: 11,
-        fontWeight: '700',
-        letterSpacing: 1,
-        textTransform: 'uppercase',
-        color: colors.textMuted,
-        marginBottom: space['2'],
-      },
-      reactionText: {
-        fontSize: 15,
-        color: colors.text,
-        lineHeight: 22,
-        fontStyle: 'italic',
-        marginBottom: space['4'],
-      },
-      crisisText: {
-        fontSize: 14,
-        color: colors.text,
-        lineHeight: 22,
-        marginBottom: space['4'],
-      },
-      doneBtn: {
-        paddingVertical: space['3'],
-        borderRadius: radius.md,
-        alignItems: 'center',
-        backgroundColor: colors.primary,
-      },
-      doneBtnText: {
-        fontSize: 15,
-        fontWeight: '700',
-        color: colors.textWhite,
-      },
+      mentorRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: space['3'] },
+      reactionText: { fontStyle: 'italic', lineHeight: 24, marginBottom: space['4'] },
+      crisisText: { lineHeight: 22, marginBottom: space['4'] },
+      seriousQ: { marginBottom: space['3'] },
+      outStack: { gap: space['2'], marginTop: space['1'] },
     });
 
     const renderReactionView = () => (
@@ -167,24 +148,62 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
         from={{ opacity: 0, translateY: 16 }}
         animate={{ opacity: 1, translateY: 0 }}
         transition={{ type: 'timing', duration: 350 }}
-        style={s.reactionCard}
+        style={s.card}
       >
-        <Text style={s.reactionLabel}>
-          {showingCrisis ? 'Resources' : 'Your mentor says'}
-        </Text>
-        <Text style={showingCrisis ? s.crisisText : s.reactionText}>
+        <View style={s.mentorRow}>
+          <MentorAvatar mentor={personalityId ?? 'marcus'} size={32} />
+          <Text variant="eyebrow">{showingCrisis ? 'Resources' : mentorName}</Text>
+        </View>
+        <Text variant={showingCrisis ? 'body' : 'display'} style={showingCrisis ? s.crisisText : s.reactionText}>
           {showingCrisis
             ? "Your wellbeing matters far more than any goal.\n\nIf you're in crisis:\n• Call or text 988\n• Text HOME to 741741\n• findahelpline.com"
             : mentorReaction}
         </Text>
-        <TouchableOpacity
-          style={s.doneBtn}
-          onPress={onClose}
-          accessibilityLabel="Done"
-          accessibilityRole="button"
-        >
-          <Text style={s.doneBtnText}>Done</Text>
-        </TouchableOpacity>
+        <Button label="Close" onPress={onClose} />
+      </MotiView>
+    );
+
+    // Screen 11 — the seriousness check. Quiet, charged, three real outs.
+    const renderSeriousView = () => (
+      <MotiView
+        from={{ opacity: 0, translateY: 16 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: 'timing', duration: 350 }}
+        style={s.card}
+      >
+        <Text variant="eyebrow" style={{ marginBottom: space['2'] }}>
+          A deliberate skip
+        </Text>
+        <Text variant="display" style={s.seriousQ}>
+          Do you actually want this?
+        </Text>
+        <View style={s.mentorRow}>
+          <MentorAvatar mentor={personalityId ?? 'marcus'} size={32} />
+          <Text variant="eyebrow">{mentorName}</Text>
+        </View>
+        <Text variant="body" style={s.reactionText}>
+          {seriousLine}
+        </Text>
+        <View style={s.outStack}>
+          <Button
+            label="I want it. Push harder."
+            onPress={() => handleSeriousCommit('push')}
+            loading={submitting}
+            disabled={submitting}
+          />
+          <Button
+            label="Let it go"
+            variant="accent"
+            onPress={() => handleSeriousCommit('let_go')}
+            disabled={submitting}
+          />
+          <Button
+            label="Pause this goal"
+            variant="link"
+            onPress={() => handleSeriousCommit('pause')}
+            disabled={submitting}
+          />
+        </View>
       </MotiView>
     );
 
@@ -202,23 +221,26 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
         <BottomSheetView style={s.content}>
           {showingReaction || showingCrisis ? (
             renderReactionView()
+          ) : showingSerious ? (
+            renderSeriousView()
           ) : (
             <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-              <Text style={s.title}>Why skipping?</Text>
-              <Text style={s.subtitle} numberOfLines={1}>
-                {taskTitle ?? 'Task'}
+              <Text variant="display">Which one is it?</Text>
+              <Text variant="eyebrow" style={s.taskEyebrow} numberOfLines={1}>
+                {(taskTitle ?? 'Task').toUpperCase()} · NOT TODAY
               </Text>
 
-              {REASONS.map(({ value, label, description }) => {
+              {REASONS.map(({ value, label, note, accent }) => {
                 const selected = reason === value;
+                const ring = accent ? colors.primary : colors.text;
                 return (
                   <TouchableOpacity
                     key={value}
                     style={[
                       s.option,
                       {
-                        borderColor: selected ? colors.primary : colors.border,
-                        backgroundColor: selected ? colors.primarySubtle : colors.canvas,
+                        borderColor: selected ? ring : colors.border,
+                        backgroundColor: selected ? colors.canvas : colors.surface,
                       },
                     ]}
                     onPress={() => handleReasonSelect(value)}
@@ -226,30 +248,26 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
                     accessibilityRole="button"
                     accessibilityState={{ selected }}
                   >
-                    <View>
-                      <Text style={[s.optionLabel, { color: selected ? colors.primary : colors.text }]}>
-                        {label}
-                      </Text>
-                      <Text style={[s.optionDesc, { color: colors.textMuted }]}>{description}</Text>
-                    </View>
+                    <Text variant="title" color={accent ? 'primary' : 'text'}>
+                      {label}
+                    </Text>
+                    <Text variant="muted" style={{ marginTop: 2 }}>
+                      {note}
+                    </Text>
                   </TouchableOpacity>
                 );
               })}
 
-              <TouchableOpacity
-                style={[s.submitBtn, { backgroundColor: reason ? colors.primary : colors.border }]}
+              <Button
+                label="That's the truth"
                 onPress={handleSubmit}
+                loading={submitting}
                 disabled={!reason || submitting}
-                accessibilityLabel="Submit explanation"
-                accessibilityRole="button"
-                accessibilityState={{ disabled: !reason || submitting }}
-              >
-                {submitting ? (
-                  <ActivityIndicator color={colors.textWhite} />
-                ) : (
-                  <Text style={[s.submitText, { color: colors.textWhite }]}>Submit</Text>
-                )}
-              </TouchableOpacity>
+                style={{ marginTop: space['2'] }}
+              />
+              <Text variant="muted" style={s.hint}>
+                no shortcuts here · pick one
+              </Text>
             </ScrollView>
           )}
         </BottomSheetView>
