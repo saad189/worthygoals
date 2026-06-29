@@ -3,9 +3,10 @@ import { useRoute } from "@react-navigation/native";
 import ImageViewerModalComponent, {
   ImageViewerHandle,
 } from "@/components/Common/ImageViewer";
-import Background from "@/components/SubComponents/Background";
+import { StatusBar } from "expo-status-bar";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useNavigation } from "expo-router";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 const styles = StyleSheet.create({
   container: {
@@ -18,6 +19,7 @@ const ImageViewerModal = () => {
     params: { imageUri, tag },
   } = useRoute() as any;
 
+  const { colors } = useAppTheme();
   const navigation = useNavigation();
   const imageRef = useRef<ImageViewerHandle>(null);
   const goBack = useCallback(() => {
@@ -27,18 +29,19 @@ const ImageViewerModal = () => {
     imageRef.current?.resetZoomAndThen(goBack);
   }, [goBack]);
 
+  // A media viewer wants a dark scrim, not the warm-paper Screen — keep it a
+  // solid backdrop so the photo reads, but off the legacy image Background.
   return (
-    <Background>
-      <View style={styles.container}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
-        <ImageViewerModalComponent
-          ref={imageRef}
-          imageUri={imageUri}
-          tag={tag}
-          onRequestClose={goBack}
-        />
-      </View>
-    </Background>
+    <View style={[styles.container, { backgroundColor: colors.black }]}>
+      <StatusBar style="light" />
+      <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+      <ImageViewerModalComponent
+        ref={imageRef}
+        imageUri={imageUri}
+        tag={tag}
+        onRequestClose={goBack}
+      />
+    </View>
   );
 };
 

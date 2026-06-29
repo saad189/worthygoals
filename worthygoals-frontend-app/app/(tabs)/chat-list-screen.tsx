@@ -1,9 +1,7 @@
 import React, { useCallback } from "react";
 import {
   ActivityIndicator,
-  SafeAreaView,
   View,
-  Text,
   FlatList,
   StyleSheet,
   Image,
@@ -17,16 +15,8 @@ import { mapTime } from "@/helpers/TimeMapper";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { ParamListBase } from "@react-navigation/native";
 import { ROUTE_NAMES } from "@/constants";
-import Background from "@/components/SubComponents/Background";
+import { Header, Screen, Text } from "@/components/ui";
 import { useAppTheme } from "@/hooks/useAppTheme";
-
-export default function ChatListWithBackground() {
-  return (
-    <Background style={staticStyles.container}>
-      <ChatListScreen />
-    </Background>
-  );
-}
 
 const ChatItem = ({ chat }: { chat: ConversationListItem }) => {
   const { colors } = useAppTheme();
@@ -51,23 +41,23 @@ const ChatItem = ({ chat }: { chat: ConversationListItem }) => {
       style={[staticStyles.chatItem, { borderBottomColor: colors.border }]}
       onPress={openChatDetail}
     >
-      <Image source={{ uri: avatar }} style={staticStyles.avatar} />
+      <Image
+        source={{ uri: avatar }}
+        style={[staticStyles.avatar, { backgroundColor: colors.canvas }]}
+      />
 
       <View style={staticStyles.chatTextContainer}>
         <View style={staticStyles.chatRow}>
-          <Text style={[staticStyles.chatName, { color: colors.textWhite }]}>{name}</Text>
-          <Text style={[staticStyles.chatTime, { color: colors.textMuted }]}>
-            {mapTime(new Date(time))}
-          </Text>
+          <Text variant="label">{name}</Text>
+          <Text variant="mono">{mapTime(new Date(time))}</Text>
         </View>
 
         <View style={staticStyles.chatRow}>
           <Text
-            style={[
-              staticStyles.chatMessageSnippet,
-              { color: colors.textFaint },
-              !isRead && { fontWeight: "bold", color: colors.textWhite },
-            ]}
+            variant="muted"
+            numberOfLines={1}
+            style={[staticStyles.chatMessageSnippet, !isRead && staticStyles.unreadSnippet]}
+            color={isRead ? "textFaint" : "text"}
           >
             {messagePreview.length > 50
               ? messagePreview.slice(0, 50) + "..."
@@ -82,8 +72,8 @@ const ChatItem = ({ chat }: { chat: ConversationListItem }) => {
   );
 };
 
-function ChatListScreen() {
-  const { colors } = useAppTheme();
+export default function ChatListScreen() {
+  const { colors, space } = useAppTheme();
   const [chatData, setChatData] = React.useState<ConversationListItem[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -124,12 +114,12 @@ function ChatListScreen() {
   );
 
   return (
-    <SafeAreaView style={staticStyles.container}>
-      <View style={[staticStyles.header, { borderBottomColor: colors.border }]}>
-        <Text style={[staticStyles.headerTitle, { color: colors.textWhite }]}>
-          Chat with Specialists
-        </Text>
-      </View>
+    <Screen padded={false} edges={["top"]}>
+      <Header
+        title="messages"
+        eyebrow="your conversations"
+        style={{ paddingHorizontal: space["5"], marginBottom: space["3"] }}
+      />
 
       <FlatList
         data={chatData}
@@ -139,47 +129,35 @@ function ChatListScreen() {
         ListEmptyComponent={() => (
           <View style={staticStyles.emptyContainer}>
             {loading ? (
-              <ActivityIndicator size="small" color={colors.textWhite} />
+              <ActivityIndicator size="small" color={colors.text} />
             ) : (
-              <Text style={[staticStyles.emptyText, { color: colors.textFaint }]}>
+              <Text variant="muted">
                 {error
                   ? error
-                  : "No conversations yet. Go to the Mentors tab to start a chat."}
+                  : "No conversations yet. Open the Team tab to start a chat."}
               </Text>
             )}
           </View>
         )}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const staticStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    padding: 16,
-    borderBottomWidth: 1,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "600",
-  },
   listContent: {
     paddingVertical: 8,
   },
   emptyContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 24,
   },
-  emptyText: {},
   chatItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   avatar: {
     width: 48,
@@ -195,17 +173,12 @@ const staticStyles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  chatName: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  chatTime: {
-    fontSize: 12,
-  },
   chatMessageSnippet: {
-    fontSize: 14,
     flex: 1,
     marginRight: 8,
+  },
+  unreadSnippet: {
+    fontWeight: "bold",
   },
   unreadDot: {
     width: 16,
