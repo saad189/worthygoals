@@ -1,232 +1,269 @@
+/**
+ * Goal creation ② · AI DRAFT (Hi-Fi flow ② · screen 05, step 2/3).
+ * The LLM proposes the goal as cost / benefit / failure; the user edits, it
+ * doesn't author. The FAILURE card uses the rust accent so the stake is
+ * visible, and an optional stake toggle puts something concrete on the line.
+ * Reskinned onto the warm-paper ui/ primitives (U5).
+ */
 import React, { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
-  ScrollView,
+  Pressable,
   StyleSheet,
-  Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useNavigation, useLocalSearchParams } from 'expo-router';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { ParamListBase } from '@react-navigation/native';
-import Background from '@/components/SubComponents/Background';
-import Button from '@/components/SubComponents/Button';
+
+import { Button, Header, Screen, Text } from '@/components/ui';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useGoalProposal } from '@/hooks/useGoalProposal';
 import { ROUTE_NAMES } from '@/constants/Routes';
 import Skeleton from '@/components/Common/Skeleton';
 
-function SkeletonLine({ width = '100%' }: { width?: string | number }) {
-  return <Skeleton height={14} width={width as any} radius={6} />;
-}
-
-function FieldSkeleton({ label }: { label: string }) {
-  const { colors } = useAppTheme();
-  return (
-    <View style={styles.fieldBlock}>
-      <Text style={[styles.fieldLabel, { color: colors.textWhite, opacity: 0.6 }]}>{label}</Text>
-      <View style={[styles.skeletonBox, { backgroundColor: colors.surface }]}>
-        <SkeletonLine />
-        <SkeletonLine width="75%" />
-      </View>
-    </View>
-  );
-}
+type FieldKey = 'title' | 'description' | 'costText' | 'benefitText' | 'failureText' | 'deadline';
 
 function EditableField({
   label,
   value,
   onChange,
+  placeholder,
+  accent = false,
   multiline = true,
-  colors,
-  radius,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  placeholder?: string;
+  accent?: boolean;
   multiline?: boolean;
-  colors: any;
-  radius: any;
 }) {
+  const { colors, space, radius, fonts, fontSizes } = useAppTheme();
   return (
-    <View style={styles.fieldBlock}>
-      <Text style={[styles.fieldLabel, { color: colors.textWhite, opacity: 0.6 }]}>{label}</Text>
+    <View style={{ gap: space['2'] }}>
+      <Text variant="eyebrow" color={accent ? 'primary' : 'textMuted'}>
+        {label}
+      </Text>
       <TextInput
         value={value}
         onChangeText={onChange}
         multiline={multiline}
-        style={[
-          styles.fieldInput,
-          {
-            color: colors.textWhite,
-            backgroundColor: colors.surface,
-            borderRadius: radius.sm ?? 8,
-          },
-        ]}
-        placeholderTextColor={`${colors.textWhite}50`}
-        placeholder={`Enter ${label.toLowerCase()}…`}
+        placeholder={placeholder}
+        placeholderTextColor={colors.textMuted}
+        accessibilityLabel={label}
+        style={{
+          fontFamily: fonts.sans,
+          fontSize: fontSizes.base,
+          lineHeight: fontSizes.base * 1.45,
+          color: colors.text,
+          backgroundColor: colors.surface,
+          borderRadius: radius.md,
+          borderWidth: accent ? 1.5 : StyleSheet.hairlineWidth,
+          borderColor: accent ? colors.primary : colors.border,
+          paddingHorizontal: space['4'],
+          paddingVertical: space['3'],
+          minHeight: multiline ? 56 : 48,
+          textAlignVertical: 'top',
+        }}
       />
     </View>
   );
 }
 
+function FieldSkeleton() {
+  const { space } = useAppTheme();
+  return (
+    <View style={{ gap: space['2'] }}>
+      <Skeleton height={10} width="40%" radius={4} />
+      <Skeleton height={52} width="100%" radius={10} />
+    </View>
+  );
+}
+
 export default function TodoProposeScreen() {
-  const { colors, space, radius } = useAppTheme();
+  const { colors, space, radius, fonts, fontSizes } = useAppTheme();
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
   const { raw, skip } = useLocalSearchParams<{ raw: string; skip?: string }>();
-
   const { proposal, loading, error, propose } = useGoalProposal();
 
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [costText, setCostText] = useState('');
-  const [benefitText, setBenefitText] = useState('');
-  const [failureText, setFailureText] = useState('');
-  const [deadline, setDeadline] = useState('');
+  const [fields, setFields] = useState<Record<FieldKey, string>>({
+    title: '',
+    description: '',
+    costText: '',
+    benefitText: '',
+    failureText: '',
+    deadline: '',
+  });
+  const [stakeOn, setStakeOn] = useState(false);
+  const [stake, setStake] = useState('');
 
   const isSkip = skip === 'true';
+  const set = (key: FieldKey) => (v: string) => setFields((f) => ({ ...f, [key]: v }));
 
   useEffect(() => {
-    if (!isSkip && raw) {
-      propose(raw);
-    }
+    if (!isSkip && raw) propose(raw);
   }, []);
 
   useEffect(() => {
     if (proposal) {
-      setTitle(proposal.title ?? '');
-      setDescription(proposal.description ?? '');
-      setCostText(proposal.costText ?? '');
-      setBenefitText(proposal.benefitText ?? '');
-      setFailureText(proposal.failureText ?? '');
-      setDeadline(proposal.deadline ?? '');
+      setFields({
+        title: proposal.title ?? '',
+        description: proposal.description ?? '',
+        costText: proposal.costText ?? '',
+        benefitText: proposal.benefitText ?? '',
+        failureText: proposal.failureText ?? '',
+        deadline: proposal.deadline ?? '',
+      });
     }
   }, [proposal]);
 
-  const canProceed = title.trim().length >= 2;
+  const canProceed = fields.title.trim().length >= 2;
 
   const handleNext = () => {
+    const stakeAmount = stakeOn ? Number(stake) : undefined;
     navigation.navigate(ROUTE_NAMES.TODO.TODO_PERSONALITY_SCREEN, {
       goalData: JSON.stringify({
-        title: title.trim(),
-        description: description.trim() || undefined,
-        costText: costText.trim() || undefined,
-        benefitText: benefitText.trim() || undefined,
-        failureText: failureText.trim() || undefined,
-        deadline: deadline.trim() || undefined,
+        title: fields.title.trim(),
+        description: fields.description.trim() || undefined,
+        costText: fields.costText.trim() || undefined,
+        benefitText: fields.benefitText.trim() || undefined,
+        failureText: fields.failureText.trim() || undefined,
+        deadline: fields.deadline.trim() || undefined,
+        stakeAmount: stakeAmount && stakeAmount > 0 ? stakeAmount : undefined,
         category: proposal?.category,
         repeatRule: proposal?.repeatRule,
       }),
-    } as any);
+    } as never);
   };
 
   return (
-    <Background style={styles.bg}>
-      <SafeAreaView style={styles.safe}>
-        <KeyboardAvoidingView
-          style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-          <View style={styles.header}>
-            <TouchableOpacity onPress={navigation.goBack} hitSlop={12}>
-              <Text style={[styles.back, { color: colors.textWhite }]}>← Back</Text>
-            </TouchableOpacity>
-            <Text style={[styles.stepLabel, { color: colors.textWhite, opacity: 0.6 }]}>
-              Step 2 of 3
-            </Text>
+    <Screen scroll>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.flex}
+      >
+        <Header
+          eyebrow={isSkip ? '2 / 3' : '2 / 3 · DRAFT'}
+          title={loading ? 'Shaping it…' : isSkip ? 'Fill in your goal' : 'Here’s the shape of it.'}
+        />
+
+        {!isSkip && error ? (
+          <Text variant="muted" color="primary" style={{ marginBottom: space['4'] }}>
+            {error}
+          </Text>
+        ) : null}
+
+        {loading ? (
+          <View style={{ gap: space['5'] }}>
+            <FieldSkeleton />
+            <FieldSkeleton />
+            <FieldSkeleton />
+            <FieldSkeleton />
           </View>
+        ) : (
+          <View style={{ gap: space['5'] }}>
+            <EditableField
+              label="THE GOAL"
+              value={fields.title}
+              onChange={set('title')}
+              placeholder="Run 5k 3×/week by June 14"
+              multiline={false}
+            />
+            <EditableField
+              label="DETAIL"
+              value={fields.description}
+              onChange={set('description')}
+              placeholder="Anything that makes it concrete"
+            />
+            <EditableField
+              label="COST · WHAT IT TAKES"
+              value={fields.costText}
+              onChange={set('costText')}
+              placeholder="shoes · 90 min/wk · sore legs"
+            />
+            <EditableField
+              label="BENEFIT · WHY IT MATTERS"
+              value={fields.benefitText}
+              onChange={set('benefitText')}
+              placeholder="energy back · wedding photos"
+            />
+            <EditableField
+              label="FAILURE · WHAT'S LOST"
+              value={fields.failureText}
+              onChange={set('failureText')}
+              placeholder="another summer of the same loop"
+              accent
+            />
+            <EditableField
+              label="DEADLINE · YYYY-MM-DD"
+              value={fields.deadline}
+              onChange={set('deadline')}
+              placeholder="2026-06-14"
+              multiline={false}
+            />
 
-          <ScrollView
-            contentContainerStyle={[styles.body, { paddingHorizontal: space[5] ?? 20 }]}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            <Text style={[styles.sectionTitle, { color: colors.textWhite }]}>
-              {loading ? 'Building your goal…' : isSkip ? 'Fill in your goal' : 'Here\'s your proposal'}
-            </Text>
-
-            {!isSkip && error && (
-              <Text style={[styles.errorBanner, { color: colors.dangerColor }]}>
-                {error}
-              </Text>
-            )}
-
-            {loading ? (
-              <View style={{ gap: 16 }}>
-                <FieldSkeleton label="Title" />
-                <FieldSkeleton label="What will it cost you?" />
-                <FieldSkeleton label="What do you gain?" />
-                <FieldSkeleton label="What do you lose if you quit?" />
-              </View>
-            ) : (
-              <View style={{ gap: 16 }}>
-                <EditableField label="Title *" value={title} onChange={setTitle} multiline={false} colors={colors} radius={radius} />
-                <EditableField label="Description" value={description} onChange={setDescription} colors={colors} radius={radius} />
-                <EditableField label="What will it cost you?" value={costText} onChange={setCostText} colors={colors} radius={radius} />
-                <EditableField label="What do you gain?" value={benefitText} onChange={setBenefitText} colors={colors} radius={radius} />
-                <EditableField label="What do you lose if you quit?" value={failureText} onChange={setFailureText} colors={colors} radius={radius} />
-                <EditableField label="Deadline (YYYY-MM-DD)" value={deadline} onChange={setDeadline} multiline={false} colors={colors} radius={radius} />
-              </View>
-            )}
-
-            <View style={styles.footerInScroll}>
-              <Button
-                mode="contained"
-                disabled={loading || !canProceed}
-                onPress={handleNext}
-                style={styles.ctaButton}
+            <Pressable
+              onPress={() => setStakeOn((s) => !s)}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: stakeOn }}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: space['3'] }}
+            >
+              <View
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: radius.sm,
+                  borderWidth: 1.5,
+                  borderColor: stakeOn ? colors.primary : colors.border,
+                  backgroundColor: stakeOn ? colors.primary : 'transparent',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                Pick Your Mentor →
-              </Button>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </Background>
+                {stakeOn ? (
+                  <Text variant="label" color="white" style={{ fontSize: 13, lineHeight: 16 }}>
+                    ✓
+                  </Text>
+                ) : null}
+              </View>
+              <Text variant="label">Put something on the line</Text>
+            </Pressable>
+
+            {stakeOn ? (
+              <TextInput
+                value={stake}
+                onChangeText={setStake}
+                keyboardType="number-pad"
+                placeholder="Amount you forfeit if you quit (e.g. 50)"
+                placeholderTextColor={colors.textMuted}
+                accessibilityLabel="Stake amount"
+                style={{
+                  fontFamily: fonts.mono,
+                  fontSize: fontSizes.base,
+                  color: colors.text,
+                  backgroundColor: colors.surface,
+                  borderRadius: radius.md,
+                  borderWidth: StyleSheet.hairlineWidth,
+                  borderColor: colors.border,
+                  paddingHorizontal: space['4'],
+                  paddingVertical: space['3'],
+                }}
+              />
+            ) : null}
+          </View>
+        )}
+
+        <View style={{ marginTop: space['8'], paddingBottom: space['4'] }}>
+          <Button label="Looks right →" onPress={handleNext} disabled={loading || !canProceed} />
+        </View>
+      </KeyboardAvoidingView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  bg: { flex: 1 },
-  safe: { flex: 1 },
   flex: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  back: { fontSize: 16, fontWeight: '500' },
-  stepLabel: { fontSize: 12, letterSpacing: 1 },
-  body: { paddingTop: 16, paddingBottom: 40, gap: 4 },
-  sectionTitle: { fontSize: 22, fontWeight: '700', marginBottom: 16 },
-  errorBanner: { fontSize: 13, marginBottom: 12 },
-  fieldBlock: { gap: 6 },
-  fieldLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase' },
-  fieldInput: {
-    fontSize: 15,
-    lineHeight: 22,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    minHeight: 48,
-    textAlignVertical: 'top',
-  },
-  skeletonBox: {
-    padding: 14,
-    borderRadius: 8,
-    gap: 8,
-    minHeight: 64,
-    justifyContent: 'center',
-  },
-  footerInScroll: {
-    marginTop: 24,
-    alignItems: 'center',
-  },
-  ctaButton: { width: '100%' },
 });

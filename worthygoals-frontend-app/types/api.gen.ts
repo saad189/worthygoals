@@ -260,6 +260,7 @@ export interface components {
             repeatRule?: Record<string, never>;
             category?: string;
             mentorId?: number;
+            stakeAmount?: number;
         };
         CreateGoalResponse: {
             id: string;
