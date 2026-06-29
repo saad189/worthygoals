@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { ImageBackground, StyleSheet, KeyboardAvoidingView, ViewStyle } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, ViewStyle } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
 
 type Props = {
@@ -7,18 +7,24 @@ type Props = {
     style?: ViewStyle;
 };
 
+/**
+ * Legacy full-bleed wrapper, kept for the screens still assembled around its
+ * centred KeyboardAvoidingView layout (auth flow, splash, mentor-detail,
+ * todo detail/edit, goal-selection). Historically it painted a dark
+ * `app-background-black.png` regardless of theme — which is why those screens
+ * stayed dark after the warm-light pin (U0). It now renders the warm-paper
+ * background token so every screen built on it reads on-brand. New screens
+ * should prefer the `ui/Screen` primitive (safe-area aware); this stays only
+ * to avoid re-laying-out the remaining form screens.
+ */
 export default function Background({ children, style }: Props) {
     const { colors } = useAppTheme();
     return (
-        <ImageBackground
-            source={require('@/assets/images/app-background-black.png')}
-            resizeMode="cover"
-            style={[styles.background, { backgroundColor: colors.surface }]}
-        >
+        <View style={[styles.background, { backgroundColor: colors.background }]}>
             <KeyboardAvoidingView style={[style ? style : styles.container]} behavior="padding">
                 {children}
             </KeyboardAvoidingView>
-        </ImageBackground>
+        </View>
     );
 }
 

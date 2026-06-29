@@ -30,12 +30,12 @@ function TodoEditScreen() {
   return (
     <SafeAreaView style={staticStyles.container}>
       <View style={[staticStyles.header, { borderBottomColor: colors.border }]}>
-        <Text style={[staticStyles.headerTitle, { color: colors.textWhite }]}>Edit To-do</Text>
+        <Text style={[staticStyles.headerTitle, { color: colors.text }]}>Edit To-do</Text>
       </View>
 
       <View style={staticStyles.body}>
-        <Text style={[staticStyles.text, { color: colors.textWhite }]}>Dummy screen for now.</Text>
-        <Text style={[staticStyles.text, { color: colors.textWhite }]}>To-do: {String(todoId)}</Text>
+        <Text style={[staticStyles.text, { color: colors.text }]}>Dummy screen for now.</Text>
+        <Text style={[staticStyles.text, { color: colors.text }]}>To-do: {String(todoId)}</Text>
 
         <TouchableOpacity
           style={[staticStyles.button, { backgroundColor: colors.primary }]}
