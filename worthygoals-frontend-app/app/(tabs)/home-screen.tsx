@@ -12,6 +12,7 @@ import React, { useMemo } from "react";
 import { View, StyleSheet, RefreshControl, Pressable } from "react-native";
 import type { ViewStyle } from "react-native";
 import { router } from "expo-router";
+import Svg, { Path } from "react-native-svg";
 import { Screen, Text, Card, MentorAvatar, ProgressRing } from "@/components/ui";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import useDashboard from "@/hooks/useDashboard";
@@ -172,28 +173,50 @@ const DashboardScreen = () => {
           upNext.map(renderTask)
         )}
 
-        {/* This week */}
-        <Text variant="eyebrow" style={styles.sectionLabel}>
-          THIS WEEK · {daysActive} OF 7
-        </Text>
+        {/* This week — continuity, not a streak (design flow ③). Each day is a
+            tall cell: filled ink + check when active, bordered + bottom dot for
+            today, hairline-bordered when still pending. */}
+        <View style={styles.weekHeader}>
+          <Text variant="eyebrow">THIS WEEK</Text>
+          <Text variant="muted" style={styles.weekCount}>
+            {daysActive} of 7
+          </Text>
+        </View>
         <Card>
           <View style={styles.weekStrip}>
             {weekCompletions.map((count, idx) => {
-              const active = count > 0;
+              const done = count > 0;
               const isToday = idx === todayIdx;
               return (
                 <View key={idx} style={styles.weekCol}>
+                  <Text variant="eyebrow" color={isToday ? "text" : undefined}>
+                    {DAY_LABELS[idx]}
+                  </Text>
                   <View
                     style={[
-                      styles.weekDot,
-                      {
-                        backgroundColor: active ? colors.text : colors.border,
-                        borderWidth: isToday ? 2 : 0,
-                        borderColor: colors.primary,
-                      },
+                      styles.weekCell,
+                      done
+                        ? { backgroundColor: colors.text, borderColor: "transparent" }
+                        : isToday
+                          ? { backgroundColor: colors.canvas, borderColor: colors.text }
+                          : { borderColor: colors.border },
                     ]}
-                  />
-                  <Text variant="eyebrow">{DAY_LABELS[idx]}</Text>
+                  >
+                    {done ? (
+                      <Svg width={16} height={16} viewBox="0 0 14 14">
+                        <Path
+                          d="M3 7.5l3 3 5-6"
+                          stroke={colors.background}
+                          strokeWidth={1.6}
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </Svg>
+                    ) : isToday ? (
+                      <View style={[styles.todayDot, { backgroundColor: colors.text }]} />
+                    ) : null}
+                  </View>
                 </View>
               );
             })}
@@ -248,13 +271,31 @@ const styles = StyleSheet.create({
     marginRight: 14,
   },
   taskBody: { flex: 1 },
-  weekStrip: {
+  weekHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "baseline",
+    marginTop: 4,
+    marginBottom: 10,
   },
-  weekCol: { alignItems: "center", gap: 8 },
-  weekDot: { width: 14, height: 14, borderRadius: 7 },
+  weekCount: { fontStyle: "italic" },
+  weekStrip: { flexDirection: "row", gap: 6 },
+  weekCol: { flex: 1, alignItems: "center", gap: 6 },
+  weekCell: {
+    width: "100%",
+    height: 44,
+    borderRadius: 6,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  todayDot: {
+    position: "absolute",
+    bottom: 5,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+  },
   listeningRow: {
     flexDirection: "row",
     alignItems: "center",
