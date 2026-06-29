@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
-  Image,
   StyleSheet,
   FlatList,
   TextInput,
@@ -23,19 +22,25 @@ import { useMessages } from "@/hooks/useMessages";
 import { StatusBar } from "expo-status-bar";
 import { mapTime } from "@/helpers/TimeMapper";
 import { ROUTE_NAMES } from "@/constants";
+import { personaByName } from "@/constants/Personalities";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { MentorAvatar, Text as UIText } from "@/components/ui";
 import TypingIndicator from "@/components/Common/TypingIndicator";
 import Skeleton from "@/components/Common/Skeleton";
 
 const { height, width } = Dimensions.get("window");
 
 export default function ChatViewScreen() {
-  const { colors } = useAppTheme();
   const {
     params: { chatData },
   } = useRoute() as any;
+
+  // Recover the personality from the conversation name → its identity colour +
+  // bubble shape tint the whole thread (§F per-mentor theming / Hi-Fi §1).
+  const persona = personaByName(chatData?.name);
+  const { colors, accent, bubbleRadius } = useAppTheme(persona.slug);
 
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
   const [chatDetail, setChatDetail] = useState<ConversationDetail>(chatData);
@@ -96,6 +101,10 @@ export default function ChatViewScreen() {
     messageLeft: {
       alignSelf: "flex-start",
       backgroundColor: colors.bubbleOther,
+      // mentor identity: a colour bar down the left edge + the mentor's bubble shape
+      borderLeftWidth: 3,
+      borderLeftColor: accent,
+      borderRadius: bubbleRadius,
     },
     messageRight: {
       alignSelf: "flex-end",
@@ -165,7 +174,7 @@ export default function ChatViewScreen() {
       marginRight: 8,
     },
     sendButton: {
-      backgroundColor: colors.primary,
+      backgroundColor: accent,
       borderRadius: 20,
       width: 40,
       height: 40,
@@ -173,7 +182,7 @@ export default function ChatViewScreen() {
       justifyContent: "center",
       alignSelf: "flex-end",
     },
-  }), [colors]);
+  }), [colors, accent, bubbleRadius]);
 
   const renderMessage = ({
     item,
@@ -296,12 +305,13 @@ export default function ChatViewScreen() {
           }}
           style={staticStyles.profileImageWrapper}
         >
-          <Image
-            source={{ uri: chatDetail.avatar }}
-            style={[staticStyles.avatar, { backgroundColor: colors.canvas }]}
-            resizeMode="cover"
-          />
-          <Text style={dynamicStyles.headerTitle}>{chatDetail.name}</Text>
+          <MentorAvatar mentor={persona.slug} size={38} style={{ marginHorizontal: 8 }} />
+          <View>
+            <UIText variant="label">{chatDetail.name}</UIText>
+            <UIText variant="eyebrow" style={{ color: accent }}>
+              {persona.role}
+            </UIText>
+          </View>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => {}}>
@@ -329,7 +339,7 @@ export default function ChatViewScreen() {
             shouldScrollToBottomRef.current = false;
             requestAnimationFrame(() => scrollToBottom(true));
           }}
-          ListFooterComponent={isMentorTyping ? <TypingIndicator /> : null}
+          ListFooterComponent={isMentorTyping ? <TypingIndicator color={accent} /> : null}
         />
       )}
       <View style={{ marginBottom: 30 }} />
@@ -344,7 +354,7 @@ export default function ChatViewScreen() {
             style={dynamicStyles.input}
             value={inputText}
             onChangeText={setInputText}
-            placeholder="Chat with your Coach..."
+            placeholder={`message ${(chatDetail?.name ?? "your mentor").toLowerCase()}…`}
             placeholderTextColor={colors.textFaint}
             multiline={true}
             returnKeyType="default"

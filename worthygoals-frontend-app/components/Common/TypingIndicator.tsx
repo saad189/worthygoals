@@ -6,7 +6,12 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 const DOT_SIZE = 8;
 const DELAYS = [0, 160, 320];
 
-export default function TypingIndicator() {
+type Props = {
+  /** Dot colour — defaults to muted ink; chat passes the mentor accent. */
+  color?: string;
+};
+
+export default function TypingIndicator({ color }: Props) {
   const { colors, radius } = useAppTheme();
 
   return (
@@ -27,7 +32,7 @@ export default function TypingIndicator() {
             loop: true,
             repeatReverse: true,
           }}
-          style={[styles.dot, { backgroundColor: colors.textMuted }]}
+          style={[styles.dot, { backgroundColor: color ?? colors.textMuted }]}
         />
       ))}
     </View>

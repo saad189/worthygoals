@@ -4,7 +4,6 @@ import {
   View,
   FlatList,
   StyleSheet,
-  Image,
   TouchableOpacity,
 } from "react-native";
 
@@ -15,12 +14,14 @@ import { mapTime } from "@/helpers/TimeMapper";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { ParamListBase } from "@react-navigation/native";
 import { ROUTE_NAMES } from "@/constants";
-import { Header, Screen, Text } from "@/components/ui";
+import { personaByName } from "@/constants/Personalities";
+import { Header, MentorAvatar, Screen, Text } from "@/components/ui";
 import { useAppTheme } from "@/hooks/useAppTheme";
 
 const ChatItem = ({ chat }: { chat: ConversationListItem }) => {
   const { colors } = useAppTheme();
-  const { name, avatar, lastMessage, time, isRead, id } = chat;
+  const { name, lastMessage, time, isRead, id } = chat;
+  const slug = personaByName(name).slug;
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
 
   const messagePreview = (lastMessage ?? "").trim() || "No messages yet";
@@ -41,10 +42,7 @@ const ChatItem = ({ chat }: { chat: ConversationListItem }) => {
       style={[staticStyles.chatItem, { borderBottomColor: colors.border }]}
       onPress={openChatDetail}
     >
-      <Image
-        source={{ uri: avatar }}
-        style={[staticStyles.avatar, { backgroundColor: colors.canvas }]}
-      />
+      <MentorAvatar mentor={slug} size={48} style={staticStyles.avatar} />
 
       <View style={staticStyles.chatTextContainer}>
         <View style={staticStyles.chatRow}>
@@ -160,9 +158,6 @@ const staticStyles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
     marginRight: 12,
   },
   chatTextContainer: {

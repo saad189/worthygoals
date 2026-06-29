@@ -16,6 +16,28 @@ const MENTORS = [
   { id: 'goggs', name: 'Goggs', role: 'the volume', line: '“NO EXCUSES. WHO’S GOT NEXT?”' },
 ];
 
+/** U7 proof: useAppTheme(slug) tints `accent` + `bubbleRadius` per personality. */
+function MentorBubble({ slug, line }: { slug: string; line: string }) {
+  const { colors, accent, bubbleRadius, space } = useAppTheme(slug);
+  return (
+    <View
+      style={{
+        backgroundColor: colors.bubbleOther,
+        borderLeftWidth: 3,
+        borderLeftColor: accent,
+        borderRadius: bubbleRadius,
+        paddingHorizontal: space['3'],
+        paddingVertical: space['2'],
+      }}
+    >
+      <Text variant="eyebrow" style={{ color: accent, marginBottom: space['1'] }}>
+        {slug.toUpperCase()}
+      </Text>
+      <Text variant="body">{line}</Text>
+    </View>
+  );
+}
+
 export default function DesignSystemDemo() {
   const { space } = useAppTheme();
   const [selected, setSelected] = useState('marcus');
@@ -49,6 +71,13 @@ export default function DesignSystemDemo() {
               </View>
             </View>
           </Card>
+        ))}
+      </View>
+
+      <Text variant="eyebrow" style={{ marginBottom: space['2'] }}>PER-MENTOR ACCENT · CHAT (U7)</Text>
+      <View style={[gap, { marginBottom: space['6'] }]}>
+        {MENTORS.map((m) => (
+          <MentorBubble key={m.id} slug={m.id} line={m.line} />
         ))}
       </View>
 
