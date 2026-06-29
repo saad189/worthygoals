@@ -30,22 +30,6 @@ const MILESTONE_LABEL: Record<MilestoneKind, string> = {
   goal_completed: 'Goal complete',
 };
 
-function categoryColor(
-  category: string | undefined,
-  colors: ReturnType<typeof useAppTheme>['colors'],
-): string {
-  switch (category) {
-    case 'power':
-      return colors.goalCategoryPink;
-    case 'knowledge':
-      return colors.goalCategoryBlue;
-    case 'spiritual':
-      return colors.goalCategoryPurple;
-    default:
-      return colors.primary;
-  }
-}
-
 const MotivationalBoardScreen: React.FC = () => {
   const { colors, space, radius } = useAppTheme();
   const { items, loading, refreshing, error, refresh } = useBoard();
@@ -53,7 +37,9 @@ const MotivationalBoardScreen: React.FC = () => {
 
   const renderItem = useCallback(
     ({ item }: { item: BoardItem }) => {
-      const accent = categoryColor(item.goalCategory, colors);
+      // E-5: discipline category colours retired — every win/milestone reads in
+      // the single warm brand accent (rust), consistent with the Hi-Fi feed.
+      const accent = colors.primary;
 
       if (item.type === 'milestone') {
         const kind = item.milestoneKind ?? 'streak_7';
@@ -75,7 +61,7 @@ const MotivationalBoardScreen: React.FC = () => {
             accessibilityLabel={`${MILESTONE_LABEL[kind]} milestone for ${item.goalTitle}`}
           >
             <Text style={styles.milestoneEmoji}>{MILESTONE_EMOJI[kind]}</Text>
-            <Text style={[styles.milestoneLabel, { color: accent }]}>
+            <Text variant="eyebrow" style={[styles.milestoneLabel, { color: accent }]}>
               {MILESTONE_LABEL[kind]}
             </Text>
             <Text style={[styles.milestoneGoal, { color: colors.text }]} numberOfLines={2}>
@@ -141,6 +127,7 @@ const MotivationalBoardScreen: React.FC = () => {
               </Text>
               {item.goalTitle ? (
                 <Text
+                  variant="eyebrow"
                   style={[styles.goalName, { color: accent }]}
                   numberOfLines={1}
                 >
