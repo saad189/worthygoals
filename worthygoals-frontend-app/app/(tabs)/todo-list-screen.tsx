@@ -7,13 +7,18 @@ import {
   View,
 } from 'react-native';
 
-import { Header, Screen, Text } from '@/components/ui';
+import { useNavigation } from 'expo-router';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { ParamListBase } from '@react-navigation/native';
+
+import { Button, Header, Screen, Text } from '@/components/ui';
 import CompletionSheet, { CompletionSheetHandle } from '@/components/CompletionSheet';
 import ExplanationSheet, { ExplanationSheetHandle } from '@/components/ExplanationSheet';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useTasks } from '@/hooks/useTasks';
 import { useCompleteTask } from '@/hooks/useCompleteTask';
 import { useExplainTask } from '@/hooks/useExplainTask';
+import { ROUTE_NAMES } from '@/constants/Routes';
 import { TaskItem } from '@/models';
 
 // This goals tab is still a stub until real goal selection lands (U5). It has
@@ -24,7 +29,13 @@ const ACTIVE_GOAL_ID: string | null = null;
 
 export default function TodoListScreen() {
   const { colors, space, radius } = useAppTheme();
+  const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
   const { tasks, loading, error, refetch, optimisticUpdateStatus } = useTasks(ACTIVE_GOAL_ID);
+
+  const startNewGoal = () =>
+    navigation.navigate(ROUTE_NAMES.TODO.self as any, {
+      screen: ROUTE_NAMES.TODO.TODO_CREATE_SCREEN,
+    });
 
   const [activeTask, setActiveTask] = useState<TaskItem | null>(null);
   const completionRef = useRef<CompletionSheetHandle>(null);
@@ -169,6 +180,10 @@ export default function TodoListScreen() {
         eyebrow="today's focus"
         style={{ paddingHorizontal: space['5'], marginBottom: space['3'] }}
       />
+
+      <View style={{ paddingHorizontal: space['5'], marginBottom: space['4'] }}>
+        <Button label="+ New goal" onPress={startNewGoal} />
+      </View>
 
       {loading ? (
         <View style={s.center}>

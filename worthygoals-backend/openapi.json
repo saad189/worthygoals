@@ -218,7 +218,8 @@
           "deadline": { "type": "string" },
           "repeatRule": { "type": "object" },
           "category": { "type": "string" },
-          "mentorId": { "type": "integer" }
+          "mentorId": { "type": "integer" },
+          "stakeAmount": { "type": "number" }
         }
       },
       "CreateGoalResponse": {
