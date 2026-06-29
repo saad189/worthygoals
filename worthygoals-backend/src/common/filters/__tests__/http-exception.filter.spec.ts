@@ -58,6 +58,17 @@ describe('AllExceptionsFilter', () => {
     expect(body.errors).toEqual(['field required']);
   });
 
+  it('falls back to 500 when an HttpException carries an invalid status', () => {
+    // Reproduces the `new HttpException(error.message, error.status)` pattern
+    // where a raw DB error has no `.status`, yielding getStatus() === undefined.
+    const exception = new HttpException('db error', undefined as any);
+    expect(() => filter.catch(exception, buildHost())).not.toThrow();
+
+    expect(mockStatus).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
+    const body = mockJson.mock.calls[0][0];
+    expect(body.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+  });
+
   it('does nothing for non-http contexts (e.g. ws)', () => {
     filter.catch(new Error('ws error'), buildHost('ws'));
     expect(mockStatus).not.toHaveBeenCalled();

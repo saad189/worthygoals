@@ -7,6 +7,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { isUUID } from 'class-validator';
 import { Repository } from 'typeorm';
 import {
   Task,
@@ -73,6 +74,9 @@ export class TasksService {
 
   async findAllForGoal(sub: string, goalId: string): Promise<Task[]> {
     const user = await this.resolveUser(sub);
+    // Postgres throws on a non-UUID literal compared to a uuid column, which
+    // would surface as a 500. Treat a malformed id as "not found" instead.
+    if (!isUUID(goalId)) throw new NotFoundException(`Goal ${goalId} not found`);
     const goal = await this.goalRepo.findOne({ where: { id: goalId } });
     if (!goal) throw new NotFoundException(`Goal ${goalId} not found`);
     if (goal.userId !== user.id) throw new ForbiddenException();
