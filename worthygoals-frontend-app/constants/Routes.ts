@@ -31,9 +31,9 @@ export const ROUTE_NAMES = {
   JOURNEY: {
     self: "journey",
     INTRO_SCREEN: "1-intro-screen",
-    SELECT_DISCIPLINE_SCREEN: "2-select-disciplines-screen",
-    PROVIDE_INFO_SCREEN: "3-provide-info-screen",
-    PROCESSING_SCREEN: "4-processing-screen",
+    TONE_TEST_SCREEN: "2-tone-test-screen",
+    YOUR_TEAM_SCREEN: "3-your-team-screen",
+    CONFIRM_SCREEN: "4-confirm-screen",
   },
   GOAL_SELECTION: {
     self: "goal-selection",
