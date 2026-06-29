@@ -162,7 +162,7 @@ function MentorDetailScreen() {
               onPress={navigation.goBack}
               style={{ marginLeft: 5 }}
             >
-              <Ionicons name="arrow-back" size={24} color={colors.textWhite} />
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
 
             <View style={staticStyles.profileImageWrapper}>
@@ -194,7 +194,7 @@ function MentorDetailScreen() {
                 color={
                   selectedTab == settingsTab.tabKey
                     ? colors.primary
-                    : colors.textWhite
+                    : colors.text
                 }
               />
             </TouchableOpacity>
