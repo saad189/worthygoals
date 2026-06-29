@@ -1,17 +1,17 @@
-import React, { useCallback, useMemo, useState } from "react";
-import {
-  Dimensions,
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-
+/**
+ * Mentor profile (Hi-Fi). Replaces the legacy tabbed "AI <name>" screen whose
+ * "Set New Goals" tab hosted the old Goal Title / Category / Duration form
+ * (the parity image #1). Goal creation now routes into the Hi-Fi wizard
+ * (todo-create) like every other entry point — there is no second goal form.
+ *
+ * This screen is a read-only profile: mentor identity in-voice, with two CTAs —
+ * set a goal with this mentor, or open a 1:1 chat. Built from the ui/ primitives;
+ * role + sample line come from the local PERSONALITIES roster (slug === personalityId)
+ * so it reads correctly even when the backend description is thin.
+ */
+import React, { useCallback, useState } from "react";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Background from "@/components/SubComponents/Background";
 import {
   ParamListBase,
   useFocusEffect,
@@ -19,280 +19,126 @@ import {
   useRoute,
 } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { ROUTE_NAMES } from "@/constants";
 
+import { Button, Card, MentorAvatar, Screen, Text } from "@/components/ui";
+import { useAppTheme } from "@/hooks/useAppTheme";
+import { ROUTE_NAMES } from "@/constants";
 import mentorService from "@/services/mentor.service";
+import conversationsService from "@/services/conversations.service";
+import { personaBySlug } from "@/constants/Personalities";
+import { formatErrorMessage } from "@/helpers";
 import { Mentor } from "@/models";
 
-import CurrentGoalsComponent from "@/components/MentorSettings/CurrentGoals";
-import NewGoalsComponent from "@/components/MentorSettings/NewGoals";
-import AIPersonalitySettingsComponent from "@/components/MentorSettings/AIPersonalitySettings";
-import DefaultSettingsComponent from "@/components/MentorSettings/DefaultSettings";
-import Animated from "react-native-reanimated";
-import { useAppTheme } from "@/hooks/useAppTheme";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
-enum Tabs {
-  CURRENT_GOALS = "CurrentGoals",
-  AI_PERSONALITY = "AIPersonality",
-  SET_GOALS = "SetGoals",
-  SETTINGS = "Settings",
-}
-
-type TabItem = {
-  tabKey: Tabs;
-  title: string;
-  onPress: () => void;
-  logo: any;
-  logoActive?: any;
-  component: React.FC;
-};
-
-const TabButton = ({
-  onPress,
-  logo,
-  title,
-  logoActive,
-  isActive,
-}: TabItem & { isActive: boolean }) => {
-  const { colors } = useAppTheme();
-  return (
-    <TouchableOpacity
-      style={[
-        staticStyles.tabButton,
-        { backgroundColor: isActive ? colors.primary : colors.textFaint },
-      ]}
-      onPress={onPress}
-    >
-      <Image
-        source={isActive && logoActive ? logoActive : logo}
-        style={{ width: SCREEN_WIDTH * 0.1, height: SCREEN_WIDTH * 0.11 }}
-      />
-      <Text
-        style={[
-          staticStyles.tabButtonText,
-          isActive && { color: colors.textWhite },
-        ]}
-        numberOfLines={2}
-        adjustsFontSizeToFit={true}
-      >
-        {title}
-      </Text>
-    </TouchableOpacity>
-  );
-};
-
-function MentorDetailScreen() {
-  const { colors } = useAppTheme();
+export default function MentorDetailScreen() {
+  const { colors, space } = useAppTheme();
+  const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
   const route = useRoute() as any;
   const mentorId = Number(route?.params?.mentorId);
 
-  const [mentor, setMentor] = useState<Mentor>({
-    id: 0,
-    slug: "",
-    name: "",
-    shortDescription: "",
-    personalityTraits: { energy: 90, focus: 80 },
-    avatarUrl:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOKOsPbE9WMa8ZO1iNNeFgoI0DWBjH8cMCwg&s",
-  } as Mentor);
-
-  const [selectedTab, setSelectedTab] = useState<Tabs>(Tabs.SETTINGS);
+  const [mentor, setMentor] = useState<Mentor | null>(null);
+  const [startingChat, setStartingChat] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       if (!mentorId) return;
+      let active = true;
       mentorService.getMentorById(mentorId).then((data: Mentor | null) => {
-        if (data) setMentor(data);
+        if (active && data) setMentor(data);
       });
+      return () => {
+        active = false;
+      };
     }, [mentorId])
   );
 
-  const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
+  const persona = personaBySlug(mentor?.slug);
+  const name = mentor?.name ?? persona?.name ?? "Your mentor";
+  const role = persona?.role ?? mentor?.title ?? "";
+  const voice = persona?.sampleLine ?? mentor?.shortDescription ?? "";
+  const about = mentor?.longDescription ?? mentor?.shortDescription ?? "";
 
-  const mentorImageUri = mentor.avatarUrl || mentor.coverImageUrl || "";
+  // Every "new goal" intent funnels into the one Hi-Fi wizard.
+  const setGoal = () =>
+    navigation.navigate(ROUTE_NAMES.TODO.self as any, {
+      screen: ROUTE_NAMES.TODO.TODO_CREATE_SCREEN,
+    });
 
-  const tabItems: TabItem[] = [
-    {
-      tabKey: Tabs.CURRENT_GOALS,
-      title: "Current Goals Status",
-      onPress: () => setSelectedTab(Tabs.CURRENT_GOALS),
-      logo: require("@/assets/images/icons/current_goals_icon.png"),
-      logoActive: require("@/assets/images/icons/current_goals_active_icon.png"),
-      component: CurrentGoalsComponent,
-    },
-    {
-      tabKey: Tabs.AI_PERSONALITY,
-      title: "AI Personality Settings",
-      onPress: () => setSelectedTab(Tabs.AI_PERSONALITY),
-      logo: require("@/assets/images/icons/ai_big_icon.png"),
-      logoActive: require("@/assets/images/icons/ai_big_active_icon.png"),
-      component: AIPersonalitySettingsComponent,
-    },
-    {
-      tabKey: Tabs.SET_GOALS,
-      title: "Set New Goals",
-      onPress: () => setSelectedTab(Tabs.SET_GOALS),
-      logo: require("@/assets/images/icons/new_goals_icon.png"),
-      logoActive: require("@/assets/images/icons/new_goals_active_icon.png"),
-      component: NewGoalsComponent,
-    },
-  ];
-
-  const settingsTab: TabItem = {
-    tabKey: Tabs.SETTINGS,
-    title: "Settings",
-    onPress: () => setSelectedTab(Tabs.SETTINGS),
-    logo: require("@/assets/images/icons/settings_icon.png"),
-    component: DefaultSettingsComponent,
+  const startChat = async () => {
+    if (!mentor) return;
+    try {
+      setStartingChat(true);
+      const chatData = await conversationsService.getConversationShellByMentorId(
+        mentor.id
+      );
+      navigation.navigate(ROUTE_NAMES.CHAT.self as any, {
+        screen: ROUTE_NAMES.CHAT.CHAT_VIEW_SCREEN,
+        params: { chatData },
+      });
+    } catch (e: any) {
+      Alert.alert("Couldn't start chat", formatErrorMessage(e));
+    } finally {
+      setStartingChat(false);
+    }
   };
 
-  const ActiveTabItem = tabItems.find((item) => item.tabKey === selectedTab);
-  const ActiveComponent = ActiveTabItem
-    ? ActiveTabItem.component
-    : settingsTab.component;
-
   return (
-    <SafeAreaView style={staticStyles.container}>
-      <ScrollView>
-        <View style={[staticStyles.profileContainer, { backgroundColor: colors.surfaceGlass }]}>
-          <View style={staticStyles.topRow}>
-            <TouchableOpacity
-              onPress={navigation.goBack}
-              style={{ marginLeft: 5 }}
-            >
-              <Ionicons name="arrow-back" size={24} color={colors.text} />
-            </TouchableOpacity>
+    <Screen scroll>
+      <Pressable
+        onPress={navigation.goBack}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+        style={styles.back}
+        hitSlop={8}
+      >
+        <Ionicons name="arrow-back" size={24} color={colors.text} />
+      </Pressable>
 
-            <View style={staticStyles.profileImageWrapper}>
-              <TouchableOpacity
-                style={{ minWidth: 150, minHeight: 150 }}
-                onPress={() => {
-                  if (!mentorImageUri) return;
-                  navigation.navigate(ROUTE_NAMES.MENTORS.IMAGE_VIEWER, {
-                    imageUri: mentorImageUri,
-                    tag: `${mentor.id}-tag`,
-                  });
-                }}
-              >
-                <Animated.Image
-                  source={{ uri: mentorImageUri }}
-                  sharedTransitionTag={`${mentor.id}-tag`}
-                  style={staticStyles.profileImage}
-                />
-              </TouchableOpacity>
-            </View>
+      <View style={styles.identity}>
+        <MentorAvatar mentor={mentor?.slug ?? persona?.slug} size={88} />
+        <Text variant="display" style={{ marginTop: space["4"] }}>
+          {name}
+        </Text>
+        {role ? (
+          <Text variant="eyebrow" style={{ marginTop: space["2"] }}>
+            {role}
+          </Text>
+        ) : null}
+      </View>
 
-            <TouchableOpacity
-              onPress={settingsTab.onPress}
-              style={{ marginLeft: 5 }}
-            >
-              <Ionicons
-                name="settings"
-                size={24}
-                color={
-                  selectedTab == settingsTab.tabKey
-                    ? colors.primary
-                    : colors.text
-                }
-              />
-            </TouchableOpacity>
-          </View>
+      {voice ? (
+        <Card style={{ marginTop: space["6"] }}>
+          <Text variant="eyebrow" style={{ marginBottom: space["2"] }}>
+            {name}
+          </Text>
+          <Text variant="display" style={styles.voice}>
+            {`"${voice}"`}
+          </Text>
+        </Card>
+      ) : null}
 
-          <View style={staticStyles.nameContainer}>
-            <Text style={[staticStyles.nameText, { color: colors.mentorNameColor }]}>
-              AI {mentor.name}
-            </Text>
-          </View>
-        </View>
+      {about ? (
+        <Text variant="body" color="textMuted" style={{ marginTop: space["5"] }}>
+          {about}
+        </Text>
+      ) : null}
 
-        <View style={[staticStyles.tabsContainer, { backgroundColor: colors.surfaceGlass }]}>
-          {tabItems.map((tab) => (
-            <TabButton
-              key={tab.tabKey}
-              {...tab}
-              isActive={selectedTab === tab.tabKey}
-            />
-          ))}
-        </View>
-
-        <View style={staticStyles.contentContainer}>
-          {ActiveComponent ? <ActiveComponent /> : null}
-        </View>
-        <View style={{ marginBottom: 20 }} />
-      </ScrollView>
-    </SafeAreaView>
+      <View style={styles.actions}>
+        <Button label={`Set a goal with ${name}`} onPress={setGoal} />
+        <Button
+          label={`Chat with ${name}`}
+          variant="link"
+          onPress={startChat}
+          loading={startingChat}
+          disabled={!mentor || startingChat}
+        />
+      </View>
+    </Screen>
   );
 }
 
-export default function MentorDetailWithBackground() {
-  return (
-    <Background style={staticStyles.container}>
-      <MentorDetailScreen />
-    </Background>
-  );
-}
-
-const staticStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  profileContainer: {
-    paddingTop: 50,
-  },
-  topRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    alignItems: "center",
-  },
-  profileImageWrapper: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    overflow: "hidden",
-    marginBottom: 10,
-  },
-  profileImage: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-    borderRadius: 75,
-  },
-  nameContainer: {
-    minHeight: "5%",
-    width: "100%",
-    alignItems: "center",
-  },
-  nameText: {
-    fontSize: 26,
-    fontWeight: "bold",
-  },
-  tabsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-evenly",
-    borderBottomEndRadius: 30,
-    borderBottomLeftRadius: 30,
-    paddingVertical: 20,
-    marginBottom: 10,
-  },
-  tabButton: {
-    paddingVertical: 8,
-    width: SCREEN_WIDTH / 3.3,
-    height: 100,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "space-evenly",
-  },
-  tabButtonText: {
-    fontWeight: "600",
-    width: "75%",
-    textAlign: "center",
-    fontSize: 12,
-  },
-  contentContainer: {
-    padding: 10,
-    flex: 1,
-  },
+const styles = StyleSheet.create({
+  back: { alignSelf: "flex-start", padding: 4, marginBottom: 8 },
+  identity: { alignItems: "center", marginTop: 8 },
+  voice: { fontSize: 20, lineHeight: 28 },
+  actions: { marginTop: 36, gap: 8 },
 });
