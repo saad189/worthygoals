@@ -231,6 +231,26 @@ export const CAPTURE = {
   sendingLabel: 'Sending…',
 };
 
+/* ---------- simple content pages (Privacy, Contact) ---------- */
+export interface SimplePage {
+  eyebrow: string;
+  heading: string;
+  /** placeholder shown until real copy is drafted */
+  note: string;
+}
+
+export const PRIVACY: SimplePage = {
+  eyebrow: 'Legal',
+  heading: 'Privacy',
+  note: 'Our privacy policy is being drafted. Check back soon.',
+};
+
+export const CONTACT: SimplePage = {
+  eyebrow: 'Say hello',
+  heading: 'Contact',
+  note: "A contact form is on the way. In the meantime, we'd love to hear from you.",
+};
+
 /* ---------- THANK-YOU page ---------- */
 export interface ThankYouStep {
   n: string;

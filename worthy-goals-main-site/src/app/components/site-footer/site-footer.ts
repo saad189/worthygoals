@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Wordmark } from '../wordmark/wordmark';
 import { BRAND } from '../../data/content';
 
@@ -6,7 +7,7 @@ import { BRAND } from '../../data/content';
 @Component({
   selector: 'wg-site-footer',
   standalone: true,
-  imports: [Wordmark],
+  imports: [Wordmark, RouterLink],
   template: `
     <div class="wrap">
       <div class="foot-inner">
@@ -16,8 +17,8 @@ import { BRAND } from '../../data/content';
         </div>
         <nav class="foot-links" aria-label="Footer">
           <a href="#join" (click)="scrollToJoin($event)">Join waitlist</a>
-          <a href="#" rel="nofollow">Privacy</a>
-          <a [href]="'mailto:' + brand.contactEmail">Contact</a>
+          <a routerLink="/privacy">Privacy</a>
+          <a routerLink="/contact">Contact</a>
         </nav>
       </div>
       <p class="foot-legal">© <span>{{ year }}</span> {{ brand.name }}. {{ brand.legal }}</p>
