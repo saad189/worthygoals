@@ -6,9 +6,11 @@ export PATH="/opt/homebrew/bin:$PATH"
 ROOT="$(git rev-parse --show-toplevel)"
 
 echo "── Frontend: tests ──────────────────────────────"
-(cd "$ROOT/worthygoals-frontend-app" && npx jest --ci --passWithNoTests)
+# --forceExit: the RN/jest setup leaks an open handle (timer/AsyncStorage mock)
+# and won't exit on its own, which hangs `git push`. Tests still run fully.
+(cd "$ROOT/worthygoals-frontend-app" && npx jest --ci --forceExit --passWithNoTests)
 
 echo "── Backend: tests ───────────────────────────────"
-(cd "$ROOT/worthygoals-backend" && npm test -- --passWithNoTests --testPathIgnorePatterns='.*\.e2e-spec\.ts$')
+(cd "$ROOT/worthygoals-backend" && npm test -- --forceExit --passWithNoTests --testPathIgnorePatterns='.*\.e2e-spec\.ts$')
 
 echo "✓ pre-push passed"
