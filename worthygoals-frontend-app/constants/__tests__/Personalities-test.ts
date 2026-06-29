@@ -1,6 +1,7 @@
 import {
   PERSONALITIES,
   TONE_TEST_CARDS,
+  personaByName,
   personaBySlug,
   recommendPersonality,
   SLUG_FOR_TONE,
@@ -53,5 +54,19 @@ describe('Personalities — tone matching (U4)', () => {
   it('personaBySlug resolves a known slug and ignores unknown ones', () => {
     expect(personaBySlug('lyra')?.name).toBe('Lyra');
     expect(personaBySlug('nobody')).toBeUndefined();
+  });
+
+  describe('personaByName (U7 — recover slug from a chat display name)', () => {
+    it('resolves a roster name case-insensitively', () => {
+      expect(personaByName('Marcus').slug).toBe('marcus');
+      expect(personaByName('lyra').slug).toBe('lyra');
+      expect(personaByName('Goggs · the volume').slug).toBe('goggs');
+    });
+
+    it('falls back to Marcus for an unknown or empty name', () => {
+      expect(personaByName('Conor McGregor').slug).toBe('marcus');
+      expect(personaByName('').slug).toBe('marcus');
+      expect(personaByName(undefined).slug).toBe('marcus');
+    });
   });
 });

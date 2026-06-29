@@ -61,6 +61,21 @@ export function personaBySlug(slug?: string): Personality | undefined {
 }
 
 /**
+ * Resolve a personality from a free-form mentor display name (e.g. "Marcus",
+ * "marcus", "Lyra · the steady one"). After the U2 roster reseed `name`
+ * matches a roster persona, so chat / lists can recover the slug — and with it
+ * the per-mentor accent — even when the data layer only carries a name.
+ * Falls back to Marcus (the prototype default) so the accent is never blank.
+ */
+export function personaByName(name?: string): Personality {
+  const needle = (name ?? '').trim().toLowerCase();
+  return (
+    PERSONALITIES.find((p) => needle.startsWith(p.name.toLowerCase())) ??
+    personaBySlug('marcus')!
+  );
+}
+
+/**
  * The forced-choice deck (Hi-Fi screen 02). Each card is a moment you slip;
  * the user picks the voice that lands — a soft framing or a harder one. Choosing
  * the hard side adds to the "intensity" score.

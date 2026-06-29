@@ -38,6 +38,14 @@ import { theme as lightPaperTheme, darkTheme as darkPaperTheme } from '@/core/th
 
 export type AppTheme = {
   colors:     AppColors | typeof Colors.dark;
+  /**
+   * The active accent colour. Brand rust by default; when `useAppTheme` is
+   * called with a mentor slug it becomes that personality's identity colour
+   * (§F per-mentor theming) — so a screen can tint itself to a mentor without
+   * touching layout. `bubbleRadius` carries the matching bubble shape.
+   */
+  accent:     string;
+  bubbleRadius: number;
   scheme:     'light' | 'dark';
   isDark:     boolean;
   paperTheme: typeof lightPaperTheme | typeof darkPaperTheme;
@@ -50,12 +58,37 @@ export type AppTheme = {
   duration:   typeof Duration;
 };
 
-export function useAppTheme(): AppTheme {
+/** Per-mentor accent + bubble shape — "each mentor in their own colour and bubble" (Hi-Fi §1). */
+function mentorAccent(
+  mentorId: string | undefined,
+  colors: AppColors | typeof Colors.dark,
+): { accent: string; bubbleRadius: number } {
+  switch (mentorId) {
+    case 'lyra':
+      return { accent: colors.mentorLyra, bubbleRadius: Radius.lg };   // soft, rounded
+    case 'goggs':
+      return { accent: colors.mentorGoggs, bubbleRadius: Radius.xs };  // loud, sharp
+    case 'marcus':
+      return { accent: colors.mentorMarcus, bubbleRadius: Radius.md }; // steady square
+    default:
+      return { accent: colors.primary, bubbleRadius: Radius.md };
+  }
+}
+
+/**
+ * @param mentorId optional personality slug — tints `accent` (and `bubbleRadius`)
+ *                 to that mentor. Omit for the neutral brand theme.
+ */
+export function useAppTheme(mentorId?: string): AppTheme {
   const scheme = (useColorScheme() ?? 'light') as 'light' | 'dark';
   const isDark  = scheme === 'dark';
+  const colors  = Colors[scheme];
+  const { accent, bubbleRadius } = mentorAccent(mentorId, colors);
 
   return {
-    colors:      Colors[scheme],
+    colors,
+    accent,
+    bubbleRadius,
     scheme,
     isDark,
     paperTheme:  isDark ? darkPaperTheme : lightPaperTheme,
