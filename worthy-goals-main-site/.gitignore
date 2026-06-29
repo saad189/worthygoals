@@ -42,3 +42,9 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Firebase (keep firebase.json + .firebaserc; ignore local cache/logs/keys)
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+*-service-account*.json

@@ -16,7 +16,7 @@ export const BRAND: Brand = {
   name: 'Worthy Goals',
   tagline: 'You are unworthy of this title — earn it.',
   contactEmail: 'hello@worthygoals.app',
-  landingUrl: 'https://worthygoals.app',
+  landingUrl: 'https://worthygoals.web.app',
   legal: 'Built for people capable of more.',
 };
 
