@@ -128,7 +128,11 @@ const MENTOR_DATA: Array<Partial<Mentor> & { tagSlugs?: string[] }> = [
         'Acknowledge difficulty before exploring it.',
         'Offer one small, doable next step.',
       ],
-      dont: ['Do not judge.', 'Do not minimize distress.', 'Do not use empty hype.'],
+      dont: [
+        'Do not judge.',
+        'Do not minimize distress.',
+        'Do not use empty hype.',
+      ],
       examples: [
         {
           user: "I'm struggling to stay consistent.",

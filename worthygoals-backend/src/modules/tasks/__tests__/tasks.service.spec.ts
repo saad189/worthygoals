@@ -22,8 +22,8 @@ import { SafetyService } from 'src/core/safety/safety.service';
 import { TasksService } from '../tasks.service';
 
 const USER_ID = 1;
-const GOAL_ID = 'goal-uuid';
-const TASK_ID = 'task-uuid';
+const GOAL_ID = '11111111-1111-4111-8111-111111111111';
+const TASK_ID = '22222222-2222-4222-8222-222222222222';
 const SUB = 'cognito-sub';
 
 const makeGoal = (o: Partial<Goal> = {}) =>
@@ -175,6 +175,13 @@ describe('TasksService', () => {
 
       const result = await service.findAllForGoal(SUB, GOAL_ID);
       expect(result).toHaveLength(2);
+    });
+
+    it('throws NotFound for a malformed (non-uuid) goalId without querying', async () => {
+      await expect(service.findAllForGoal(SUB, 'demo-goal')).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(goalRepo.findOne).not.toHaveBeenCalled();
     });
   });
 

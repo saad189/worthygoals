@@ -18,7 +18,11 @@ import { useCompleteTask } from '@/hooks/useCompleteTask';
 import { useExplainTask } from '@/hooks/useExplainTask';
 import { TaskItem } from '@/models';
 
-const PLACEHOLDER_GOAL_ID = 'demo-goal';
+// This goals tab is still a stub until real goal selection lands (U5). It has
+// no concrete goal to scope tasks to yet, so we pass `null` — useTasks stays
+// disabled and renders the empty state instead of hitting /tasks with a fake
+// id (which made Postgres 500 on an invalid uuid).
+const ACTIVE_GOAL_ID: string | null = null;
 
 export default function TodoListWithBackground() {
   return (
@@ -30,7 +34,7 @@ export default function TodoListWithBackground() {
 
 function TodoListScreen() {
   const { colors, space, radius } = useAppTheme();
-  const { tasks, loading, error, refetch, optimisticUpdateStatus } = useTasks(PLACEHOLDER_GOAL_ID);
+  const { tasks, loading, error, refetch, optimisticUpdateStatus } = useTasks(ACTIVE_GOAL_ID);
 
   const [activeTask, setActiveTask] = useState<TaskItem | null>(null);
   const completionRef = useRef<CompletionSheetHandle>(null);

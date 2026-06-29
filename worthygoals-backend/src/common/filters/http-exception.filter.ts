@@ -19,9 +19,19 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const status =
+    const rawStatus =
       exception instanceof HttpException
         ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    // Guard against malformed HttpExceptions (e.g. `new HttpException(msg,
+    // error.status)` where a raw DB/driver error has no `.status`). An invalid
+    // status code makes `res.status(...)` throw ERR_HTTP_INVALID_STATUS_CODE,
+    // which crashes the response and surfaces to clients as a dropped
+    // connection rather than a clean error.
+    const status =
+      Number.isInteger(rawStatus) && rawStatus >= 100 && rawStatus <= 599
+        ? rawStatus
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
     if (!(exception instanceof HttpException)) {
