@@ -1,15 +1,7 @@
 import React, { useCallback, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, FlatList, StyleSheet, View } from "react-native";
 
-import Background from "@/components/SubComponents/Background";
+import { Header, Screen, Text } from "@/components/ui";
 import MentorCard from "@/components/Mentors/MentorCard";
 import mentorService from "@/services/mentor.service";
 import conversationsService from "@/services/conversations.service";
@@ -21,16 +13,8 @@ import { ROUTE_NAMES } from "@/constants";
 import { formatErrorMessage } from "@/helpers";
 import { useAppTheme } from "@/hooks/useAppTheme";
 
-export default function MentorsListWithBackground() {
-  return (
-    <Background style={staticStyles.container}>
-      <MentorsListScreen />
-    </Background>
-  );
-}
-
-function MentorsListScreen() {
-  const { colors } = useAppTheme();
+export default function MentorsListScreen() {
+  const { colors, space } = useAppTheme();
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -66,14 +50,18 @@ function MentorsListScreen() {
   );
 
   return (
-    <SafeAreaView style={staticStyles.container}>
-      <View style={[staticStyles.header, { borderBottomColor: colors.border }]}>
-        <Text style={[staticStyles.headerTitle, { color: colors.textWhite }]}>Mentors</Text>
-      </View>
+    <Screen padded={false} edges={["top"]}>
+      <Header
+        title="team"
+        eyebrow="your mentors"
+        style={{ paddingHorizontal: space["5"], marginBottom: space["3"] }}
+      />
 
       {!!error && (
-        <View style={staticStyles.errorContainer}>
-          <Text style={[staticStyles.errorText, { color: colors.notificationError }]}>{error}</Text>
+        <View style={[staticStyles.errorContainer, { paddingHorizontal: space["5"] }]}>
+          <Text variant="muted" color="dangerColor">
+            {error}
+          </Text>
         </View>
       )}
 
@@ -113,44 +101,31 @@ function MentorsListScreen() {
         ListEmptyComponent={() => (
           <View style={staticStyles.emptyContainer}>
             {loading ? (
-              <ActivityIndicator size="small" color={colors.textWhite} />
+              <ActivityIndicator size="small" color={colors.text} />
             ) : (
-              <Text style={[staticStyles.emptyText, { color: colors.textFaint }]}>
-                {error ? "" : "Mentors not available!"}
+              <Text variant="muted">
+                {error ? "" : "No mentors available yet."}
               </Text>
             )}
           </View>
         )}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const staticStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    padding: 16,
-    borderBottomWidth: 1,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "600",
-  },
   listContent: {
     paddingVertical: 8,
     flexGrow: 1,
   },
   errorContainer: {
-    paddingHorizontal: 16,
     paddingVertical: 8,
   },
-  errorText: {},
   emptyContainer: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 16,
+    alignItems: "center",
   },
-  emptyText: {},
 });

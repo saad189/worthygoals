@@ -2,14 +2,12 @@ import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  SafeAreaView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 
-import Background from '@/components/SubComponents/Background';
+import { Header, Screen, Text } from '@/components/ui';
 import CompletionSheet, { CompletionSheetHandle } from '@/components/CompletionSheet';
 import ExplanationSheet, { ExplanationSheetHandle } from '@/components/ExplanationSheet';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -24,15 +22,7 @@ import { TaskItem } from '@/models';
 // id (which made Postgres 500 on an invalid uuid).
 const ACTIVE_GOAL_ID: string | null = null;
 
-export default function TodoListWithBackground() {
-  return (
-    <Background style={{ flex: 1 }}>
-      <TodoListScreen />
-    </Background>
-  );
-}
-
-function TodoListScreen() {
+export default function TodoListScreen() {
   const { colors, space, radius } = useAppTheme();
   const { tasks, loading, error, refetch, optimisticUpdateStatus } = useTasks(ACTIVE_GOAL_ID);
 
@@ -80,40 +70,19 @@ function TodoListScreen() {
   };
 
   const s = StyleSheet.create({
-    container: { flex: 1 },
-    header: {
-      padding: space['4'],
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    headerTitle: {
-      fontSize: 24,
-      fontWeight: '600',
-      color: colors.textWhite,
-    },
     center: {
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
       padding: space['6'],
     },
-    centerText: { color: colors.textWhite, fontSize: 14 },
     list: { padding: space['4'] },
     card: {
       backgroundColor: colors.surface,
       borderRadius: radius.lg,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
       padding: space['4'],
-      marginBottom: space['3'],
-    },
-    taskTitle: {
-      fontSize: 15,
-      fontWeight: '600',
-      color: colors.text,
-      marginBottom: space['1'],
-    },
-    taskDesc: {
-      fontSize: 13,
-      color: colors.textMuted,
       marginBottom: space['3'],
     },
     statusBadge: {
@@ -121,9 +90,9 @@ function TodoListScreen() {
       paddingHorizontal: space['2'],
       paddingVertical: 2,
       borderRadius: radius.sm,
+      marginTop: space['1'],
       marginBottom: space['3'],
     },
-    statusText: { fontSize: 11, fontWeight: '600' },
     actionRow: { flexDirection: 'row', gap: space['2'] },
     actionBtn: {
       flex: 1,
@@ -131,15 +100,13 @@ function TodoListScreen() {
       borderRadius: radius.md,
       alignItems: 'center',
     },
-    actionText: { fontSize: 13, fontWeight: '600' },
     retryBtn: {
       marginTop: space['3'],
       paddingVertical: space['3'],
       paddingHorizontal: space['5'],
-      borderRadius: radius.md,
+      borderRadius: radius.pill,
       backgroundColor: colors.primary,
     },
-    retryText: { color: colors.textWhite, fontSize: 14, fontWeight: '600' },
   });
 
   const renderItem = ({ item }: { item: TaskItem }) => {
@@ -153,11 +120,17 @@ function TodoListScreen() {
 
     return (
       <View style={s.card}>
-        <Text style={s.taskTitle}>{item.title}</Text>
-        {item.description ? <Text style={s.taskDesc}>{item.description}</Text> : null}
+        <Text variant="title">{item.title}</Text>
+        {item.description ? (
+          <Text variant="muted" style={{ marginTop: space['1'] }}>
+            {item.description}
+          </Text>
+        ) : null}
 
         <View style={[s.statusBadge, { backgroundColor: badgeColor }]}>
-          <Text style={[s.statusText, { color: colors.text }]}>{item.status}</Text>
+          <Text variant="eyebrow" color="text">
+            {item.status}
+          </Text>
         </View>
 
         {isPending && (
@@ -165,8 +138,11 @@ function TodoListScreen() {
             <TouchableOpacity
               style={[s.actionBtn, { backgroundColor: colors.primary }]}
               onPress={() => openComplete(item)}
+              accessibilityRole="button"
             >
-              <Text style={[s.actionText, { color: colors.textWhite }]}>Done ✓</Text>
+              <Text variant="label" color="white">
+                Done ✓
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -174,8 +150,11 @@ function TodoListScreen() {
                 { backgroundColor: colors.canvas, borderWidth: 1, borderColor: colors.border },
               ]}
               onPress={() => openExplain(item)}
+              accessibilityRole="button"
             >
-              <Text style={[s.actionText, { color: colors.textMuted }]}>Skip</Text>
+              <Text variant="label" color="textMuted">
+                Skip
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -184,25 +163,36 @@ function TodoListScreen() {
   };
 
   return (
-    <SafeAreaView style={s.container}>
-      <View style={s.header}>
-        <Text style={s.headerTitle}>To-do</Text>
-      </View>
+    <Screen padded={false} edges={['top']}>
+      <Header
+        title="goals"
+        eyebrow="today's focus"
+        style={{ paddingHorizontal: space['5'], marginBottom: space['3'] }}
+      />
 
       {loading ? (
         <View style={s.center}>
-          <ActivityIndicator size="small" color={colors.textWhite} />
+          <ActivityIndicator size="small" color={colors.text} />
         </View>
       ) : error ? (
         <View style={s.center}>
-          <Text style={s.centerText}>{error}</Text>
-          <TouchableOpacity style={s.retryBtn} onPress={refetch}>
-            <Text style={s.retryText}>Retry</Text>
+          <Text variant="body" style={{ textAlign: 'center' }}>
+            {error}
+          </Text>
+          <TouchableOpacity style={s.retryBtn} onPress={refetch} accessibilityRole="button">
+            <Text variant="label" color="white">
+              Retry
+            </Text>
           </TouchableOpacity>
         </View>
       ) : tasks.length === 0 ? (
         <View style={s.center}>
-          <Text style={s.centerText}>No tasks yet.</Text>
+          <Text variant="display" style={{ textAlign: 'center', marginBottom: space['2'] }}>
+            nothing yet.
+          </Text>
+          <Text variant="muted" style={{ textAlign: 'center' }}>
+            Your goals and their tasks will land here once you set one up with a mentor.
+          </Text>
         </View>
       ) : (
         <FlatList
@@ -240,6 +230,6 @@ function TodoListScreen() {
           setActiveTask(null);
         }}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }

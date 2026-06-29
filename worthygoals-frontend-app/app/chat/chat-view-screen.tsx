@@ -20,7 +20,7 @@ import { useNavigation } from "expo-router";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { ParamListBase, useRoute } from "@react-navigation/native";
 import { useMessages } from "@/hooks/useMessages";
-import Background from "@/components/SubComponents/Background";
+import { StatusBar } from "expo-status-bar";
 import { mapTime } from "@/helpers/TimeMapper";
 import { ROUTE_NAMES } from "@/constants";
 import Animated from "react-native-reanimated";
@@ -31,15 +31,7 @@ import Skeleton from "@/components/Common/Skeleton";
 
 const { height, width } = Dimensions.get("window");
 
-export default function ChatViewScreenWithBackground() {
-  return (
-    <Background style={staticStyles.container}>
-      <ChatViewScreen />
-    </Background>
-  );
-}
-
-function ChatViewScreen() {
+export default function ChatViewScreen() {
   const { colors } = useAppTheme();
   const {
     params: { chatData },
@@ -89,13 +81,15 @@ function ChatViewScreen() {
   const dynamicStyles = useMemo(() => StyleSheet.create({
     header: {
       height: height * 0.08,
-      backgroundColor: colors.surfaceGlass,
+      backgroundColor: colors.surface,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
       flexDirection: "row",
       alignItems: "center",
       paddingHorizontal: 15,
     },
     headerTitle: {
-      color: colors.textWhite,
+      color: colors.text,
       fontSize: 17,
       fontWeight: "500",
     },
@@ -142,6 +136,8 @@ function ChatViewScreen() {
       left: 0,
       right: 0,
       backgroundColor: colors.surface,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
       flexDirection: "row",
       alignItems: "center",
       marginLeft: 8,
@@ -154,15 +150,15 @@ function ChatViewScreen() {
       paddingHorizontal: 12,
       paddingVertical: 3,
       fontSize: 15,
-      backgroundColor: colors.cardSurface,
-      color: colors.textWhite,
+      backgroundColor: colors.canvas,
+      color: colors.text,
       borderRadius: 20,
       marginRight: 8,
     },
     inputScrollView: {
       flex: 1,
       maxHeight: 100,
-      backgroundColor: colors.cardSurface,
+      backgroundColor: colors.canvas,
       borderRadius: 20,
       paddingHorizontal: 12,
       paddingVertical: 8,
@@ -276,10 +272,11 @@ function ChatViewScreen() {
   const insets = useSafeAreaInsets();
   return (
     <KeyboardAvoidingView
-      style={[staticStyles.keyboardAvoiding, { paddingTop: insets.top }]}
+      style={[staticStyles.keyboardAvoiding, { paddingTop: insets.top, backgroundColor: colors.background }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
     >
+      <StatusBar style="dark" />
       <View style={dynamicStyles.header}>
         <TouchableOpacity
           onPress={navigation.goBack}
@@ -287,7 +284,7 @@ function ChatViewScreen() {
           accessibilityLabel="Go back"
           accessibilityRole="button"
         >
-          <Ionicons name="arrow-back" size={24} color={colors.textWhite} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -301,14 +298,14 @@ function ChatViewScreen() {
         >
           <Image
             source={{ uri: chatDetail.avatar }}
-            style={staticStyles.avatar}
+            style={[staticStyles.avatar, { backgroundColor: colors.canvas }]}
             resizeMode="cover"
           />
           <Text style={dynamicStyles.headerTitle}>{chatDetail.name}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => {}}>
-          <Ionicons name="ellipsis-vertical" size={20} color={colors.textWhite} />
+          <Ionicons name="ellipsis-vertical" size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
 
@@ -373,9 +370,6 @@ function ChatViewScreen() {
 }
 
 const staticStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   keyboardAvoiding: {
     flex: 1,
   },

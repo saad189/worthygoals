@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
@@ -12,8 +11,7 @@ import { MasonryFlashList } from '@shopify/flash-list';
 import { useNavigation } from 'expo-router';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { ParamListBase } from '@react-navigation/native';
-import Background from '@/components/SubComponents/Background';
-import Header from '@/components/SubComponents/Header';
+import { Header, Screen, Text } from '@/components/ui';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import useBoard from '@/hooks/useBoard';
 import { BoardItem, MilestoneKind } from '@/models';
@@ -167,9 +165,9 @@ const MotivationalBoardScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <Background style={styles.container}>
+      <Screen padded={false} edges={['top']} style={styles.container}>
         <View style={styles.titleContainer}>
-          <Header>Motivational Board</Header>
+          <Header title="feed" eyebrow="your wins" />
         </View>
         <View style={{ flexDirection: 'row', gap: 12, paddingHorizontal: 12, paddingTop: 12 }}>
           <View style={{ flex: 1, gap: 12 }}>
@@ -181,29 +179,30 @@ const MotivationalBoardScreen: React.FC = () => {
             <Skeleton height={160} radius={12} />
           </View>
         </View>
-      </Background>
+      </Screen>
     );
   }
 
   return (
-    <Background style={styles.container}>
+    <Screen padded={false} edges={['top']} style={styles.container}>
       <View style={styles.titleContainer}>
-        <Header>Motivational Board</Header>
+        <Header title="feed" eyebrow="your wins" />
       </View>
 
       {error ? (
-        <Text style={[styles.errorText, { color: colors.textMuted }]}>{error}</Text>
+        <Text variant="muted" style={styles.errorText}>
+          {error}
+        </Text>
       ) : null}
 
       {items.length === 0 && !loading ? (
         <View style={styles.empty}>
-          <Text style={[styles.emptyEmoji]}>🌱</Text>
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>
-            Your board is empty
+          <Text style={styles.emptyEmoji}>🌱</Text>
+          <Text variant="display" style={styles.emptyTitle}>
+            nothing here yet.
           </Text>
-          <Text style={[styles.emptyBody, { color: colors.textMuted }]}>
-            Complete tasks with a happy mood to start building your motivational
-            board.
+          <Text variant="muted" style={styles.emptyBody}>
+            Finish tasks in a good mood and your wins start collecting here.
           </Text>
         </View>
       ) : (
@@ -219,7 +218,7 @@ const MotivationalBoardScreen: React.FC = () => {
           }
         />
       )}
-    </Background>
+    </Screen>
   );
 };
 
@@ -228,12 +227,11 @@ export default MotivationalBoardScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
-    paddingHorizontal: 8,
   },
   titleContainer: {
-    marginBottom: 12,
-    paddingHorizontal: 8,
+    marginBottom: 4,
+    paddingHorizontal: 20,
+    paddingTop: 8,
   },
   loader: {
     marginTop: 60,
@@ -308,19 +306,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
     marginBottom: 8,
     textAlign: 'center',
   },
   emptyBody: {
-    fontSize: 14,
     textAlign: 'center',
-    lineHeight: 20,
   },
   errorText: {
     textAlign: 'center',
     marginTop: 20,
-    fontSize: 14,
+    paddingHorizontal: 20,
   },
 });
