@@ -57,6 +57,11 @@ export const ROUTE_NAMES = {
     COMPOSE_SCREEN: "compose-screen",
   },
 
+  REVIEW: {
+    self: "review",
+    REVIEW_SCREEN: "review-screen",
+  },
+
   TODO: {
     self: "todo",
     TODO_CREATE_SCREEN: "todo-create-screen",

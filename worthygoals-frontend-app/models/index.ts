@@ -13,3 +13,4 @@ export * from "./messages.interface";
 export * from "./task.interface";
 export * from "./board.interface";
 export * from "./status.interface";
+export * from "./weekly-review.interface";
