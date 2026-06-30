@@ -22,6 +22,26 @@ export interface GoalItem {
     creationDate: Date;
 }
 
+// The shape returned by GET /goals (the backend's ResponseGoalDto). That route
+// isn't described in openapi.json yet, so this is hand-written to match it —
+// keep in sync with src/modules/goals/dto/response-goal.dto.ts on the backend.
+export interface ApiGoal {
+    id: string;
+    userId: number;
+    mentorId?: number;
+    title: string;
+    description?: string;
+    category: string;
+    status: string;
+    costText?: string;
+    benefitText?: string;
+    failureText?: string;
+    stakeAmount?: number;
+    imageUri?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface GoalProposal {
     title: string;
     description?: string;

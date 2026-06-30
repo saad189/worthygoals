@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -15,22 +15,36 @@ import { Button, Header, Screen, Text } from '@/components/ui';
 import CompletionSheet, { CompletionSheetHandle } from '@/components/CompletionSheet';
 import ExplanationSheet, { ExplanationSheetHandle } from '@/components/ExplanationSheet';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useGoals } from '@/hooks/useGoals';
+import { useMentors } from '@/hooks/useMentors';
 import { useTasks } from '@/hooks/useTasks';
 import { useCompleteTask } from '@/hooks/useCompleteTask';
 import { useExplainTask } from '@/hooks/useExplainTask';
 import { ROUTE_NAMES } from '@/constants/Routes';
-import { TaskItem } from '@/models';
-
-// This goals tab is still a stub until real goal selection lands (U5). It has
-// no concrete goal to scope tasks to yet, so we pass `null` — useTasks stays
-// disabled and renders the empty state instead of hitting /tasks with a fake
-// id (which made Postgres 500 on an invalid uuid).
-const ACTIVE_GOAL_ID: string | null = null;
+import { ApiGoal, Mentor, TaskItem } from '@/models';
 
 export default function TodoListScreen() {
   const { colors, space, radius } = useAppTheme();
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
-  const { tasks, loading, error, refetch, optimisticUpdateStatus } = useTasks(ACTIVE_GOAL_ID);
+
+  const { goals, loading: goalsLoading, error: goalsError, refetch: refetchGoals } = useGoals();
+  const { mentors } = useMentors();
+
+  // Drill from the goals list into a single goal's task list. Tasks (and the
+  // completion sheets) are scoped to whichever goal is selected — `useTasks`
+  // stays disabled until one is.
+  const [selectedGoal, setSelectedGoal] = useState<ApiGoal | null>(null);
+  const { tasks, loading, error, refetch, optimisticUpdateStatus } = useTasks(
+    selectedGoal?.id ?? null,
+  );
+
+  // On the WG roster `slug === personalityId`, so the goal's mentor slug is the
+  // personality the completion sheets should react in. Falls back to null →
+  // sheets default to Marcus.
+  const personalityId = useMemo(() => {
+    if (!selectedGoal?.mentorId) return null;
+    return mentors.find((m: Mentor) => m.id === selectedGoal.mentorId)?.slug ?? null;
+  }, [mentors, selectedGoal]);
 
   const startNewGoal = () =>
     navigation.navigate(ROUTE_NAMES.TODO.self as any, {
@@ -96,6 +110,12 @@ export default function TodoListScreen() {
       padding: space['4'],
       marginBottom: space['3'],
     },
+    goalCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: space['3'],
+    },
+    chevron: { marginLeft: 'auto' },
     statusBadge: {
       alignSelf: 'flex-start',
       paddingHorizontal: space['2'],
@@ -103,6 +123,14 @@ export default function TodoListScreen() {
       borderRadius: radius.sm,
       marginTop: space['1'],
       marginBottom: space['3'],
+    },
+    goalStatusBadge: {
+      alignSelf: 'flex-start',
+      paddingHorizontal: space['2'],
+      paddingVertical: 2,
+      borderRadius: radius.sm,
+      marginTop: space['2'],
+      backgroundColor: colors.canvas,
     },
     actionRow: { flexDirection: 'row', gap: space['2'] },
     actionBtn: {
@@ -118,9 +146,42 @@ export default function TodoListScreen() {
       borderRadius: radius.pill,
       backgroundColor: colors.primary,
     },
+    backRow: {
+      paddingHorizontal: space['5'],
+      paddingTop: space['2'],
+      paddingBottom: space['1'],
+    },
   });
 
-  const renderItem = ({ item }: { item: TaskItem }) => {
+  // ── Goal card (list level) ──
+  const renderGoal = ({ item }: { item: ApiGoal }) => (
+    <TouchableOpacity
+      style={[s.card, s.goalCard]}
+      onPress={() => setSelectedGoal(item)}
+      accessibilityRole="button"
+      accessibilityLabel={`Open goal ${item.title}`}
+    >
+      <View style={{ flex: 1 }}>
+        <Text variant="title">{item.title}</Text>
+        {item.description ? (
+          <Text variant="muted" numberOfLines={2} style={{ marginTop: space['1'] }}>
+            {item.description}
+          </Text>
+        ) : null}
+        <View style={s.goalStatusBadge}>
+          <Text variant="eyebrow" color="textMuted">
+            {item.status}
+          </Text>
+        </View>
+      </View>
+      <Text variant="title" color="textMuted" style={s.chevron}>
+        ›
+      </Text>
+    </TouchableOpacity>
+  );
+
+  // ── Task card (drilled-in level) ──
+  const renderTask = ({ item }: { item: TaskItem }) => {
     const isPending = item.status === 'pending';
     const badgeColor =
       item.status === 'completed'
@@ -173,11 +234,99 @@ export default function TodoListScreen() {
     );
   };
 
+  // ── Drilled-in view: one goal's tasks ──
+  if (selectedGoal) {
+    return (
+      <Screen padded={false} edges={['top']}>
+        <View style={s.backRow}>
+          <TouchableOpacity
+            onPress={() => setSelectedGoal(null)}
+            accessibilityRole="button"
+            accessibilityLabel="Back to goals"
+          >
+            <Text variant="label" color="textMuted">
+              ‹ goals
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <Header
+          title={selectedGoal.title}
+          eyebrow="your goal"
+          style={{ paddingHorizontal: space['5'], marginBottom: space['3'] }}
+        />
+
+        {loading ? (
+          <View style={s.center}>
+            <ActivityIndicator size="small" color={colors.text} />
+          </View>
+        ) : error ? (
+          <View style={s.center}>
+            <Text variant="body" style={{ textAlign: 'center' }}>
+              {error}
+            </Text>
+            <TouchableOpacity style={s.retryBtn} onPress={refetch} accessibilityRole="button">
+              <Text variant="label" color="white">
+                Retry
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : tasks.length === 0 ? (
+          <View style={s.center}>
+            <Text variant="display" style={{ textAlign: 'center', marginBottom: space['2'] }}>
+              no tasks yet.
+            </Text>
+            <Text variant="muted" style={{ textAlign: 'center' }}>
+              This goal has no tasks to work on right now.
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={tasks}
+            keyExtractor={(t) => t.id}
+            renderItem={renderTask}
+            contentContainerStyle={s.list}
+          />
+        )}
+
+        <CompletionSheet
+          ref={completionRef}
+          taskTitle={activeTask?.title}
+          personalityId={personalityId}
+          submitting={completing}
+          mentorReaction={completionReaction}
+          safetyFlag={completionSafety}
+          onSubmit={(payload) => activeTask && complete(activeTask.id, payload)}
+          onClose={() => {
+            clearCompletionReaction();
+            completionRef.current?.close();
+            setActiveTask(null);
+          }}
+        />
+
+        <ExplanationSheet
+          ref={explanationRef}
+          taskTitle={activeTask?.title}
+          personalityId={personalityId}
+          submitting={explaining}
+          mentorReaction={explanationReaction}
+          safetyFlag={explanationSafety}
+          onSubmit={(payload) => activeTask && explain(activeTask.id, payload)}
+          onClose={() => {
+            clearExplanationReaction();
+            explanationRef.current?.close();
+            setActiveTask(null);
+          }}
+        />
+      </Screen>
+    );
+  }
+
+  // ── List view: the user's goals ──
   return (
     <Screen padded={false} edges={['top']}>
       <Header
         title="goals"
-        eyebrow="today's focus"
+        eyebrow="what you're chasing"
         style={{ paddingHorizontal: space['5'], marginBottom: space['3'] }}
       />
 
@@ -185,66 +334,38 @@ export default function TodoListScreen() {
         <Button label="+ New goal" onPress={startNewGoal} />
       </View>
 
-      {loading ? (
+      {goalsLoading ? (
         <View style={s.center}>
           <ActivityIndicator size="small" color={colors.text} />
         </View>
-      ) : error ? (
+      ) : goalsError ? (
         <View style={s.center}>
           <Text variant="body" style={{ textAlign: 'center' }}>
-            {error}
+            {goalsError}
           </Text>
-          <TouchableOpacity style={s.retryBtn} onPress={refetch} accessibilityRole="button">
+          <TouchableOpacity style={s.retryBtn} onPress={refetchGoals} accessibilityRole="button">
             <Text variant="label" color="white">
               Retry
             </Text>
           </TouchableOpacity>
         </View>
-      ) : tasks.length === 0 ? (
+      ) : goals.length === 0 ? (
         <View style={s.center}>
           <Text variant="display" style={{ textAlign: 'center', marginBottom: space['2'] }}>
             nothing yet.
           </Text>
           <Text variant="muted" style={{ textAlign: 'center' }}>
-            Your goals and their tasks will land here once you set one up with a mentor.
+            Set up your first goal with a mentor and it'll land here.
           </Text>
         </View>
       ) : (
         <FlatList
-          data={tasks}
-          keyExtractor={(t) => t.id}
-          renderItem={renderItem}
+          data={goals}
+          keyExtractor={(g) => g.id}
+          renderItem={renderGoal}
           contentContainerStyle={s.list}
         />
       )}
-
-      <CompletionSheet
-        ref={completionRef}
-        taskTitle={activeTask?.title}
-        submitting={completing}
-        mentorReaction={completionReaction}
-        safetyFlag={completionSafety}
-        onSubmit={(payload) => activeTask && complete(activeTask.id, payload)}
-        onClose={() => {
-          clearCompletionReaction();
-          completionRef.current?.close();
-          setActiveTask(null);
-        }}
-      />
-
-      <ExplanationSheet
-        ref={explanationRef}
-        taskTitle={activeTask?.title}
-        submitting={explaining}
-        mentorReaction={explanationReaction}
-        safetyFlag={explanationSafety}
-        onSubmit={(payload) => activeTask && explain(activeTask.id, payload)}
-        onClose={() => {
-          clearExplanationReaction();
-          explanationRef.current?.close();
-          setActiveTask(null);
-        }}
-      />
     </Screen>
   );
 }
