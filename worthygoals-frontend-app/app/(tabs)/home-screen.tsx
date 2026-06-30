@@ -126,12 +126,41 @@ const DashboardScreen = () => {
       }
     >
       <View style={{ paddingHorizontal: space["5"] }}>
-        {/* Header */}
+        {/* App-bar — date + title on the left, bell + avatar on the right
+            (Hi-Fi screen 07). The avatar drills into the profile/settings tab;
+            the bell is the notifications affordance (surface not yet built). */}
         <View style={styles.header}>
-          <Text variant="eyebrow">{formatDateEyebrow()}</Text>
-          <Text variant="display" style={{ marginTop: space["1"] }}>
-            today
-          </Text>
+          <View style={styles.headerText}>
+            <Text variant="eyebrow">{formatDateEyebrow()}</Text>
+            <Text variant="display" style={{ marginTop: space["1"] }}>
+              today
+            </Text>
+          </View>
+          <View style={styles.appBarControls}>
+            <View
+              style={[styles.bellButton, { borderColor: colors.border }]}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              <Svg width={15} height={15} viewBox="0 0 14 14">
+                <Path
+                  d="M7 1.5a4 4 0 014 4v3l1.5 2H1.5L3 8.5v-3a4 4 0 014-4z"
+                  stroke={colors.text}
+                  strokeWidth={1.2}
+                  fill="none"
+                  strokeLinejoin="round"
+                />
+              </Svg>
+            </View>
+            <Pressable
+              onPress={() => router.push(`/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.ME_SCREEN}` as never)}
+              accessibilityRole="button"
+              accessibilityLabel="Open your profile"
+              style={({ pressed }) => pressed && { opacity: 0.7 }}
+            >
+              <MentorAvatar mentor="marcus" size={32} />
+            </Pressable>
+          </View>
         </View>
 
         {/* Narration + progress ring */}
@@ -263,7 +292,23 @@ const DashboardScreen = () => {
 export default DashboardScreen;
 
 const styles = StyleSheet.create({
-  header: { marginTop: 8, marginBottom: 20 },
+  header: {
+    marginTop: 8,
+    marginBottom: 20,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+  },
+  headerText: { flex: 1, minWidth: 0 },
+  appBarControls: { flexDirection: "row", alignItems: "center", gap: 8 },
+  bellButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   narrationCard: { marginBottom: 24 },
   narrationTop: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
   narrationBody: { flexDirection: "row", alignItems: "center" },
