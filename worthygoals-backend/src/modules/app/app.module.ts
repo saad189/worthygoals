@@ -18,6 +18,7 @@ import { DashboardModule } from '../dashboard/dashboard.module';
 import { MediaModule } from '../media/media.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { BoardModule } from '../board/board.module';
+import { StatusModule } from '../status/status.module';
 import { WsSkipThrottlerGuard } from 'src/common/guards/throttler-ws.guard';
 
 const modules = [
@@ -32,6 +33,7 @@ const modules = [
   DashboardModule,
   NotificationsModule,
   BoardModule,
+  StatusModule,
 ];
 const entities = [
   __dirname + '/**/*.entity{.ts,.js}',
