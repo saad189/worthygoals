@@ -52,6 +52,11 @@ export const ROUTE_NAMES = {
     IMAGE_VIEWER: "image-viewer-screen",
   },
 
+  STATUS: {
+    self: "status",
+    COMPOSE_SCREEN: "compose-screen",
+  },
+
   TODO: {
     self: "todo",
     TODO_CREATE_SCREEN: "todo-create-screen",
