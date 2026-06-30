@@ -19,7 +19,11 @@ describe('StatusService', () => {
   beforeEach(async () => {
     statusRepo = {
       create: jest.fn((v) => v),
-      save: jest.fn(async (v) => ({ id: 'post-1', createdAt: new Date(), ...v })),
+      save: jest.fn(async (v) => ({
+        id: 'post-1',
+        createdAt: new Date(),
+        ...v,
+      })),
       find: jest.fn(),
     };
     reactionRepo = {
@@ -54,9 +58,9 @@ describe('StatusService', () => {
 
   it('throws NotFoundException when user not found on create', async () => {
     usersService.findByAccountSub.mockResolvedValue(null);
-    await expect(
-      service.create(USER_SUB, { text: 'hello' }),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.create(USER_SUB, { text: 'hello' })).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('fans out one in-voice reaction per personality, in roster order', async () => {
@@ -88,7 +92,13 @@ describe('StatusService', () => {
   it('falls back to a template line when a model call fails (post still succeeds)', async () => {
     gateway.chat.mockImplementation(async (req) => {
       if (req.personalityId === 'goggs') throw new Error('model down');
-      return { text: `reply from ${req.personalityId}`, model: 'm', provider: 'p', tokensIn: 0, tokensOut: 0 };
+      return {
+        text: `reply from ${req.personalityId}`,
+        model: 'm',
+        provider: 'p',
+        tokensIn: 0,
+        tokensOut: 0,
+      };
     });
 
     const result = await service.create(USER_SUB, { text: 'mixed day' });
