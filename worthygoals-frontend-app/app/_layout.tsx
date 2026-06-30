@@ -164,6 +164,10 @@ function Routes() {
         options={{ presentation: "modal", headerShown: false }}
       />
       <Stack.Screen
+        name={ROUTE_NAMES.REVIEW.self}
+        options={{ animation: "slide_from_right", headerShown: false }}
+      />
+      <Stack.Screen
         name={`${ROUTE_NAMES.PROFILE.self}/${ROUTE_NAMES.PROFILE.REGISTER_PROFILE}`}
         options={{
           headerLeft: () => <View />,

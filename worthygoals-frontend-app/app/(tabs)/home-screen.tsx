@@ -176,12 +176,20 @@ const DashboardScreen = () => {
         {/* This week — continuity, not a streak (design flow ③). Each day is a
             tall cell: filled ink + check when active, bordered + bottom dot for
             today, hairline-bordered when still pending. */}
-        <View style={styles.weekHeader}>
+        <Pressable
+          onPress={() => router.push(`/${ROUTE_NAMES.REVIEW.self}/${ROUTE_NAMES.REVIEW.REVIEW_SCREEN}` as never)}
+          style={({ pressed }) => [styles.weekHeader, pressed && { opacity: 0.7 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Open the weekly review"
+        >
           <Text variant="eyebrow">THIS WEEK</Text>
-          <Text variant="muted" style={styles.weekCount}>
-            {daysActive} of 7
-          </Text>
-        </View>
+          <View style={styles.weekHeaderRight}>
+            <Text variant="muted" style={styles.weekCount}>
+              {daysActive} of 7
+            </Text>
+            <Text variant="eyebrow">REVIEW ›</Text>
+          </View>
+        </Pressable>
         <Card>
           <View style={styles.weekStrip}>
             {weekCompletions.map((count, idx) => {
@@ -278,6 +286,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 10,
   },
+  weekHeaderRight: { flexDirection: "row", alignItems: "baseline", gap: 8 },
   weekCount: { fontStyle: "italic" },
   weekStrip: { flexDirection: "row", gap: 6 },
   weekCol: { flex: 1, alignItems: "center", gap: 6 },
