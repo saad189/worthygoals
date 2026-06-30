@@ -7,7 +7,7 @@
  */
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import { Screen, Header, Card, Button, MentorAvatar, ProgressRing, Text } from '@/components/ui';
+import { Screen, Header, Card, Button, MentorAvatar, ProgressRing, StepDots, Text } from '@/components/ui';
 import { useAppTheme } from '@/hooks/useAppTheme';
 
 const MENTORS = [
@@ -91,9 +91,17 @@ export default function DesignSystemDemo() {
         ))}
       </View>
 
+      <Text variant="eyebrow" style={{ marginBottom: space['2'] }}>STEP DOTS</Text>
+      <View style={[gap, { marginBottom: space['6'] }]}>
+        <StepDots total={3} active={0} />
+        <StepDots total={3} active={1} />
+        <StepDots total={6} active={4} />
+      </View>
+
       <Text variant="eyebrow" style={{ marginBottom: space['2'] }}>BUTTONS</Text>
       <View style={[gap, { marginBottom: space['10'] }]}>
         <Button label="Get started" variant="primary" />
+        <Button label="Hold to talk" variant="secondary" />
         <Button label="Sign me up — the harder voice" variant="accent" />
         <Button label="I already have an account" variant="link" />
         <Button label="Loading…" variant="primary" loading />

@@ -18,7 +18,7 @@ import { useNavigation, useLocalSearchParams } from 'expo-router';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { ParamListBase } from '@react-navigation/native';
 
-import { Button, Header, Screen, Text } from '@/components/ui';
+import { Button, Header, Screen, StepDots, Text } from '@/components/ui';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useGoalProposal } from '@/hooks/useGoalProposal';
 import { ROUTE_NAMES } from '@/constants/Routes';
@@ -145,8 +145,11 @@ export default function TodoProposeScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}
       >
+        <View style={styles.stepRow}>
+          <StepDots total={3} active={1} />
+          <Text variant="mono">{isSkip ? '2 / 3' : '2 / 3 · DRAFT'}</Text>
+        </View>
         <Header
-          eyebrow={isSkip ? '2 / 3' : '2 / 3 · DRAFT'}
           title={loading ? 'Shaping it…' : isSkip ? 'Fill in your goal' : 'Here’s the shape of it.'}
         />
 
@@ -266,4 +269,10 @@ export default function TodoProposeScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
 });

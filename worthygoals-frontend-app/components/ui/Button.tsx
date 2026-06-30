@@ -2,16 +2,18 @@
  * Worthy Goals — Button (shell primitive)
  * ─────────────────────────────────────────────────────────────
  * The Hi-Fi CTA system (§0):
- *   primary  — full-width ink (black) pill, the dominant CTA
- *   accent   — rust pill, reserved for stake/intensity moments
- *   link     — quiet text, the secondary "I already have an account" door
+ *   primary   — full-width ink (black) pill, the dominant CTA
+ *   secondary — transparent pill, hairline border + ink text (the quieter
+ *               sibling action, e.g. "Hold to talk" next to "Next →")
+ *   accent    — rust pill, reserved for stake/intensity moments
+ *   link      — quiet text, the secondary "I already have an account" door
  */
-import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, ViewStyle } from 'react-native';
+import React, { ReactNode } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, View, ViewStyle } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import Text from './Text';
 
-type Variant = 'primary' | 'accent' | 'link';
+type Variant = 'primary' | 'secondary' | 'accent' | 'link';
 
 type Props = {
   label: string;
@@ -19,6 +21,8 @@ type Props = {
   variant?: Variant;
   disabled?: boolean;
   loading?: boolean;
+  /** Optional leading element (e.g. an icon) rendered before the label. */
+  icon?: ReactNode;
   /** Full-width pill (default true for primary/accent). */
   block?: boolean;
   style?: ViewStyle;
@@ -30,21 +34,27 @@ export default function Button({
   variant = 'primary',
   disabled = false,
   loading = false,
+  icon,
   block = true,
   style,
 }: Props) {
   const { colors, space, radius } = useAppTheme();
   const isLink = variant === 'link';
-  const bg = variant === 'accent' ? colors.primary : colors.text;
-  const labelColor = isLink ? 'textMuted' : 'white';
+  const isSecondary = variant === 'secondary';
+  const bg = variant === 'accent' ? colors.primary : isSecondary ? 'transparent' : colors.text;
+  const labelColor = isLink || isSecondary ? 'text' : 'white';
 
   const containerStyle: ViewStyle = isLink
     ? { paddingVertical: space['3'], alignItems: 'center' }
     : {
         backgroundColor: bg,
         borderRadius: radius.pill,
+        borderWidth: isSecondary ? StyleSheet.hairlineWidth : 0,
+        borderColor: isSecondary ? colors.border : 'transparent',
         paddingVertical: space['4'],
         paddingHorizontal: space['6'],
+        flexDirection: 'row',
+        gap: space['2'],
         alignItems: 'center',
         justifyContent: 'center',
         alignSelf: block ? 'stretch' : 'center',
@@ -59,11 +69,14 @@ export default function Button({
       style={({ pressed }) => [containerStyle, pressed ? styles.pressed : null, disabled ? styles.disabled : null, style]}
     >
       {loading ? (
-        <ActivityIndicator color={isLink ? colors.textMuted : colors.white} />
+        <ActivityIndicator color={isLink || isSecondary ? colors.textMuted : colors.white} />
       ) : (
-        <Text variant="label" color={labelColor}>
-          {label}
-        </Text>
+        <>
+          {icon ? <View>{icon}</View> : null}
+          <Text variant="label" color={labelColor}>
+            {label}
+          </Text>
+        </>
       )}
     </Pressable>
   );
