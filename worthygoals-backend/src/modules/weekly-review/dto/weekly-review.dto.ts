@@ -29,10 +29,14 @@ export class GoalWeekRowDto {
   @ApiProperty({ enum: ['up', 'flat', 'down'] })
   trend!: WeekTrend;
 
-  @ApiProperty({ description: 'No completions this week — the row to talk about.' })
+  @ApiProperty({
+    description: 'No completions this week — the row to talk about.',
+  })
   danger!: boolean;
 
-  @ApiProperty({ description: "The goal's mentor reacting to the week, in voice." })
+  @ApiProperty({
+    description: "The goal's mentor reacting to the week, in voice.",
+  })
   commentary!: string;
 }
 
@@ -40,7 +44,9 @@ export class WeeklyReviewDto {
   @ApiProperty({ description: 'Monday 00:00 of the week under review (ISO).' })
   weekStart!: string;
 
-  @ApiProperty({ description: 'Sunday 23:59:59 of the week under review (ISO).' })
+  @ApiProperty({
+    description: 'Sunday 23:59:59 of the week under review (ISO).',
+  })
   weekEnd!: string;
 
   @ApiProperty({ description: 'ISO week number.' })

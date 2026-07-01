@@ -66,16 +66,23 @@ describe('WeeklyReviewService', () => {
 
   it('throws NotFoundException when the user is not found', async () => {
     usersService.findByAccountSub.mockResolvedValue(null);
-    await expect(service.getReview(USER_SUB)).rejects.toThrow(NotFoundException);
+    await expect(service.getReview(USER_SUB)).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('counts this-week vs last-week completions and marks the trend up', async () => {
     // today is always within this week; today−7d is always within last week.
     goalRepo.find.mockResolvedValue([
-      goal('g1', '5k run', [completionAt(0), completionAt(0), completionAt(7)], {
-        personalityId: 'marcus',
-        name: 'Marcus',
-      }),
+      goal(
+        'g1',
+        '5k run',
+        [completionAt(0), completionAt(0), completionAt(7)],
+        {
+          personalityId: 'marcus',
+          name: 'Marcus',
+        },
+      ),
     ]);
 
     const review = await service.getReview(USER_SUB);
@@ -110,7 +117,10 @@ describe('WeeklyReviewService', () => {
 
   it("resolves the goal's mentor and falls back to marcus when none is set", async () => {
     goalRepo.find.mockResolvedValue([
-      goal('g3', 'lift', [completionAt(0)], { personalityId: 'goggs', name: 'Goggs' }),
+      goal('g3', 'lift', [completionAt(0)], {
+        personalityId: 'goggs',
+        name: 'Goggs',
+      }),
       goal('g4', 'read', [completionAt(0)], undefined),
     ]);
 
