@@ -1,20 +1,19 @@
+/**
+ * New password — Hi-Fi composition (S45 · P-E): editorial header + warm
+ * Field inputs. Confirm-code logic unchanged; native stack header keeps
+ * the back affordance.
+ */
 import React, { useReducer } from 'react';
-import { StyleSheet, Keyboard } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import { ParamListBase, RouteProp, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useNavigation } from 'expo-router';
 
-import Background from '@/components/SubComponents/Background';
-import Button from '@/components/SubComponents/Button';
-import Header from '@/components/SubComponents/Header';
-import Logo from '@/components/SubComponents/Logo';
-import TextInput from '@/components/SubComponents/TextInput';
-import PasswordField from '@/components/SubComponents/PasswordField';
+import { Button, Field, Header, Screen } from '@/components/ui';
 import { passwordValidator, repeatPasswordValidator } from '@/helpers';
 import { useLoader, useToast } from '@/hooks';
 import authService from '@/services/AuthService';
 import { ROUTE_NAMES } from '@/constants';
-import { useAppTheme } from '@/hooks/useAppTheme';
 
 type FormState = {
     code: { value: string; error: string };
@@ -65,7 +64,6 @@ export default function NewPasswordScreen() {
     const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
     const route = useRoute<RouteProp<{ params: { email: string } }, 'params'>>();
     const { email } = route.params;
-    const { colors } = useAppTheme();
 
     const { isLoading, setLoading } = useLoader();
     const { showSuccessMessage, showErrorMessage } = useToast();
@@ -111,49 +109,47 @@ export default function NewPasswordScreen() {
     };
 
     return (
-        <Background>
-            <Logo isWhite={true} />
-            <Header>Reset Password</Header>
+        <Screen scroll edges={['bottom']}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                style={styles.flex}
+            >
+                <View style={{ flex: 1, justifyContent: 'center' }}>
+                    <Header eyebrow="RESET" title="Pick a new one." />
 
-            <TextInput
-                label="Code"
-                returnKeyType="done"
-                value={formState.code.value}
-                onChangeText={(text: string) => dispatch({ type: 'UPDATE_CODE', payload: text })}
-                error={!!formState.code.error}
-                errorText={formState.code.error}
-                description={`If the provided email: ${email} is valid, you will have received the code`}
-            />
+                    <Field
+                        label="Code"
+                        returnKeyType="next"
+                        value={formState.code.value}
+                        onChangeText={(text: string) => dispatch({ type: 'UPDATE_CODE', payload: text })}
+                        errorText={formState.code.error}
+                        keyboardType="number-pad"
+                        description={`If the provided email: ${email} is valid, you will have received the code`}
+                    />
+                    <Field
+                        label="New password"
+                        secure
+                        value={formState.newPassword.value}
+                        onChangeText={(text: string) => dispatch({ type: 'UPDATE_NEW_PASSWORD', payload: text })}
+                        errorText={formState.newPassword.error}
+                        onSubmitEditing={onSubmitPressed}
+                    />
+                    <Field
+                        label="Repeat new password"
+                        secure
+                        value={formState.repeatedPassword.value}
+                        onChangeText={(text: string) => dispatch({ type: 'UPDATE_REPEATED_PASSWORD', payload: text })}
+                        errorText={formState.repeatedPassword.error}
+                        onSubmitEditing={onSubmitPressed}
+                    />
 
-            <PasswordField
-                placeholder="New Password"
-                value={formState.newPassword.value}
-                onChangeText={(text: string) => dispatch({ type: 'UPDATE_NEW_PASSWORD', payload: text })}
-                errorText={formState.newPassword.error}
-                onSubmitEditing={onSubmitPressed}
-            />
-
-            <PasswordField
-                placeholder="Repeat New Password"
-                value={formState.repeatedPassword.value}
-                onChangeText={(text: string) => dispatch({ type: 'UPDATE_REPEATED_PASSWORD', payload: text })}
-                errorText={formState.repeatedPassword.error}
-                onSubmitEditing={onSubmitPressed}
-            />
-
-            <Button mode="contained" onPress={onSubmitPressed} style={staticStyles.button} loading={isLoading}>
-                Submit
-            </Button>
-        </Background>
+                    <Button label="Update password" onPress={onSubmitPressed} loading={isLoading} />
+                </View>
+            </KeyboardAvoidingView>
+        </Screen>
     );
 }
 
-const staticStyles = StyleSheet.create({
-    button: {
-        width: '100%',
-        marginTop: 24,
-    },
-    link: {
-        fontWeight: 'bold',
-    },
+const styles = StyleSheet.create({
+    flex: { flex: 1 },
 });

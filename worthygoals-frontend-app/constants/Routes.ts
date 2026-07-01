@@ -35,10 +35,6 @@ export const ROUTE_NAMES = {
     YOUR_TEAM_SCREEN: "3-your-team-screen",
     CONFIRM_SCREEN: "4-confirm-screen",
   },
-  GOAL_SELECTION: {
-    self: "goal-selection",
-    SELECTION_SCREEN: "selection-screen",
-  },
   CHAT: {
     self: "chat",
     CHAT_VIEW_SCREEN: "chat-view-screen",

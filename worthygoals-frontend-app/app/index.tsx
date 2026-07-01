@@ -1,29 +1,18 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet, Dimensions } from "react-native";
+/**
+ * Entry gate — silently checks the stored session and routes to auth when
+ * there is none. Renders a quiet warm-paper beat while the check runs.
+ */
+import React, { useEffect } from "react";
+import { ActivityIndicator } from "react-native";
+import { router } from "expo-router";
+
+import { Screen } from "@/components/ui";
 import { useAuth } from "@/hooks";
-import Background from "@/components/SubComponents/Background";
-import { router, useNavigation } from "expo-router";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { ParamListBase } from "@react-navigation/native";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 export default function Index() {
   const { checkAuth } = useAuth();
-  const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
-  const [_, setIsLandScapeMode] = useState(
-    Dimensions.get("window").width >= Dimensions.get("window").height
-  );
-  useEffect(() => {
-    const updateMode = () => {
-      const { width, height } = Dimensions.get("window");
-      setIsLandScapeMode(width >= height);
-    };
-
-    const dimensionListener = Dimensions.addEventListener("change", updateMode);
-
-    return () => {
-      dimensionListener.remove();
-    };
-  }, []);
+  const { colors } = useAppTheme();
 
   useEffect(() => {
     checkAuth()
@@ -37,10 +26,9 @@ export default function Index() {
       });
   }, []);
 
-  // Still needs fixing
   return (
-    <Background>
-      <></>
-    </Background>
+    <Screen center>
+      <ActivityIndicator color={colors.textMuted} />
+    </Screen>
   );
 }

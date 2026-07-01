@@ -1,37 +1,37 @@
+/**
+ * Sign in — Hi-Fi composition (S45 · P-E): editorial header + warm Field
+ * inputs replace the legacy dark form. Logic (remembered credentials,
+ * unverified-email redirect) unchanged.
+ */
 import React, { useEffect, useState } from "react";
 import {
-  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
+  Switch,
   View,
   Keyboard,
-  Switch,
 } from "react-native";
-import { Text } from "react-native-paper";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { ParamListBase } from "@react-navigation/native";
+import { useNavigation } from "expo-router";
+
+import { Button, Field, Header, Screen, Text } from "@/components/ui";
+import { APP_NAME } from "@/constants/Brand";
+import { ROUTE_NAMES } from "@/constants/Routes";
 import {
   emailValidator,
   getRememberedUserCredentials,
   rememberUserCredentials,
 } from "@/helpers";
-import Background from "@/components/SubComponents/Background";
-import { StackNavigationProp } from "@react-navigation/stack";
-import Logo from "@/components/SubComponents/Logo";
-
-import TextInput from "@/components/SubComponents/TextInput";
-import Button from "@/components/SubComponents/Button";
-import { ROUTE_NAMES } from "@/constants/Routes";
-import { useNavigation } from "expo-router";
-import { ParamListBase } from "@react-navigation/native";
-import Header from "@/components/SubComponents/Header";
-
 import { LoginInfo } from "@/models";
 import authService from "@/services/AuthService";
 import { useAuth, useLoader, useToast } from "@/hooks";
-import PasswordField from "@/components/SubComponents/PasswordField";
 import { useAppTheme } from "@/hooks/useAppTheme";
 
 export default function LoginScreen() {
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
-  const { colors } = useAppTheme();
+  const { colors, space } = useAppTheme();
   const emptyLoginInfo = { email: "", password: "" };
 
   const [email, setEmail] = useState<{ value: string; error: string }>({
@@ -115,105 +115,76 @@ export default function LoginScreen() {
   };
 
   return (
-    <Background>
-      <Logo isWhite={true} />
-      <View style={staticStyles.container}>
-        <Header>Welcome back!</Header>
-        <TextInput
-          label="Email"
-          returnKeyType="next"
-          value={email.value}
-          onChangeText={(text: any) => setEmail({ value: text, error: "" })}
-          error={!!email.error}
-          errorText={email.error}
-          autoCapitalize="none"
-          textContentType="emailAddress"
-          keyboardType="email-address"
-        />
+    <Screen scroll>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.flex}
+      >
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          <Header eyebrow={`${APP_NAME} · SIGN IN`} title="Welcome back." />
 
-        <PasswordField
-          placeholder="Password"
-          value={password.value}
-          onChangeText={(text: any) => setPassword({ value: text, error: "" })}
-          onSubmitEditing={onLoginPressed}
-          errorText={password.error}
-        />
-        <View style={staticStyles.rememberMeContainer}>
-          <Text style={[staticStyles.rememberMeText, { color: colors.secondary }]}>Remember Me</Text>
-          <Switch
-            value={rememberMe}
-            onValueChange={setRememberMe}
-            trackColor={{ true: colors.background, false: colors.background }}
-            thumbColor={colors.icon}
+          <Field
+            label="Email"
+            returnKeyType="next"
+            value={email.value}
+            onChangeText={(text: string) => setEmail({ value: text, error: "" })}
+            errorText={email.error}
+            autoCapitalize="none"
+            textContentType="emailAddress"
+            keyboardType="email-address"
           />
-        </View>
-        <View style={staticStyles.forgotPassword}>
-          <TouchableOpacity
+          <Field
+            label="Password"
+            secure
+            returnKeyType="done"
+            value={password.value}
+            onChangeText={(text: string) =>
+              setPassword({ value: text, error: "" })
+            }
+            onSubmitEditing={onLoginPressed}
+            errorText={password.error}
+          />
+
+          <View style={[styles.rememberRow, { marginBottom: space["4"] }]}>
+            <Text variant="muted">Remember me</Text>
+            <Switch
+              value={rememberMe}
+              onValueChange={setRememberMe}
+              trackColor={{ true: colors.text, false: colors.border }}
+              thumbColor={colors.background}
+            />
+          </View>
+
+          <Button label="Sign in" onPress={onLoginPressed} loading={isLoading} />
+          <Button
+            label="Forgot your password?"
+            variant="link"
             onPress={() =>
               navigation.navigate(ROUTE_NAMES.AUTH.self, {
                 screen: ROUTE_NAMES.AUTH.RESET_PASSWORD,
               })
             }
-          >
-            <Text style={[staticStyles.forgot, { color: colors.secondary }]}>Forgot your password?</Text>
-          </TouchableOpacity>
-        </View>
-        <Button
-          style={staticStyles.button}
-          mode="contained"
-          onPress={onLoginPressed}
-          loading={isLoading}
-        >
-          Login
-        </Button>
-        <View style={staticStyles.row}>
-          <TouchableOpacity
+          />
+          <Button
+            label="No account yet? Create one"
+            variant="link"
             onPress={() =>
               navigation.navigate(ROUTE_NAMES.AUTH.self, {
                 screen: ROUTE_NAMES.AUTH.REGISTER,
               })
             }
-          >
-            <Text style={{ color: colors.primary }}>
-              Don't have an account?
-              <Text style={{ fontWeight: "bold", color: colors.secondary }}> Sign up</Text>
-            </Text>
-          </TouchableOpacity>
+          />
         </View>
-      </View>
-    </Background>
+      </KeyboardAvoidingView>
+    </Screen>
   );
 }
 
-const staticStyles = StyleSheet.create({
-  container: {
-    width: "100%",
-    justifyContent: "center",
-  },
-  button: {
-    width: "100%",
-  },
-  forgotPassword: {
-    width: "100%",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  row: {
-    flexDirection: "row",
-    marginTop: 4,
-  },
-  forgot: {
-    fontSize: 13,
-  },
-  rememberMeContainer: {
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  rememberRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 10,
-    marginBottom: 15,
-    marginHorizontal: 5,
-  },
-  rememberMeText: {
-    fontSize: 16,
   },
 });

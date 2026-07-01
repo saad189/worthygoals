@@ -7,7 +7,7 @@
  */
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import { Screen, Header, Card, Button, MentorAvatar, ProgressRing, StepDots, Text } from '@/components/ui';
+import { Screen, Header, Card, Button, Field, MentorAvatar, ProgressRing, StepDots, Text } from '@/components/ui';
 import { useAppTheme } from '@/hooks/useAppTheme';
 
 const MENTORS = [
@@ -96,6 +96,14 @@ export default function DesignSystemDemo() {
         <StepDots total={3} active={0} />
         <StepDots total={3} active={1} />
         <StepDots total={6} active={4} />
+      </View>
+
+      <Text variant="eyebrow" style={{ marginBottom: space['2'] }}>FIELDS (S45)</Text>
+      <View style={{ marginBottom: space['6'] }}>
+        <Field label="Email" placeholder="you@example.com" keyboardType="email-address" autoCapitalize="none" />
+        <Field label="Password" secure placeholder="••••••••" />
+        <Field label="Code" errorText="Code cannot be empty!" />
+        <Field label="Handle" description="Shown to your mentors." disabled value="@saad" />
       </View>
 
       <Text variant="eyebrow" style={{ marginBottom: space['2'] }}>BUTTONS</Text>

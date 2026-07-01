@@ -6,7 +6,6 @@ import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
 import "react-native-reanimated";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { View } from "react-native";
 import { RootSiblingParent } from "react-native-root-siblings";
 import { PostHogProvider } from "posthog-react-native";
 import { useColorScheme } from "@/components/useColorScheme";
@@ -14,7 +13,6 @@ import { ROUTE_NAMES } from "@/constants/Routes";
 import { Colors } from "@/constants";
 import CustomSplashScreen from "./custom-splash-screen";
 import { AuthProvider, LoaderProvider, ToastProvider, useAuth } from "@/hooks";
-import Background from "@/components/SubComponents/Background";
 import { initSentry, SentryWrap, POSTHOG_KEY } from "@/services/observability";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { queryClient, asyncStoragePersister } from "@/core/queryClient";
@@ -77,9 +75,6 @@ function RootLayout() {
     Newsreader: require("../assets/fonts/Newsreader.ttf"),
     "Newsreader-Italic": require("../assets/fonts/Newsreader-Italic.ttf"),
     "JetBrains Mono": require("../assets/fonts/JetBrainsMono.ttf"),
-    // Legacy — kept registered until the reskin sweep (U3–U8) removes the last refs.
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
-    Outfit: require("../assets/fonts/Outfit-VariableFont_wght.ttf"),
     ...FontAwesome.font,
   });
 
@@ -110,10 +105,10 @@ function RootLayout() {
     // GestureHandlerRootView must wrap the whole tree: @gorhom/bottom-sheet
     // (CompletionSheet / ExplanationSheet) drives gesture handlers in the main
     // navigation tree, which crash without a root provider (E-1).
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <Background style={{ flex: 1 }}>
-        {isSplashVisible || !loaded ? <CustomSplashScreen /> : <RootLayoutNav />}
-      </Background>
+    <GestureHandlerRootView
+      style={{ flex: 1, backgroundColor: Colors.light.background }}
+    >
+      {isSplashVisible || !loaded ? <CustomSplashScreen /> : <RootLayoutNav />}
     </GestureHandlerRootView>
   );
 }
@@ -140,10 +135,6 @@ function Routes() {
         name={ROUTE_NAMES.JOURNEY.self}
         options={{ headerShown: false, animation: "slide_from_right" }}
       />
-      <Stack.Screen
-        name={ROUTE_NAMES.GOAL_SELECTION.self}
-        options={{ headerShown: false, animation: "slide_from_bottom" }}
-      />
       <Stack.Screen name="modal" options={{ presentation: "modal" }} />
       <Stack.Screen
         name={ROUTE_NAMES.CHAT.self}
@@ -167,12 +158,11 @@ function Routes() {
         name={ROUTE_NAMES.REVIEW.self}
         options={{ animation: "slide_from_right", headerShown: false }}
       />
+      {/* Forced step for new users — no back affordance; the screen renders
+          its own editorial header. */}
       <Stack.Screen
         name={`${ROUTE_NAMES.PROFILE.self}/${ROUTE_NAMES.PROFILE.REGISTER_PROFILE}`}
-        options={{
-          headerLeft: () => <View />,
-          title: " Register Profile",
-        }}
+        options={{ headerShown: false, gestureEnabled: false }}
       />
     </Stack>
   );

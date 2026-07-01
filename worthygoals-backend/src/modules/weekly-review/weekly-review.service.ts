@@ -176,9 +176,7 @@ export class WeeklyReviewService {
 
   /** ISO-8601 week number (weeks start Monday; week 1 holds the first Thursday). */
   private isoWeekNumber(d: Date): number {
-    const date = new Date(
-      Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()),
-    );
+    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     const dayNum = (date.getUTCDay() + 6) % 7; // Mon=0 … Sun=6
     date.setUTCDate(date.getUTCDate() - dayNum + 3); // nearest Thursday
     const firstThursday = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
@@ -186,9 +184,7 @@ export class WeeklyReviewService {
     firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDayNum + 3);
     return (
       1 +
-      Math.round(
-        (date.getTime() - firstThursday.getTime()) / (7 * 86_400_000),
-      )
+      Math.round((date.getTime() - firstThursday.getTime()) / (7 * 86_400_000))
     );
   }
 }
