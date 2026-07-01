@@ -1,60 +1,52 @@
-import Background from '@/components/SubComponents/Background';
-import Button from '@/components/SubComponents/Button';
-import Header from '@/components/SubComponents/Header';
-import Logo from '@/components/SubComponents/Logo';
-import SlidingText from '@/components/SubComponents/SlidingText';
-import { APP_NAME } from '@/constants/Brand';
-import { ROUTE_NAMES } from '@/constants/Routes';
+/**
+ * Auth entry — Hi-Fi screen 01 (SPLASH): the promise, the name, two doors.
+ * "Italic serif sets the editorial register before mentor copy lands."
+ */
+import React from 'react';
+import { View } from 'react-native';
+import { useNavigation } from 'expo-router';
 import { ParamListBase } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { useNavigation } from 'expo-router';
-import React from 'react';
-import { Dimensions, StyleSheet } from 'react-native';
 
-// Get screen dimensions
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-type Props = {
-    navigation: any;
-};
+import { Button, Header, MentorAvatar, Screen, Text } from '@/components/ui';
+import { APP_NAME } from '@/constants/Brand';
+import { PERSONALITIES } from '@/constants/Personalities';
+import { ROUTE_NAMES } from '@/constants/Routes';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 export default function StartScreen() {
-    const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
-    return (
-        <Background style={styles.container} >
-            <Logo isWhite={true} />
-            <Header>{`${APP_NAME} Membership`}</Header>
-            <Button
-                style={styles.button}
-                mode="contained"
-                onPress={() => navigation.navigate(ROUTE_NAMES.AUTH.LOGIN)}
-            >
-                Login
-            </Button>
-            <Button
-                style={styles.button}
-                mode="contained"
-                onPress={() => navigation.navigate(ROUTE_NAMES.AUTH.REGISTER)}
-            >
-                Sign Up
-            </Button>
-            <SlidingText text="ONE" startPosition={-SCREEN_WIDTH + 100} endPosition={SCREEN_WIDTH} />
-            <SlidingText text="ENDURE" startPosition={SCREEN_WIDTH} endPosition={-SCREEN_WIDTH} />
-            <SlidingText text="LEGACY" startPosition={-SCREEN_WIDTH} endPosition={SCREEN_WIDTH} />
-        </Background>
-    );
-}
+  const { space } = useAppTheme();
+  const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
 
-const styles = StyleSheet.create({
-    button: {
-        width: '100%'
-    },
-    container: {
-        flex: 1,
-        padding: 20,
-        width: '100%',
-        maxWidth: 340,
-        alignSelf: 'center',
-        alignItems: 'center',
-        justifyContent: 'space-around',
-    }
-})
+  return (
+    <Screen>
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <Header
+          eyebrow={`${APP_NAME} · V1`}
+          title={"Find someone who'll\nactually hold you to it."}
+        />
+        <Text variant="muted" style={{ marginBottom: space['8'] }}>
+          Three coaches. One stake. A spine when yours is tired. Pick the voice
+          you can't ignore.
+        </Text>
+        <View style={{ flexDirection: 'row', gap: space['3'] }}>
+          {PERSONALITIES.map((p) => (
+            <MentorAvatar key={p.slug} mentor={p.slug} size={52} />
+          ))}
+        </View>
+      </View>
+
+      <View style={{ paddingBottom: space['4'] }}>
+        <Button
+          label="Get started"
+          onPress={() => navigation.navigate(ROUTE_NAMES.AUTH.REGISTER)}
+        />
+        <Button
+          label="I already have an account"
+          variant="link"
+          onPress={() => navigation.navigate(ROUTE_NAMES.AUTH.LOGIN)}
+        />
+      </View>
+    </Screen>
+  );
+}

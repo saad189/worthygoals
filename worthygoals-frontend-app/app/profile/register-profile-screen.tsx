@@ -1,27 +1,37 @@
+/**
+ * Register profile — Hi-Fi composition (S45 · P-E): editorial header, warm
+ * Field inputs, and the selectable-card pattern for gender (replaces the
+ * legacy rust DropDownPicker). Profile-creation logic and the DOB picker
+ * behaviour (iOS modal / Android inline) are unchanged; on success the
+ * personality-match funnel (U4) takes over.
+ */
 import React, { useReducer, useState } from "react";
 import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
   StyleSheet,
   TouchableOpacity,
-  Keyboard,
-  Platform,
-  Modal,
   View,
-  Text,
+  Keyboard,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "expo-router";
 import { ParamListBase } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import DropDownPicker from "react-native-dropdown-picker";
-import Background from "@/components/SubComponents/Background";
-import Header from "@/components/SubComponents/Header";
-import TextInput from "@/components/SubComponents/TextInput";
-import Button from "@/components/SubComponents/Button";
+
+import { Button, Card, Field, Header, Screen, Text } from "@/components/ui";
 import { ROUTE_NAMES } from "@/constants/Routes";
 import { calculateAge, getUserLocationAsync, nameValidator } from "@/helpers";
 import { useAuth, useLoader, useToast } from "@/hooks";
 import userService from "@/services/UserService";
 import { useAppTheme } from "@/hooks/useAppTheme";
+
+const GENDER_OPTIONS = [
+  { label: "Male", value: "m" },
+  { label: "Female", value: "f" },
+];
 
 type FormState = {
   firstName: { value: string; error: string };
@@ -78,16 +88,11 @@ function formReducer(state: FormState, action: FormAction): FormState {
 
 export default function RegisterProfileScreen() {
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
-  const { colors } = useAppTheme();
+  const { colors, space } = useAppTheme();
   const { isLoading, setLoading } = useLoader();
   const { showErrorMessage, showInfoMessage } = useToast();
   const { userProfile, setUserProfile } = useAuth();
   const [formState, dispatch] = useReducer(formReducer, initialState);
-  const [open, setOpen] = useState(false);
-  const [items, setItems] = useState([
-    { label: "Male", value: "m" },
-    { label: "Female", value: "f" },
-  ]);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState<Date | null>(null);
@@ -183,77 +188,95 @@ export default function RegisterProfileScreen() {
   };
 
   return (
-    <Background>
-      <Header>Your Profile</Header>
+    <Screen scroll>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={staticStyles.flex}
+      >
+        <Header
+          eyebrow="BEFORE WE START"
+          title="Who's doing this?"
+          style={{ marginTop: space["4"] }}
+        />
+        <Text variant="muted" style={{ marginBottom: space["6"] }}>
+          So your mentors know who they're talking to.
+        </Text>
 
-      <TextInput
-        label="First Name"
-        returnKeyType="next"
-        value={formState.firstName.value}
-        onChangeText={(text: string) =>
-          dispatch({ type: "UPDATE_FIRST_NAME", payload: text })
-        }
-        error={!!formState.firstName.error}
-        errorText={formState.firstName.error}
-      />
+        <Field
+          label="First name"
+          returnKeyType="next"
+          value={formState.firstName.value}
+          onChangeText={(text: string) =>
+            dispatch({ type: "UPDATE_FIRST_NAME", payload: text })
+          }
+          errorText={formState.firstName.error}
+        />
+        <Field
+          label="Last name"
+          returnKeyType="next"
+          value={formState.lastName.value}
+          onChangeText={(text: string) =>
+            dispatch({ type: "UPDATE_LAST_NAME", payload: text })
+          }
+          errorText={formState.lastName.error}
+        />
+        <Field
+          label="Email"
+          value={userProfile?.email || ""}
+          autoCapitalize="none"
+          textContentType="emailAddress"
+          keyboardType="email-address"
+          disabled
+        />
 
-      <TextInput
-        label="Last Name"
-        returnKeyType="next"
-        value={formState.lastName.value}
-        onChangeText={(text: string) =>
-          dispatch({ type: "UPDATE_LAST_NAME", payload: text })
-        }
-        error={!!formState.lastName.error}
-        errorText={formState.lastName.error}
-      />
-
-      <TextInput
-        label="Email"
-        returnKeyType="next"
-        value={userProfile?.email || ""}
-        autoCapitalize="none"
-        textContentType="emailAddress"
-        keyboardType="email-address"
-        disabled={true}
-      />
-
-      <DropDownPicker
-        open={open}
-        value={formState.gender.value}
-        items={items}
-        setOpen={setOpen}
-        setValue={(callback) => {
-          const value = callback(formState.gender.value);
-          dispatch({ type: "UPDATE_GENDER", payload: value });
-        }}
-        setItems={setItems}
-        labelStyle={{ color: colors.textWhite }}
-        theme="LIGHT"
-        multiple={false}
-        mode="BADGE"
-        placeholder="Gender"
-        style={[staticStyles.input, { backgroundColor: colors.primary }]}
-      />
-
-      <TouchableOpacity onPress={openDOBPicker} style={staticStyles.datePickerButton}>
-        <View pointerEvents="none">
-          <TextInput
-            disabled={true}
-            label="Date of Birth"
-            returnKeyType="next"
-            value={formState.dateOfBirth.value?.toDateString() || ""}
-            error={!!formState.dateOfBirth.error}
-            errorText={formState.dateOfBirth.error}
-            description={
-              formState.dateOfBirth.value
-                ? "You are " +
-                  calculateAge(formState.dateOfBirth.value.toDateString()) +
-                  " years old"
-                : ""
-            }
-          />
+        <Text variant="eyebrow" style={{ marginBottom: space["2"] }}>
+          Gender
+        </Text>
+        <View style={[staticStyles.genderRow, { gap: space["3"] }]}>
+          {GENDER_OPTIONS.map((option) => (
+            <Card
+              key={option.value}
+              selected={formState.gender.value === option.value}
+              onPress={() =>
+                dispatch({ type: "UPDATE_GENDER", payload: option.value })
+              }
+              style={staticStyles.genderCard}
+            >
+              <Text variant="label" style={staticStyles.genderLabel}>
+                {option.label}
+              </Text>
+            </Card>
+          ))}
         </View>
+        {formState.gender.error ? (
+          <Text variant="muted" color="dangerColor" style={{ marginTop: space["2"] }}>
+            {formState.gender.error}
+          </Text>
+        ) : null}
+
+        <Pressable
+          onPress={openDOBPicker}
+          accessibilityRole="button"
+          accessibilityLabel="Date of birth"
+          style={{ marginTop: space["4"] }}
+        >
+          <View pointerEvents="none">
+            <Field
+              label="Date of birth"
+              value={formState.dateOfBirth.value?.toDateString() || ""}
+              placeholder="Tap to pick a date"
+              errorText={formState.dateOfBirth.error}
+              description={
+                formState.dateOfBirth.value
+                  ? "You are " +
+                    calculateAge(formState.dateOfBirth.value.toDateString()) +
+                    " years old"
+                  : ""
+              }
+              editable={false}
+            />
+          </View>
+        </Pressable>
 
         {showDatePicker && Platform.OS === "android" && (
           <DateTimePicker
@@ -264,56 +287,52 @@ export default function RegisterProfileScreen() {
             maximumDate={new Date()}
           />
         )}
-      </TouchableOpacity>
 
-      {showDatePicker && Platform.OS === "ios" && (
-        <Modal transparent animationType="fade">
-          <View style={[staticStyles.datePickerModalOverlay, { backgroundColor: colors.overlayBlack }]}>
-            <View style={[staticStyles.datePickerModalContent, { backgroundColor: colors.surface }]}>
-              <DateTimePicker
-                value={tempDate || formState.dateOfBirth.value || new Date(2000, 0, 1)}
-                mode="date"
-                display="spinner"
-                onChange={onChangeDate}
-                maximumDate={new Date()}
-              />
-              <View style={staticStyles.datePickerActions}>
-                <TouchableOpacity onPress={cancelDOBPicker}>
-                  <Text style={[staticStyles.datePickerActionText, { color: colors.secondary }]}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={confirmDOBPicker}>
-                  <Text style={[staticStyles.datePickerActionText, { color: colors.secondary }]}>OK</Text>
-                </TouchableOpacity>
+        {showDatePicker && Platform.OS === "ios" && (
+          <Modal transparent animationType="fade">
+            <View style={[staticStyles.datePickerModalOverlay, { backgroundColor: colors.overlayBlack }]}>
+              <View style={[staticStyles.datePickerModalContent, { backgroundColor: colors.surface }]}>
+                <DateTimePicker
+                  value={tempDate || formState.dateOfBirth.value || new Date(2000, 0, 1)}
+                  mode="date"
+                  display="spinner"
+                  onChange={onChangeDate}
+                  maximumDate={new Date()}
+                />
+                <View style={staticStyles.datePickerActions}>
+                  <TouchableOpacity onPress={cancelDOBPicker}>
+                    <Text variant="label" color="textMuted">Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={confirmDOBPicker}>
+                    <Text variant="label">OK</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
-          </View>
-        </Modal>
-      )}
+          </Modal>
+        )}
 
-      <Button mode="contained" onPress={onSubmit} style={staticStyles.button} loading={isLoading}>
-        Submit
-      </Button>
-    </Background>
+        <Button
+          label="Continue"
+          onPress={onSubmit}
+          loading={isLoading}
+          style={{ marginTop: space["6"], marginBottom: space["6"] }}
+        />
+      </KeyboardAvoidingView>
+    </Screen>
   );
 }
 
 const staticStyles = StyleSheet.create({
-  button: {
-    width: "100%",
-    marginTop: 24,
+  flex: { flex: 1 },
+  genderRow: {
+    flexDirection: "row",
   },
-  input: {
-    borderRadius: 25,
-    marginVertical: 10,
-    paddingHorizontal: 16,
-    height: 56,
-    fontSize: 14,
+  genderCard: {
+    flex: 1,
   },
-  picker: {
-    borderRadius: 5,
-  },
-  datePickerButton: {
-    width: "100%",
+  genderLabel: {
+    textAlign: "center",
   },
   datePickerModalOverlay: {
     flex: 1,
@@ -331,9 +350,5 @@ const staticStyles = StyleSheet.create({
     justifyContent: "space-between",
     paddingTop: 10,
     paddingHorizontal: 10,
-  },
-  datePickerActionText: {
-    fontWeight: "600",
-    fontSize: 16,
   },
 });

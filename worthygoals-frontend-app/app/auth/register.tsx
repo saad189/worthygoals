@@ -1,20 +1,20 @@
-import Background from '@/components/SubComponents/Background';
-import Button from '@/components/SubComponents/Button';
-import Header from '@/components/SubComponents/Header';
-import Logo from '@/components/SubComponents/Logo';
-import PasswordField from '@/components/SubComponents/PasswordField';
-import TextInput from '@/components/SubComponents/TextInput';
+/**
+ * Create account — Hi-Fi composition (S45 · P-E): editorial header + warm
+ * Field inputs replace the legacy dark form. Sign-up + verify redirect
+ * logic unchanged.
+ */
+import React, { useReducer } from 'react';
+import { KeyboardAvoidingView, Platform, StyleSheet, View, Keyboard } from 'react-native';
+import { ParamListBase } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { useNavigation } from 'expo-router';
+
+import { Button, Field, Header, Screen } from '@/components/ui';
+import { APP_NAME } from '@/constants/Brand';
 import { ROUTE_NAMES } from '@/constants/Routes';
 import { emailValidator, passwordValidator, repeatPasswordValidator } from '@/helpers';
 import { useLoader, useToast } from '@/hooks';
 import authService from '@/services/AuthService';
-import { ParamListBase } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { useNavigation } from 'expo-router';
-import React, { useReducer } from 'react';
-import { View, StyleSheet, TouchableOpacity, Keyboard } from 'react-native';
-import { Text } from 'react-native-paper';
-import { useAppTheme } from '@/hooks/useAppTheme';
 
 type FormState = {
     email: { value: string; error: string };
@@ -63,7 +63,6 @@ function formReducer(state: FormState, action: FormAction): FormState {
 
 export default function RegisterScreen() {
     const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
-    const { colors } = useAppTheme();
     const { isLoading, setLoading } = useLoader();
     const { showSuccessMessage, showErrorMessage } = useToast();
 
@@ -108,57 +107,53 @@ export default function RegisterScreen() {
     };
 
     return (
-        <Background>
-            <Logo isWhite={true} />
-            <Header>Create Account</Header>
-            <TextInput
-                label="Email"
-                returnKeyType="next"
-                value={formState.email.value}
-                onChangeText={(text: string) => dispatch({ type: 'UPDATE_EMAIL', payload: text })}
-                error={!!formState.email.error}
-                errorText={formState.email.error}
-                autoCapitalize="none"
-                textContentType="emailAddress"
-                keyboardType="email-address"
-            />
-            <PasswordField
-                placeholder="Password"
-                value={formState.password.value}
-                onChangeText={(text: string) => dispatch({ type: 'UPDATE_PASSWORD', payload: text })}
-                errorText={formState.password.error}
-                onSubmitEditing={onSignUpPressed}
-            />
+        <Screen scroll>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                style={styles.flex}
+            >
+                <View style={{ flex: 1, justifyContent: 'center' }}>
+                    <Header eyebrow={`${APP_NAME} · NEW`} title="Let's get you set up." />
 
-            <PasswordField
-                placeholder="Repeat Password"
-                value={formState.repeatedPassword.value}
-                onChangeText={(text: string) => dispatch({ type: 'UPDATE_REPEAT_PASSWORD', payload: text })}
-                errorText={formState.repeatedPassword.error}
-                onSubmitEditing={onSignUpPressed}
-            />
-            <Button mode="contained" onPress={onSignUpPressed} style={staticStyles.button} loading={isLoading}>
-                Sign Up
-            </Button>
-            <View style={staticStyles.row}>
-                <TouchableOpacity onPress={() => navigation.replace(ROUTE_NAMES.AUTH.LOGIN)}>
-                    <Text style={{ color: colors.primary }}>
-                        Already have an account?
-                        <Text style={{ fontWeight: 'bold', color: colors.secondary }}> Login</Text>
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        </Background>
+                    <Field
+                        label="Email"
+                        returnKeyType="next"
+                        value={formState.email.value}
+                        onChangeText={(text: string) => dispatch({ type: 'UPDATE_EMAIL', payload: text })}
+                        errorText={formState.email.error}
+                        autoCapitalize="none"
+                        textContentType="emailAddress"
+                        keyboardType="email-address"
+                    />
+                    <Field
+                        label="Password"
+                        secure
+                        value={formState.password.value}
+                        onChangeText={(text: string) => dispatch({ type: 'UPDATE_PASSWORD', payload: text })}
+                        errorText={formState.password.error}
+                        onSubmitEditing={onSignUpPressed}
+                    />
+                    <Field
+                        label="Repeat password"
+                        secure
+                        value={formState.repeatedPassword.value}
+                        onChangeText={(text: string) => dispatch({ type: 'UPDATE_REPEAT_PASSWORD', payload: text })}
+                        errorText={formState.repeatedPassword.error}
+                        onSubmitEditing={onSignUpPressed}
+                    />
+
+                    <Button label="Create account" onPress={onSignUpPressed} loading={isLoading} />
+                    <Button
+                        label="Already have an account? Sign in"
+                        variant="link"
+                        onPress={() => navigation.replace(ROUTE_NAMES.AUTH.LOGIN)}
+                    />
+                </View>
+            </KeyboardAvoidingView>
+        </Screen>
     );
 }
 
-const staticStyles = StyleSheet.create({
-    button: {
-        width: '100%',
-        marginTop: 24,
-    },
-    row: {
-        flexDirection: 'row',
-        marginTop: 4,
-    },
+const styles = StyleSheet.create({
+    flex: { flex: 1 },
 });

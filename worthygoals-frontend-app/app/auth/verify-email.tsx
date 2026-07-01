@@ -1,5 +1,10 @@
+/**
+ * Verify email — Hi-Fi composition (S45 · P-E): editorial header + warm
+ * Field input. Verification logic unchanged; native stack header keeps
+ * the back affordance.
+ */
 import React, { useReducer } from 'react';
-import { StyleSheet, Keyboard } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import {
     ParamListBase,
     RouteProp,
@@ -8,11 +13,7 @@ import {
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useNavigation } from 'expo-router';
 
-import Background from '@/components/SubComponents/Background';
-import Button from '@/components/SubComponents/Button';
-import Header from '@/components/SubComponents/Header';
-import Logo from '@/components/SubComponents/Logo';
-import TextInput from '@/components/SubComponents/TextInput';
+import { Button, Field, Header, Screen } from '@/components/ui';
 import { useLoader, useToast } from '@/hooks';
 import authService from '@/services/AuthService';
 import { ROUTE_NAMES } from '@/constants';
@@ -73,41 +74,37 @@ export default function VerifyEmailScreen() {
     };
 
     return (
-        <Background>
-            <Logo isWhite />
-            <Header>
-                Enter Code to Verify Your Email
-            </Header>
-            <TextInput
-                label="Code"
-                returnKeyType="done"
-                value={formState.code.value}
-                onChangeText={(text: string) => dispatch({ type: 'UPDATE_CODE', payload: text })}
-                onSubmitEditing={onSubmitPressed}
-                error={!!formState.code.error}
-                errorText={formState.code.error}
-                description={`Please enter the code received on ${email}`}
-            />
-            <Button
-                mode="contained"
-                onPress={onSubmitPressed}
-                style={styles.button}
-                loading={isLoading}
-                disabled={isLoading}
+        <Screen scroll edges={['bottom']}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                style={styles.flex}
             >
-                Submit
-            </Button>
-        </Background>
+                <View style={{ flex: 1, justifyContent: 'center' }}>
+                    <Header eyebrow="ONE-TIME CODE" title="Check your inbox." />
+
+                    <Field
+                        label="Code"
+                        returnKeyType="done"
+                        value={formState.code.value}
+                        onChangeText={(text: string) => dispatch({ type: 'UPDATE_CODE', payload: text })}
+                        onSubmitEditing={onSubmitPressed}
+                        errorText={formState.code.error}
+                        keyboardType="number-pad"
+                        description={`Please enter the code received on ${email}`}
+                    />
+
+                    <Button
+                        label="Verify"
+                        onPress={onSubmitPressed}
+                        loading={isLoading}
+                        disabled={isLoading}
+                    />
+                </View>
+            </KeyboardAvoidingView>
+        </Screen>
     );
 }
 
 const styles = StyleSheet.create({
-    button: {
-        width: '100%',
-        marginTop: 24,
-    },
-    row: {
-        flexDirection: 'row',
-        marginTop: 4,
-    },
+    flex: { flex: 1 },
 });

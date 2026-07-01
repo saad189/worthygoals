@@ -1,17 +1,19 @@
-import Background from '@/components/SubComponents/Background';
-import Button from '@/components/SubComponents/Button';
-import Header from '@/components/SubComponents/Header';
-import Logo from '@/components/SubComponents/Logo';
-import TextInput from '@/components/SubComponents/TextInput';
+/**
+ * Reset password — Hi-Fi composition (S45 · P-E): editorial header + warm
+ * Field input. Reset-code logic unchanged; native stack header keeps the
+ * back affordance.
+ */
+import React, { useState } from 'react';
+import { Keyboard, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
+import { ParamListBase } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { useNavigation } from 'expo-router';
+
+import { Button, Field, Header, Screen } from '@/components/ui';
 import { ROUTE_NAMES } from '@/constants/Routes';
 import { emailValidator } from '@/helpers';
 import { useLoader, useToast } from '@/hooks';
 import authService from '@/services/AuthService';
-import { ParamListBase } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { useNavigation } from 'expo-router';
-import React, { useState } from 'react';
-import { Keyboard, StyleSheet } from 'react-native';
 
 export default function ResetPasswordScreen() {
     const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
@@ -44,31 +46,33 @@ export default function ResetPasswordScreen() {
     };
 
     return (
-        <Background>
-            <Logo isWhite={true} />
-            <Header>Restore Password</Header>
-            <TextInput
-                label="E-mail address"
-                returnKeyType="done"
-                value={email.value}
-                onChangeText={(text: any) => setEmail({ value: text, error: '' })}
-                error={!!email.error}
-                errorText={email.error}
-                autoCapitalize="none"
-                textContentType="emailAddress"
-                keyboardType="email-address"
-                description="You will receive an email with a one-time code for resetting the password."
-            />
-            <Button mode="contained" onPress={sendResetPasswordEmail} style={staticStyles.button} loading={isLoading}>
-                Send Instructions
-            </Button>
-        </Background>
+        <Screen scroll edges={['bottom']}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                style={styles.flex}
+            >
+                <View style={{ flex: 1, justifyContent: 'center' }}>
+                    <Header eyebrow="RESET" title="Forgot it? It happens." />
+
+                    <Field
+                        label="Email"
+                        returnKeyType="done"
+                        value={email.value}
+                        onChangeText={(text: string) => setEmail({ value: text, error: '' })}
+                        errorText={email.error}
+                        autoCapitalize="none"
+                        textContentType="emailAddress"
+                        keyboardType="email-address"
+                        description="You will receive an email with a one-time code for resetting the password."
+                    />
+
+                    <Button label="Send instructions" onPress={sendResetPasswordEmail} loading={isLoading} />
+                </View>
+            </KeyboardAvoidingView>
+        </Screen>
     );
 }
 
-const staticStyles = StyleSheet.create({
-    button: {
-        width: '100%',
-        marginTop: 16,
-    },
+const styles = StyleSheet.create({
+    flex: { flex: 1 },
 });
