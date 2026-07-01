@@ -13,6 +13,7 @@ import { ParamListBase } from '@react-navigation/native';
 
 import { Button, Header, Screen, Text } from '@/components/ui';
 import CompletionSheet, { CompletionSheetHandle } from '@/components/CompletionSheet';
+import DidYouDoIt from '@/components/DidYouDoIt';
 import ExplanationSheet, { ExplanationSheetHandle } from '@/components/ExplanationSheet';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useGoals } from '@/hooks/useGoals';
@@ -52,6 +53,10 @@ export default function TodoListScreen() {
     });
 
   const [activeTask, setActiveTask] = useState<TaskItem | null>(null);
+  // Screen 08 — the full-screen "Did you do it?" moment a pending task tap
+  // opens before either sheet. Yes → CompletionSheet (09) · Not today →
+  // ExplanationSheet (10).
+  const [askTask, setAskTask] = useState<TaskItem | null>(null);
   const completionRef = useRef<CompletionSheetHandle>(null);
   const explanationRef = useRef<ExplanationSheetHandle>(null);
 
@@ -94,6 +99,18 @@ export default function TodoListScreen() {
     explanationRef.current?.open();
   };
 
+  // Let the full-screen modal finish fading before the bottom sheet animates
+  // in, so the two transitions don't fight.
+  const answerYes = (task: TaskItem) => {
+    setAskTask(null);
+    setTimeout(() => openComplete(task), 200);
+  };
+
+  const answerNotToday = (task: TaskItem) => {
+    setAskTask(null);
+    setTimeout(() => openExplain(task), 200);
+  };
+
   const s = StyleSheet.create({
     center: {
       flex: 1,
@@ -131,13 +148,6 @@ export default function TodoListScreen() {
       borderRadius: radius.sm,
       marginTop: space['2'],
       backgroundColor: colors.canvas,
-    },
-    actionRow: { flexDirection: 'row', gap: space['2'] },
-    actionBtn: {
-      flex: 1,
-      paddingVertical: space['2'],
-      borderRadius: radius.md,
-      alignItems: 'center',
     },
     retryBtn: {
       marginTop: space['3'],
@@ -190,8 +200,16 @@ export default function TodoListScreen() {
         ? colors.notificationInfo
         : colors.canvas;
 
+    // A pending task opens the screen-08 "Did you do it?" moment — the binary
+    // lives there, not on inline row buttons (flow ④ interception).
     return (
-      <View style={s.card}>
+      <TouchableOpacity
+        style={s.card}
+        disabled={!isPending}
+        onPress={() => setAskTask(item)}
+        accessibilityRole="button"
+        accessibilityLabel={isPending ? `Answer for ${item.title}` : item.title}
+      >
         <Text variant="title">{item.title}</Text>
         {item.description ? (
           <Text variant="muted" style={{ marginTop: space['1'] }}>
@@ -206,31 +224,11 @@ export default function TodoListScreen() {
         </View>
 
         {isPending && (
-          <View style={s.actionRow}>
-            <TouchableOpacity
-              style={[s.actionBtn, { backgroundColor: colors.primary }]}
-              onPress={() => openComplete(item)}
-              accessibilityRole="button"
-            >
-              <Text variant="label" color="white">
-                Done ✓
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                s.actionBtn,
-                { backgroundColor: colors.canvas, borderWidth: 1, borderColor: colors.border },
-              ]}
-              onPress={() => openExplain(item)}
-              accessibilityRole="button"
-            >
-              <Text variant="label" color="textMuted">
-                Skip
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <Text variant="eyebrow" color="textMuted">
+            tap to answer ›
+          </Text>
         )}
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -287,6 +285,15 @@ export default function TodoListScreen() {
             contentContainerStyle={s.list}
           />
         )}
+
+        <DidYouDoIt
+          visible={!!askTask}
+          taskTitle={askTask?.title}
+          personalityId={personalityId}
+          onYes={() => askTask && answerYes(askTask)}
+          onNotToday={() => askTask && answerNotToday(askTask)}
+          onDismiss={() => setAskTask(null)}
+        />
 
         <CompletionSheet
           ref={completionRef}
