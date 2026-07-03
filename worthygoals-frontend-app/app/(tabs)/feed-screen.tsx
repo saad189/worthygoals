@@ -8,7 +8,7 @@
  * Tapping a reply talks back 1:1 — it opens that mentor's chat (S47).
  */
 import React, { useState } from 'react';
-import { Alert, RefreshControl, StyleSheet, View } from 'react-native';
+import { Alert, Image, RefreshControl, StyleSheet, View } from 'react-native';
 import { useNavigation } from 'expo-router';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { ParamListBase } from '@react-navigation/native';
@@ -113,6 +113,20 @@ export default function FeedScreen() {
                 <Text variant="body" style={{ marginTop: space['2'], fontStyle: 'italic' }}>
                   “{post.text}”
                 </Text>
+                {post.imageUrl ? (
+                  <Image
+                    source={{ uri: post.imageUrl }}
+                    style={{
+                      marginTop: space['3'],
+                      width: '100%',
+                      aspectRatio: 4 / 3,
+                      borderRadius: radius.md,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                    }}
+                    accessibilityLabel="Photo attached to this status"
+                  />
+                ) : null}
               </View>
 
               <Text variant="eyebrow">

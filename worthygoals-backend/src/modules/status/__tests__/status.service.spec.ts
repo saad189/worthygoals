@@ -4,6 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { StatusPost, StatusReaction } from 'src/database/models';
 import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
 import { StatusService } from '../status.service';
+import { MediaService } from '../../media/media.service';
 import { UsersService } from '../../users/users.service';
 
 const USER_ID = 1;
@@ -15,6 +16,7 @@ describe('StatusService', () => {
   let reactionRepo: { create: jest.Mock; save: jest.Mock };
   let usersService: { findByAccountSub: jest.Mock };
   let gateway: { chat: jest.Mock };
+  let mediaService: { getPresignedGetUrl: jest.Mock; markAttached: jest.Mock };
 
   beforeEach(async () => {
     statusRepo = {
@@ -43,6 +45,11 @@ describe('StatusService', () => {
       })),
     };
 
+    mediaService = {
+      getPresignedGetUrl: jest.fn().mockResolvedValue('https://signed/img.jpg'),
+      markAttached: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         StatusService,
@@ -50,6 +57,7 @@ describe('StatusService', () => {
         { provide: getRepositoryToken(StatusReaction), useValue: reactionRepo },
         { provide: UsersService, useValue: usersService },
         { provide: AiGatewayService, useValue: gateway },
+        { provide: MediaService, useValue: mediaService },
       ],
     }).compile();
 
@@ -140,5 +148,26 @@ describe('StatusService', () => {
       'lyra',
       'goggs',
     ]);
+  });
+
+  it('persists an attached photo and returns its presigned url (screen 12 chip)', async () => {
+    const result = await service.create(USER_SUB, {
+      text: 'ran with proof',
+      mediaId: 'media-1',
+    });
+
+    expect(statusRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ mediaId: 'media-1' }),
+    );
+    expect(mediaService.markAttached).toHaveBeenCalledWith('media-1', USER_SUB);
+    expect(mediaService.getPresignedGetUrl).toHaveBeenCalledWith('media-1');
+    expect(result.imageUrl).toBe('https://signed/img.jpg');
+  });
+
+  it('returns a null imageUrl for photoless posts without touching media', async () => {
+    const result = await service.create(USER_SUB, { text: 'plain' });
+    expect(result.imageUrl).toBeNull();
+    expect(mediaService.markAttached).not.toHaveBeenCalled();
+    expect(mediaService.getPresignedGetUrl).not.toHaveBeenCalled();
   });
 });

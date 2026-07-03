@@ -14,5 +14,7 @@ export interface StatusPost {
   id: string;
   text: string;
   createdAt: string;
+  /** Presigned GET url for the attached photo, if any (screen 12's chip). */
+  imageUrl?: string | null;
   reactions: StatusReaction[];
 }

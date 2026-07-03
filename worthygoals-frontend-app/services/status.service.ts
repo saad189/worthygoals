@@ -9,8 +9,11 @@ export const statusApiService = {
     return data ?? [];
   },
 
-  create: async (text: string): Promise<StatusPost> => {
-    const { data } = await ApiService.post<StatusPost>(STATUS_BASE, { text });
+  create: async (text: string, mediaId?: string): Promise<StatusPost> => {
+    const { data } = await ApiService.post<StatusPost>(STATUS_BASE, {
+      text,
+      ...(mediaId ? { mediaId } : {}),
+    });
     return data;
   },
 };
