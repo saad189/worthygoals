@@ -60,6 +60,14 @@ export class User {
   @Column({ length: 16, default: 'free' })
   tier: string;
 
+  /**
+   * Onboarding tone preference (soft | firm | intense) — the forced-choice
+   * deck's result, persisted server-side so voiced surfaces (notifications,
+   * personas) can scale to it. The earned-escalation slope builds on this.
+   */
+  @Column({ length: 16, nullable: true })
+  tone: string;
+
   @ManyToOne(() => Role, (role) => role.users, { eager: true })
   role: Role;
 

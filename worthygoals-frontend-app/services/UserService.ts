@@ -74,6 +74,16 @@ class UserService {
             throw new Error(formatErrorMessage(error));
         }
     }
+
+    /** Persist the onboarding tone (soft | firm | intense) server-side so
+     *  voiced surfaces (notifications, personas) can scale to it (S47). */
+    async updateTone(tone: string): Promise<void> {
+        try {
+            await this.apiService.put(`${this.userEndPoint}/profile`, { tone });
+        } catch (error: any) {
+            throw new Error(formatErrorMessage(error));
+        }
+    }
 }
 
 const userService = new UserService(ApiService);

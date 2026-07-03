@@ -32,6 +32,10 @@ export class StatusPost {
   @Column({ type: 'text' })
   text!: string;
 
+  /** Optional photo (screen 12's 📷 chip) — media drafts table id. */
+  @Column({ type: 'uuid', nullable: true })
+  mediaId!: string | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 

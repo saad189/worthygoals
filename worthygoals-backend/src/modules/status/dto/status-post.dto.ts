@@ -21,6 +21,13 @@ export class StatusPostDto {
   @ApiProperty()
   createdAt!: Date;
 
+  @ApiProperty({
+    description: 'Presigned GET url for the attached photo, if any.',
+    required: false,
+    nullable: true,
+  })
+  imageUrl?: string | null;
+
   @ApiProperty({ type: [StatusReactionDto] })
   reactions!: StatusReactionDto[];
 }

@@ -158,6 +158,13 @@ function Routes() {
         name={ROUTE_NAMES.REVIEW.self}
         options={{ animation: "slide_from_right", headerShown: false }}
       />
+      {/* Motivational board — wins + memory pictures; entered from the me
+          tab's MEMORIES card (S47 re-entry after the Hi-Fi IA dropped the
+          board tab). */}
+      <Stack.Screen
+        name={ROUTE_NAMES.TABS.INSPIRATION.self}
+        options={{ animation: "slide_from_right", headerShown: false }}
+      />
       {/* Forced step for new users — no back affordance; the screen renders
           its own editorial header. */}
       <Stack.Screen

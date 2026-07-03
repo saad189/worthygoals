@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
+  IsIn,
   IsOptional,
   IsString,
   IsDateString,
@@ -68,6 +69,16 @@ export class CreateUserDto {
   @IsOptional()
   @IsNumber()
   readonly longitude?: number;
+
+  @ApiProperty({
+    example: 'firm',
+    description:
+      "The user's onboarding tone preference (forced-choice deck result)",
+    required: false,
+  })
+  @IsOptional()
+  @IsIn(['soft', 'firm', 'intense'])
+  readonly tone?: string;
 
   @IsOptional()
   parentId?: number;

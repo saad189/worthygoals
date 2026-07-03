@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { StatusPost } from 'src/database/models/status-post.entity';
 import { StatusReaction } from 'src/database/models/status-reaction.entity';
 import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
+import { MediaService } from '../media/media.service';
 import { UsersService } from '../users/users.service';
 import { CreateStatusDto } from './dto/create-status.dto';
 import { StatusPostDto } from './dto/status-post.dto';
@@ -36,6 +37,7 @@ export class StatusService {
     private readonly reactionRepo: Repository<StatusReaction>,
     private readonly usersService: UsersService,
     private readonly gateway: AiGatewayService,
+    private readonly mediaService: MediaService,
   ) {}
 
   async create(sub: string, dto: CreateStatusDto): Promise<StatusPostDto> {
@@ -43,8 +45,18 @@ export class StatusService {
     if (!user) throw new NotFoundException('User not found');
 
     const post = await this.statusRepo.save(
-      this.statusRepo.create({ userId: user.id, text: dto.text }),
+      this.statusRepo.create({
+        userId: user.id,
+        text: dto.text,
+        mediaId: dto.mediaId ?? null,
+      }),
     );
+
+    // Photo uploaded through the presign path — mark the draft attached so it
+    // isn't collectable as an orphan.
+    if (dto.mediaId) {
+      await this.mediaService.markAttached(dto.mediaId, sub);
+    }
 
     // Fan out to every personality in parallel — the team reacts at once.
     const reactions = await Promise.all(
@@ -80,8 +92,10 @@ export class StatusService {
       take: STATUS_FEED_LIMIT,
     });
 
-    return posts.map((post) =>
-      this.toDto(post, this.orderReactions(post.reactions ?? [])),
+    return Promise.all(
+      posts.map((post) =>
+        this.toDto(post, this.orderReactions(post.reactions ?? [])),
+      ),
     );
   }
 
@@ -119,11 +133,21 @@ export class StatusService {
     );
   }
 
-  private toDto(post: StatusPost, reactions: StatusReaction[]): StatusPostDto {
+  private async toDto(
+    post: StatusPost,
+    reactions: StatusReaction[],
+  ): Promise<StatusPostDto> {
+    // Same pattern as the board: resolve the media draft to a presigned GET
+    // url on read; null when there's no photo or S3 isn't configured.
+    const imageUrl = post.mediaId
+      ? await this.mediaService.getPresignedGetUrl(post.mediaId)
+      : null;
+
     return {
       id: post.id,
       text: post.text,
       createdAt: post.createdAt,
+      imageUrl,
       reactions: reactions.map((r) => ({
         personalityId: r.personalityId,
         mentorName: r.mentorName,

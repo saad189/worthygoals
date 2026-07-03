@@ -247,8 +247,16 @@ export class UsersService {
     if (!user)
       throw new NotFoundException(`User not found, trying to extract Dto`);
 
-    const { id, firstName, lastName, email, latitude, longitude, dateOfBirth } =
-      user;
+    const {
+      id,
+      firstName,
+      lastName,
+      email,
+      latitude,
+      longitude,
+      dateOfBirth,
+      tone,
+    } = user;
 
     const role = await this.roleRepository.findOne({
       where: { id: user.role.id },
@@ -263,6 +271,7 @@ export class UsersService {
       email,
       id,
       age,
+      tone: tone ?? null,
       role: {
         id: role.id,
         name: role.name,

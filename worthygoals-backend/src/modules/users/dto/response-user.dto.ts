@@ -8,4 +8,6 @@ export class ResponseUserDto {
   localtion: LocationData;
   role: UserRole;
   age: number;
+  /** Onboarding tone preference (soft | firm | intense); null until chosen. */
+  tone?: string | null;
 }

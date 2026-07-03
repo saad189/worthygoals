@@ -3,11 +3,12 @@
  * "Which lands harder when you slip?" A single deck card with two framings of
  * the same slip — quiet (left) or loud (right, in the accent) — over a stack of
  * rotated hint cards. Pick one; the tally feeds the personality match (Q3 — the
- * tone preference, soft-by-default). Tap-to-choose; a swipe gesture layer is a
- * later polish pass. Step-dots + counter sit at the top (S44 fidelity pass).
+ * tone preference, soft-by-default). Swipe ← quiet / → loud (the design's
+ * "swipe ← or →", S47) with tap-to-choose kept as the accessible path.
+ * Step-dots + counter sit at the top (S44 fidelity pass).
  */
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { Animated, PanResponder, Pressable, StyleSheet, View } from 'react-native';
 import { useNavigation } from 'expo-router';
 import { ParamListBase } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -16,6 +17,10 @@ import { Button, Screen, StepDots, Text } from '@/components/ui';
 import { ROUTE_NAMES } from '@/constants/Routes';
 import { TONE_TEST_CARDS } from '@/constants/Personalities';
 import { useAppTheme } from '@/hooks/useAppTheme';
+
+// Drag past this to commit the swipe; anything less springs back.
+const SWIPE_THRESHOLD = 96;
+const SWIPE_OUT_DISTANCE = 480;
 
 export default function ToneTestScreen() {
   const { colors, space, radius, fonts } = useAppTheme();
@@ -44,6 +49,47 @@ export default function ToneTestScreen() {
     setIndex(answered);
   };
 
+  // Swipe layer — right = the loud voice (accent), left = the quiet one,
+  // mirroring the LEFT/RIGHT labels on the card. Kept on plain Animated +
+  // PanResponder so taps on either side still work untouched.
+  const panX = useRef(new Animated.Value(0)).current;
+  const chooseRef = useRef(choose);
+  chooseRef.current = choose;
+
+  const swipeOut = (isHard: boolean) => {
+    Animated.timing(panX, {
+      toValue: isHard ? SWIPE_OUT_DISTANCE : -SWIPE_OUT_DISTANCE,
+      duration: 180,
+      useNativeDriver: true,
+    }).start(() => {
+      panX.setValue(0);
+      chooseRef.current(isHard);
+    });
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      // Only claim clear horizontal drags so simple taps fall through to the
+      // Pressable sides.
+      onMoveShouldSetPanResponder: (_evt, g) =>
+        Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+      onPanResponderMove: (_evt, g) => panX.setValue(g.dx),
+      onPanResponderRelease: (_evt, g) => {
+        if (g.dx > SWIPE_THRESHOLD) swipeOut(true);
+        else if (g.dx < -SWIPE_THRESHOLD) swipeOut(false);
+        else
+          Animated.spring(panX, { toValue: 0, useNativeDriver: true }).start();
+      },
+      onPanResponderTerminate: () =>
+        Animated.spring(panX, { toValue: 0, useNativeDriver: true }).start(),
+    }),
+  ).current;
+
+  const cardRotate = panX.interpolate({
+    inputRange: [-SWIPE_OUT_DISTANCE, 0, SWIPE_OUT_DISTANCE],
+    outputRange: ['-7deg', '0deg', '7deg'],
+  });
+
   return (
     <Screen>
       <View style={styles.stepRow}>
@@ -70,8 +116,18 @@ export default function ToneTestScreen() {
           ]}
         />
 
-        {/* Live card. */}
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        {/* Live card — draggable; a committed swipe answers the card. */}
+        <Animated.View
+          {...panResponder.panHandlers}
+          style={[
+            styles.card,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              transform: [{ translateX: panX }, { rotate: cardRotate }],
+            },
+          ]}
+        >
           <Pressable
             style={[styles.choice, { backgroundColor: colors.canvas, borderColor: colors.border }]}
             onPress={() => choose(false)}
@@ -117,11 +173,11 @@ export default function ToneTestScreen() {
               Loud &amp; in your face. The shove.
             </Text>
           </Pressable>
-        </View>
+        </Animated.View>
       </View>
 
       <View style={styles.footer}>
-        <Text variant="mono">tap a side to choose</Text>
+        <Text variant="mono">swipe ← or → · or tap a side</Text>
         <Button
           label="Skip — just pick for me"
           variant="link"

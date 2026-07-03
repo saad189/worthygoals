@@ -127,6 +127,13 @@ export default function MeScreen() {
       `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.MENTORS_LIST_SCREEN}` as never,
     );
 
+  // The motivational board — memory pictures land here (PRD V1). The Hi-Fi IA
+  // has no board tab, so the me tab is its home.
+  const goToBoard = () =>
+    router.push(
+      `/${ROUTE_NAMES.TABS.INSPIRATION.self}/${ROUTE_NAMES.TABS.INSPIRATION.DEFAULT_SCREEN}` as never,
+    );
+
   return (
     <Screen scroll>
       <Header eyebrow={`${APP_NAME} · V1`} title="me." />
@@ -187,6 +194,19 @@ export default function MeScreen() {
         <SettingRow
           label="tone"
           value={tone ? TONE_LABEL[tone] : "not set"}
+          last
+        />
+      </Card>
+
+      {/* ── MEMORIES ──────────────────────────────────────────── */}
+      <Text variant="eyebrow" color="textMuted" style={styles.groupLabel}>
+        memories
+      </Text>
+      <Card>
+        <SettingRow
+          label="board"
+          value="Your wins, on file"
+          onPress={goToBoard}
           last
         />
       </Card>

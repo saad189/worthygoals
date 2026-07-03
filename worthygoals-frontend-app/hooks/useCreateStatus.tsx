@@ -12,7 +12,8 @@ export function useCreateStatus(onSuccess?: (post: StatusPost) => void) {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: (text: string) => statusApiService.create(text),
+    mutationFn: ({ text, mediaId }: { text: string; mediaId?: string }) =>
+      statusApiService.create(text, mediaId),
     onSuccess: (post) => {
       queryClient.invalidateQueries({ queryKey: ['status'] });
       onSuccess?.(post);
@@ -20,8 +21,8 @@ export function useCreateStatus(onSuccess?: (post: StatusPost) => void) {
   });
 
   const post = useCallback(
-    (text: string) => {
-      mutation.mutate(text);
+    (text: string, mediaId?: string) => {
+      mutation.mutate({ text, mediaId });
     },
     [mutation],
   );
