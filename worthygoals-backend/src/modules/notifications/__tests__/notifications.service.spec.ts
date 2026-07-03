@@ -138,7 +138,9 @@ describe('NotificationsService', () => {
           kind: 're_engage',
           payload: { daysSince: 4 },
         }),
-        expect.objectContaining({ jobId: expect.stringContaining(':re_engage:') }),
+        expect.objectContaining({
+          jobId: expect.stringContaining(':re_engage:'),
+        }),
       );
     });
 
