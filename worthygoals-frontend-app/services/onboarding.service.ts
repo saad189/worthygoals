@@ -5,11 +5,13 @@
  * "lands with a matched mentor + a saved tone preference" and those choices
  * survive a reload (exit criteria, §G/U4).
  *
- * V1 persists locally (AsyncStorage). Handoff: the backend has no `tone`
- * field on the user / user_personalities yet — once it does, sync the saved
- * tone + mentor there so the runtime's earned-escalation slope reads from it.
+ * Persists locally (AsyncStorage) as the source the app reads synchronously,
+ * and best-effort syncs the tone to the backend (users.tone, S47) so the
+ * runtime's earned-escalation slope can read from it — an offline save still
+ * completes onboarding.
  */
 import Storage from '@/helpers/StorageUtilAsync';
+import userService from '@/services/UserService';
 import {
   ONBOARDING_COMPLETE,
   ONBOARDING_MENTOR,
@@ -37,6 +39,15 @@ export const onboardingService = {
       mentorId: choice.mentorId ?? null,
     } as SavedMentor);
     await Storage.setItem(ONBOARDING_COMPLETE, true);
+
+    // Best-effort backend sync — the tone shapes voiced surfaces server-side.
+    // A failure (offline, cold start) never blocks onboarding; the local copy
+    // stays the app's read path.
+    try {
+      await userService.updateTone(choice.tone);
+    } catch {
+      // Swallowed by design — re-synced next time the profile is updated.
+    }
   },
 
   async getTone(): Promise<ToneKey | null> {
