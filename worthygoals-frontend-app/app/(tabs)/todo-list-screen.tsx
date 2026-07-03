@@ -47,6 +47,20 @@ export default function TodoListScreen() {
     return mentors.find((m: Mentor) => m.id === selectedGoal.mentorId)?.slug ?? null;
   }, [mentors, selectedGoal]);
 
+  // Misses already recorded this week for the selected goal (Monday-start, the
+  // weekly-review convention). From the 3rd miss on, the explanation sheet
+  // escalates to the seriousness check whatever the reason — "3RD MISS THIS
+  // WEEK" (screen 11).
+  const missCountThisWeek = useMemo(() => {
+    const weekStart = new Date();
+    const day = weekStart.getDay(); // 0=Sun
+    weekStart.setDate(weekStart.getDate() - (day === 0 ? 6 : day - 1));
+    weekStart.setHours(0, 0, 0, 0);
+    return tasks.filter(
+      (t: TaskItem) => t.status === 'skipped' && new Date(t.updatedAt) >= weekStart,
+    ).length;
+  }, [tasks]);
+
   const startNewGoal = () =>
     navigation.navigate(ROUTE_NAMES.TODO.self as any, {
       screen: ROUTE_NAMES.TODO.TODO_CREATE_SCREEN,
@@ -317,6 +331,7 @@ export default function TodoListScreen() {
           submitting={explaining}
           mentorReaction={explanationReaction}
           safetyFlag={explanationSafety}
+          missCountThisWeek={missCountThisWeek}
           onSubmit={(payload) => activeTask && explain(activeTask.id, payload)}
           onClose={() => {
             clearExplanationReaction();

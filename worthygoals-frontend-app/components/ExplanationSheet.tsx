@@ -16,6 +16,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { ExplainTaskPayload, ExplanationReason } from '@/models';
 import { personaBySlug, PersonalitySlug } from '@/constants/Personalities';
 import { triggerPersonalityHaptic, triggerSelectionHaptic } from '@/helpers/haptics';
+import { ordinal } from '@/helpers/Ordinal';
 
 // Hi-Fi flow ④ · screen 10 (FAILURE → WHICH ONE?). Three verbs, three downstream
 // behaviours; "chose not to" is the honest one — it's accent-only (the same rust
@@ -45,6 +46,10 @@ interface Props {
   submitting: boolean;
   mentorReaction?: string | null;
   safetyFlag?: boolean;
+  /** Misses already recorded this week for this goal (excluding this one).
+   *  At 2+ prior misses this one is the 3rd — the seriousness check fires
+   *  regardless of which reason was picked (design: "3RD MISS THIS WEEK"). */
+  missCountThisWeek?: number;
   onSubmit: (payload: ExplainTaskPayload) => void;
   onClose: () => void;
 }
@@ -57,7 +62,19 @@ export interface ExplanationSheetHandle {
 type Phase = 'pick' | 'serious';
 
 const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
-  ({ taskTitle, personalityId, submitting, mentorReaction, safetyFlag, onSubmit, onClose }, ref) => {
+  (
+    {
+      taskTitle,
+      personalityId,
+      submitting,
+      mentorReaction,
+      safetyFlag,
+      missCountThisWeek = 0,
+      onSubmit,
+      onClose,
+    },
+    ref,
+  ) => {
     const { colors, space, radius } = useAppTheme();
     const sheetRef = useRef<BottomSheet>(null);
     const [reason, setReason] = useState<ExplanationReason | null>(null);
@@ -94,10 +111,17 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
       setReason(value);
     };
 
+    // This miss's number within the week (prior recorded misses + this one).
+    // From the 3rd on, every miss earns the check regardless of the reason —
+    // the design's "3RD MISS THIS WEEK" trigger (screen 11).
+    const missNumber = missCountThisWeek + 1;
+    const missTriggered = missNumber >= 3;
+
     const handleSubmit = () => {
       if (!reason) return;
-      // The deliberate skip earns a seriousness check before it's recorded.
-      if (reason === 'chose_not_to') {
+      // The deliberate skip — or the 3rd miss this week, whatever the reason —
+      // earns a seriousness check before it's recorded.
+      if (reason === 'chose_not_to' || missTriggered) {
         triggerSelectionHaptic();
         setPhase('serious');
         return;
@@ -106,13 +130,13 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
       onSubmit({ reason, personalityId: personalityId ?? undefined });
     };
 
-    // The three real outs on the seriousness check. All record the deliberate
-    // skip; "push harder" keeps the sheet for the mentor's reaction, the other
-    // two close out. (Pausing / archiving the goal itself is a backend lifecycle
-    // step that doesn't exist yet — see handoff.)
+    // The three real outs on the seriousness check. All record the reason the
+    // user actually picked; "push harder" keeps the sheet for the mentor's
+    // reaction, the other two close out. (Pausing / archiving the goal itself
+    // is a backend lifecycle step that doesn't exist yet — see handoff.)
     const handleSeriousCommit = (action: 'push' | 'pause' | 'let_go') => {
       triggerPersonalityHaptic(personalityId);
-      onSubmit({ reason: 'chose_not_to', personalityId: personalityId ?? undefined });
+      onSubmit({ reason: reason ?? 'chose_not_to', personalityId: personalityId ?? undefined });
       if (action !== 'push') onClose();
     };
 
@@ -171,8 +195,12 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
         transition={{ type: 'timing', duration: 350 }}
         style={s.card}
       >
-        <Text variant="eyebrow" style={{ marginBottom: space['2'] }}>
-          A deliberate skip
+        <Text
+          variant="eyebrow"
+          color={missTriggered ? 'primary' : undefined}
+          style={{ marginBottom: space['2'] }}
+        >
+          {missTriggered ? `${ordinal(missNumber)} MISS THIS WEEK` : 'A deliberate skip'}
         </Text>
         <Text variant="display" style={s.seriousQ}>
           Do you actually want this?
