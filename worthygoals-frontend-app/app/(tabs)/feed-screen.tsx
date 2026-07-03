@@ -5,9 +5,10 @@
  * their own voice, type, colour and bubble shape. Tap "+ status" to compose
  * (screen 12). Replaces the U2 placeholder that re-exported the inspiration
  * board — status is the feed tab per the Hi-Fi IA (TabBar active={3}).
+ * Tapping a reply talks back 1:1 — it opens that mentor's chat (S47).
  */
-import React from 'react';
-import { RefreshControl, StyleSheet, View } from 'react-native';
+import React, { useState } from 'react';
+import { Alert, RefreshControl, StyleSheet, View } from 'react-native';
 import { useNavigation } from 'expo-router';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { ParamListBase } from '@react-navigation/native';
@@ -15,9 +16,12 @@ import { ParamListBase } from '@react-navigation/native';
 import { Button, Header, Screen, Text } from '@/components/ui';
 import StatusReactionCard from '@/components/StatusReactionCard';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useMentors } from '@/hooks/useMentors';
 import { useStatusFeed } from '@/hooks/useStatusFeed';
+import conversationsService from '@/services/conversations.service';
+import { formatErrorMessage } from '@/helpers/ErrorFormatter';
 import { ROUTE_NAMES } from '@/constants/Routes';
-import { StatusPost } from '@/models';
+import { Mentor, StatusPost, StatusReaction } from '@/models';
 
 /** "11:14 AM" — keeps the post header close to the design's timestamp. */
 function postTime(iso: string): string {
@@ -32,11 +36,34 @@ export default function FeedScreen() {
   const { colors, space, radius } = useAppTheme();
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
   const { posts, loading, error, refetch, refreshing } = useStatusFeed();
+  const { mentors } = useMentors();
+  const [openingChat, setOpeningChat] = useState(false);
 
   const compose = () =>
     navigation.navigate(ROUTE_NAMES.STATUS.self as any, {
       screen: ROUTE_NAMES.STATUS.COMPOSE_SCREEN,
     });
+
+  // "tap a reply to talk back · 1:1" (screen 13) — resolve the reaction's
+  // personality slug to the roster mentor (slug === personalityId on the WG
+  // roster) and drop into that mentor's chat, same path as mentor-detail.
+  const talkBack = async (reaction: StatusReaction) => {
+    if (openingChat) return;
+    const mentor = mentors.find((m: Mentor) => m.slug === reaction.personalityId);
+    if (!mentor) return;
+    try {
+      setOpeningChat(true);
+      const chatData = await conversationsService.getConversationShellByMentorId(mentor.id);
+      navigation.navigate(ROUTE_NAMES.CHAT.self as any, {
+        screen: ROUTE_NAMES.CHAT.CHAT_VIEW_SCREEN,
+        params: { chatData },
+      });
+    } catch (e: any) {
+      Alert.alert("Couldn't open the chat", formatErrorMessage(e));
+    } finally {
+      setOpeningChat(false);
+    }
+  };
 
   return (
     <Screen
@@ -93,8 +120,18 @@ export default function FeedScreen() {
               </Text>
 
               {post.reactions.map((r) => (
-                <StatusReactionCard key={`${post.id}-${r.personalityId}`} reaction={r} />
+                <StatusReactionCard
+                  key={`${post.id}-${r.personalityId}`}
+                  reaction={r}
+                  onPress={talkBack}
+                />
               ))}
+
+              {post.reactions.length > 0 && (
+                <Text variant="muted" style={styles.talkBackHint}>
+                  tap a reply to talk back · 1:1
+                </Text>
+              )}
             </View>
           ))}
         </View>
@@ -106,4 +143,5 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   noMargin: { marginBottom: 0, flex: 1 },
+  talkBackHint: { textAlign: 'center', fontStyle: 'italic' },
 });
