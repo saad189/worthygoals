@@ -34,6 +34,7 @@ describe('NotificationsService', () => {
     logRepo = {
       count: jest.fn().mockResolvedValue(0),
       save: jest.fn().mockResolvedValue(undefined),
+      manager: { query: jest.fn().mockResolvedValue([]) } as any,
     };
     queue = {
       add: jest.fn().mockResolvedValue({ id: 'job-1' }),
@@ -113,6 +114,65 @@ describe('NotificationsService', () => {
       tokenRepo.find.mockResolvedValue([makeToken({ timezone: 'UTC' })]);
       queue.getJob.mockResolvedValue({ id: 'existing' });
       await service.materializeNext24h();
+      expect(queue.add).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('scheduleLapseReEngagement', () => {
+    const daysAgo = (n: number) =>
+      new Date(Date.now() - n * 24 * 60 * 60 * 1000).toISOString();
+
+    beforeEach(() => {
+      tokenRepo.find.mockResolvedValue([makeToken({ timezone: 'UTC' })]);
+    });
+
+    it('enqueues a voiced re_engage with daysSince for a user quiet 3+ days', async () => {
+      (logRepo.manager as any).query.mockResolvedValue([
+        { userId: USER_ID, lastTs: daysAgo(4) },
+      ]);
+      await service.scheduleLapseReEngagement();
+      expect(queue.add).toHaveBeenCalledWith(
+        're_engage',
+        expect.objectContaining({
+          userId: USER_ID,
+          kind: 're_engage',
+          payload: { daysSince: 4 },
+        }),
+        expect.objectContaining({ jobId: expect.stringContaining(':re_engage:') }),
+      );
+    });
+
+    it('leaves recently-active users alone', async () => {
+      (logRepo.manager as any).query.mockResolvedValue([
+        { userId: USER_ID, lastTs: daysAgo(1) },
+      ]);
+      await service.scheduleLapseReEngagement();
+      expect(queue.add).not.toHaveBeenCalled();
+    });
+
+    it('skips users who were never active', async () => {
+      (logRepo.manager as any).query.mockResolvedValue([
+        { userId: USER_ID, lastTs: null },
+      ]);
+      await service.scheduleLapseReEngagement();
+      expect(queue.add).not.toHaveBeenCalled();
+    });
+
+    it('suppresses a re_engage sent within the last week', async () => {
+      (logRepo.manager as any).query.mockResolvedValue([
+        { userId: USER_ID, lastTs: daysAgo(5) },
+      ]);
+      logRepo.count.mockResolvedValue(1);
+      await service.scheduleLapseReEngagement();
+      expect(queue.add).not.toHaveBeenCalled();
+    });
+
+    it('does not double-enqueue when the job already exists', async () => {
+      (logRepo.manager as any).query.mockResolvedValue([
+        { userId: USER_ID, lastTs: daysAgo(5) },
+      ]);
+      queue.getJob.mockResolvedValue({ id: 'existing' });
+      await service.scheduleLapseReEngagement();
       expect(queue.add).not.toHaveBeenCalled();
     });
   });

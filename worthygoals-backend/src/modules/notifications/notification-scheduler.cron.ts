@@ -13,4 +13,12 @@ export class NotificationScheduler {
     this.logger.log('Materializing next 24h of notification jobs');
     await this.notifService.materializeNext24h();
   }
+
+  // Once a day is enough — the lapse threshold is measured in days, and the
+  // service itself enforces the weekly resend guard.
+  @Cron(CronExpression.EVERY_DAY_AT_6AM)
+  async lapseReEngagement(): Promise<void> {
+    this.logger.log('Scanning for lapsed users (re_engage)');
+    await this.notifService.scheduleLapseReEngagement();
+  }
 }
