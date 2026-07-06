@@ -161,7 +161,8 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
         backgroundColor: colors.canvas,
       },
       mentorRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: space['3'] },
-      reactionText: { fontStyle: 'italic', lineHeight: 24, marginBottom: space['4'] },
+      // Paragraph, not a headline — shrink the display variant so lines don't overlap.
+      reactionText: { fontStyle: 'italic', fontSize: 18, lineHeight: 27, marginBottom: space['4'] },
       crisisText: { lineHeight: 22, marginBottom: space['4'] },
       seriousQ: { marginBottom: space['3'] },
       outStack: { gap: space['2'], marginTop: space['1'] },

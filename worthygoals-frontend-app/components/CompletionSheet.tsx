@@ -218,9 +218,13 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
         backgroundColor: colors.canvas,
       },
       mentorRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: space['3'] },
+      // The mentor reaction is a paragraph, not a headline: override the
+      // display variant's 3xl size down to a readable serif-italic body so the
+      // lines don't overlap.
       reactionText: {
         fontStyle: 'italic',
-        lineHeight: 24,
+        fontSize: 18,
+        lineHeight: 27,
         marginBottom: space['4'],
       },
       crisisText: { lineHeight: 22, marginBottom: space['4'] },

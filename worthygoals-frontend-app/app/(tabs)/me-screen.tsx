@@ -11,7 +11,7 @@
  * onboarding-matched mentor + saved tone (tap-through to the team tab), and an
  * ABOUT group with the app version. Sign-out stays the closing accent CTA.
  */
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import Constants from "expo-constants";
 import { router } from "expo-router";
@@ -21,8 +21,8 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { APP_NAME } from "@/constants/Brand";
 import { ROUTE_NAMES } from "@/constants/Routes";
 import { useAuth } from "@/hooks/useAuth";
-import onboardingService from "@/services/onboarding.service";
-import { personaBySlug, ToneKey } from "@/constants/Personalities";
+import { useProfile } from "@/hooks/useProfile";
+import { ToneKey } from "@/constants/Personalities";
 
 const TONE_LABEL: Record<ToneKey, string> = {
   soft: "soft — gentle, steady",
@@ -92,25 +92,10 @@ function SettingRow({
 export default function MeScreen() {
   const { colors, space, radius } = useAppTheme();
   const { userProfile, logout } = useAuth();
-
-  const [tone, setTone] = useState<ToneKey | null>(null);
-  const [mentorSlug, setMentorSlug] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      const [savedTone, savedMentor] = await Promise.all([
-        onboardingService.getTone(),
-        onboardingService.getMentor(),
-      ]);
-      if (!active) return;
-      setTone(savedTone);
-      setMentorSlug(savedMentor?.slug ?? null);
-    })();
-    return () => {
-      active = false;
-    };
-  }, []);
+  // Mentor + tone from the global profile (backend-derived), not local
+  // onboarding storage — so they survive a reinstall and stay consistent with
+  // the today screen and the goal's mentor.
+  const { mentor: persona, tone } = useProfile();
 
   const fullName = [userProfile?.firstName, userProfile?.lastName]
     .filter(Boolean)
@@ -119,7 +104,7 @@ export default function MeScreen() {
   const displayName = fullName || userProfile?.email || "Your profile";
   const initials = initialsOf(fullName || userProfile?.email || "");
 
-  const persona = personaBySlug(mentorSlug ?? undefined);
+  const toneLabel = tone ? TONE_LABEL[tone as ToneKey] ?? tone : "not set";
   const version = Constants.expoConfig?.version ?? "1.0.0";
 
   const goToTeam = () =>
@@ -191,11 +176,7 @@ export default function MeScreen() {
       </Card>
 
       <Card style={{ marginTop: space["3"] }}>
-        <SettingRow
-          label="tone"
-          value={tone ? TONE_LABEL[tone] : "not set"}
-          last
-        />
+        <SettingRow label="tone" value={toneLabel} last />
       </Card>
 
       {/* ── MEMORIES ──────────────────────────────────────────── */}
