@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   Dimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -120,7 +119,15 @@ export default function ChatViewScreen() {
       fontSize: 14,
       marginBottom: 4,
     },
-    messageTime: {
+    messageTimeSelf: {
+      fontSize: 12,
+      alignSelf: "flex-end",
+      position: "relative",
+      paddingTop: 4,
+      right: -12,
+      color: "rgba(255, 255, 255, 0.7)",
+    },
+    messageTimeOther: {
       fontSize: 12,
       alignSelf: "flex-end",
       position: "relative",
@@ -156,21 +163,13 @@ export default function ChatViewScreen() {
     },
     input: {
       flex: 1,
+      maxHeight: 100,
       paddingHorizontal: 12,
-      paddingVertical: 3,
+      paddingVertical: 8,
       fontSize: 15,
       backgroundColor: colors.canvas,
       color: colors.text,
       borderRadius: 20,
-      marginRight: 8,
-    },
-    inputScrollView: {
-      flex: 1,
-      maxHeight: 100,
-      backgroundColor: colors.canvas,
-      borderRadius: 20,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
       marginRight: 8,
     },
     sendButton: {
@@ -257,7 +256,12 @@ export default function ChatViewScreen() {
             {item.type.toUpperCase()} message: {item.content}
           </Text>
         )}
-        <Text style={[dynamicStyles.messageTime, isMedia ? dynamicStyles.mediaTime : null]}>
+        <Text
+          style={[
+            isCurrentUser ? dynamicStyles.messageTimeSelf : dynamicStyles.messageTimeOther,
+            isMedia ? dynamicStyles.mediaTime : null,
+          ]}
+        >
           {mapTime(new Date(item.time))}
         </Text>
       </View>
@@ -344,22 +348,16 @@ export default function ChatViewScreen() {
       )}
       <View style={{ marginBottom: 30 }} />
       <View style={dynamicStyles.inputContainer}>
-        <ScrollView
-          style={dynamicStyles.inputScrollView}
-          contentContainerStyle={{ flexGrow: 1 }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={true}
-        >
-          <TextInput
-            style={dynamicStyles.input}
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder={`message ${(chatDetail?.name ?? "your mentor").toLowerCase()}…`}
-            placeholderTextColor={colors.textFaint}
-            multiline={true}
-            returnKeyType="default"
-          />
-        </ScrollView>
+        <TextInput
+          style={dynamicStyles.input}
+          value={inputText}
+          onChangeText={setInputText}
+          placeholder={`message ${(chatDetail?.name ?? "your mentor").toLowerCase()}…`}
+          placeholderTextColor={colors.textFaint}
+          multiline={true}
+          textAlignVertical="top"
+          returnKeyType="default"
+        />
         <TouchableOpacity
           style={dynamicStyles.sendButton}
           onPress={handleSend}
