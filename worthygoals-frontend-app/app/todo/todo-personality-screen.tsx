@@ -17,7 +17,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { PERSONALITIES, PersonalitySlug, personaBySlug } from '@/constants/Personalities';
 import mentorService from '@/services/mentor.service';
 import onboardingService from '@/services/onboarding.service';
-import { goalsApiService } from '@/services/goals.service';
+import { useCreateGoal } from '@/hooks/useCreateGoal';
 import { ROUTE_NAMES } from '@/constants/Routes';
 
 export default function TodoPersonalityScreen() {
@@ -32,7 +32,7 @@ export default function TodoPersonalityScreen() {
   const [selected, setSelected] = useState<PersonalitySlug>('marcus');
   // slug → backend mentor id (when the roster has been reseeded).
   const [mentorIds, setMentorIds] = useState<Record<string, number>>({});
-  const [saving, setSaving] = useState(false);
+  const { createGoal, saving } = useCreateGoal();
 
   useEffect(() => {
     let active = true;
@@ -60,9 +60,8 @@ export default function TodoPersonalityScreen() {
   const { accent } = useAppTheme(selected);
 
   const handleSign = async () => {
-    setSaving(true);
     try {
-      await goalsApiService.create({
+      await createGoal({
         ...parsedGoal,
         mentorId: mentorIds[selected],
       });
@@ -71,8 +70,6 @@ export default function TodoPersonalityScreen() {
       });
     } catch {
       Alert.alert('Could not save', 'Something went wrong saving your goal. Please try again.');
-    } finally {
-      setSaving(false);
     }
   };
 

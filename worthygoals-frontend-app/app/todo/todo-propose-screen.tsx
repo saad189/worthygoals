@@ -8,12 +8,15 @@
 import React, { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation, useLocalSearchParams } from 'expo-router';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { ParamListBase } from '@react-navigation/native';
@@ -79,6 +82,113 @@ function FieldSkeleton() {
     <View style={{ gap: space['2'] }}>
       <Skeleton height={10} width="40%" radius={4} />
       <Skeleton height={52} width="100%" radius={10} />
+    </View>
+  );
+}
+
+// Local-date <-> YYYY-MM-DD (not toISOString, which shifts to UTC and can land
+// on the previous day for negative offsets).
+const toYmd = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const parseYmd = (s: string): Date | null => {
+  const [y, m, d] = s.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  const dt = new Date(y, m - 1, d);
+  return isNaN(dt.getTime()) ? null : dt;
+};
+const prettyDate = (s: string) =>
+  parseYmd(s)?.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }) ?? '';
+
+function DeadlineField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { colors, space, radius, fonts, fontSizes } = useAppTheme();
+  const [open, setOpen] = useState(false);
+  const today = new Date();
+  const initial = parseYmd(value) ?? today;
+  const [temp, setTemp] = useState<Date>(initial);
+
+  const openPicker = () => {
+    setTemp(parseYmd(value) ?? today);
+    setOpen(true);
+  };
+
+  return (
+    <View style={{ gap: space['2'] }}>
+      <Text variant="eyebrow" color="textMuted">
+        DEADLINE
+      </Text>
+      <Pressable onPress={openPicker} accessibilityRole="button" accessibilityLabel="Deadline">
+        <View
+          pointerEvents="none"
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: radius.md,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.border,
+            paddingHorizontal: space['4'],
+            justifyContent: 'center',
+            minHeight: 48,
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: fonts.sans,
+              fontSize: fontSizes.base,
+              color: value ? colors.text : colors.textMuted,
+            }}
+          >
+            {value ? prettyDate(value) : 'Tap to pick a date'}
+          </Text>
+        </View>
+      </Pressable>
+
+      {open && Platform.OS === 'android' && (
+        <DateTimePicker
+          value={temp}
+          mode="date"
+          display="calendar"
+          minimumDate={today}
+          onChange={(_e, picked) => {
+            setOpen(false);
+            if (picked) onChange(toYmd(picked));
+          }}
+        />
+      )}
+
+      {open && Platform.OS === 'ios' && (
+        <Modal transparent animationType="fade">
+          <View style={[styles.pickerOverlay, { backgroundColor: colors.overlayBlack }]}>
+            <View style={[styles.pickerCard, { backgroundColor: colors.surface }]}>
+              <DateTimePicker
+                value={temp}
+                mode="date"
+                display="spinner"
+                minimumDate={today}
+                onChange={(_e, picked) => picked && setTemp(picked)}
+              />
+              <View style={styles.pickerActions}>
+                <TouchableOpacity onPress={() => setOpen(false)}>
+                  <Text variant="label" color="textMuted">
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    onChange(toYmd(temp));
+                    setOpen(false);
+                  }}
+                >
+                  <Text variant="label">OK</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
@@ -200,13 +310,7 @@ export default function TodoProposeScreen() {
               placeholder="another summer of the same loop"
               accent
             />
-            <EditableField
-              label="DEADLINE · YYYY-MM-DD"
-              value={fields.deadline}
-              onChange={set('deadline')}
-              placeholder="2026-06-14"
-              multiline={false}
-            />
+            <DeadlineField value={fields.deadline} onChange={set('deadline')} />
 
             <Pressable
               onPress={() => setStakeOn((s) => !s)}
@@ -274,5 +378,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 18,
+  },
+  pickerOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  pickerCard: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  pickerActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    paddingTop: 8,
   },
 });
