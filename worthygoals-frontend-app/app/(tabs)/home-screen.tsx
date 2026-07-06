@@ -16,7 +16,9 @@ import Svg, { Path } from "react-native-svg";
 import { Screen, Text, Card, MentorAvatar, ProgressRing } from "@/components/ui";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import useDashboard from "@/hooks/useDashboard";
+import { useProfile } from "@/hooks/useProfile";
 import { ROUTE_NAMES } from "@/constants/Routes";
+import { personaBySlug } from "@/constants/Personalities";
 import type { TaskSummary, GoalSummary } from "@/services/dashboard.service";
 import type { MentorId } from "@/components/ui";
 
@@ -46,7 +48,8 @@ function formatDueTime(iso?: string | null): string | null {
 
 /**
  * Client-derived pacing line. Voice stand-in until the backend exposes a real
- * mentor narration field (handoff) — keep it short and Marcus-toned.
+ * per-mentor narration field (handoff) — kept mentor-neutral so it reads fine
+ * under whichever mentor the user matched with.
  */
 function narrationLine(remaining: number, total: number): string {
   if (total === 0) return "Nothing on the list. A quiet day — or a head start on tomorrow.";
@@ -58,6 +61,13 @@ function narrationLine(remaining: number, total: number): string {
 const DashboardScreen = () => {
   const { colors, space } = useAppTheme();
   const { data, loading, refreshing, refresh } = useDashboard();
+
+  // The mentor pacing the day comes from the global profile (derived from the
+  // user's goals), so it's the real matched mentor and survives a reinstall.
+  // Falls back to Marcus only until the profile/goals load.
+  const { mentorSlug } = useProfile();
+  const mentor = (mentorSlug ?? "marcus") as MentorId;
+  const mentorName = personaBySlug(mentor)?.name ?? "Marcus";
 
   const goals: GoalSummary[] = data?.goals ?? [];
   const tasks: TaskSummary[] = data?.todaysTasks ?? [];
@@ -158,7 +168,7 @@ const DashboardScreen = () => {
               accessibilityLabel="Open your profile"
               style={({ pressed }) => pressed && { opacity: 0.7 }}
             >
-              <MentorAvatar mentor="marcus" size={32} />
+              <MentorAvatar mentor={mentor} size={32} />
             </Pressable>
           </View>
         </View>
@@ -166,9 +176,9 @@ const DashboardScreen = () => {
         {/* Narration + progress ring */}
         <Card style={styles.narrationCard}>
           <View style={styles.narrationTop}>
-            <MentorAvatar mentor="marcus" size={36} />
+            <MentorAvatar mentor={mentor} size={36} />
             <Text variant="eyebrow" style={{ marginLeft: space["2"] }}>
-              MARCUS
+              {mentorName.toUpperCase()}
             </Text>
           </View>
           <View style={styles.narrationBody}>

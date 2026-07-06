@@ -9,7 +9,7 @@
  *   link      — quiet text, the secondary "I already have an account" door
  */
 import React, { ReactNode } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View, ViewStyle } from 'react-native';
+import { ActivityIndicator, StyleSheet, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import Text from './Text';
 
@@ -60,13 +60,18 @@ export default function Button({
         alignSelf: block ? 'stretch' : 'center',
       };
 
+  // TouchableOpacity, not Pressable: Pressable does not receive touches inside
+  // @gorhom/bottom-sheet's BottomSheetView, so every sheet CTA (Mark it done,
+  // That's the truth, …) silently no-ops. TouchableOpacity works there and
+  // everywhere else. activeOpacity replaces the old pressed-opacity.
   return (
-    <Pressable
+    <TouchableOpacity
       onPress={disabled || loading ? undefined : onPress}
       disabled={disabled || loading}
+      activeOpacity={0.8}
       accessibilityRole="button"
       accessibilityState={{ disabled: disabled || loading }}
-      style={({ pressed }) => [containerStyle, pressed ? styles.pressed : null, disabled ? styles.disabled : null, style]}
+      style={[containerStyle, disabled ? styles.disabled : null, style]}
     >
       {loading ? (
         <ActivityIndicator color={isLink || isSecondary ? colors.textMuted : colors.white} />
@@ -78,11 +83,10 @@ export default function Button({
           </Text>
         </>
       )}
-    </Pressable>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  pressed: { opacity: 0.8 },
   disabled: { opacity: 0.45 },
 });

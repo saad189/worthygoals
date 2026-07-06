@@ -67,6 +67,9 @@ export default function TodoListScreen() {
     });
 
   const [activeTask, setActiveTask] = useState<TaskItem | null>(null);
+  // The task a sheet is acting on, held in a ref so the submit handler can't be
+  // defeated by `activeTask` state being cleared out from under the open sheet.
+  const actingTaskRef = useRef<TaskItem | null>(null);
   // Screen 08 — the full-screen "Did you do it?" moment a pending task tap
   // opens before either sheet. Yes → CompletionSheet (09) · Not today →
   // ExplanationSheet (10).
@@ -103,12 +106,19 @@ export default function TodoListScreen() {
     }
   });
 
+  // Reset state on OPEN, never on gorhom's onClose — that callback fires
+  // spuriously (incl. several times on mount), so tying cleanup to it wiped the
+  // acting task out from under the open sheet.
   const openComplete = (task: TaskItem) => {
+    clearCompletionReaction();
+    actingTaskRef.current = task;
     setActiveTask(task);
     completionRef.current?.open();
   };
 
   const openExplain = (task: TaskItem) => {
+    clearExplanationReaction();
+    actingTaskRef.current = task;
     setActiveTask(task);
     explanationRef.current?.open();
   };
@@ -316,12 +326,11 @@ export default function TodoListScreen() {
           submitting={completing}
           mentorReaction={completionReaction}
           safetyFlag={completionSafety}
-          onSubmit={(payload) => activeTask && complete(activeTask.id, payload)}
-          onClose={() => {
-            clearCompletionReaction();
-            completionRef.current?.close();
-            setActiveTask(null);
+          onSubmit={(payload) => {
+            const t = actingTaskRef.current;
+            if (t) complete(t.id, payload);
           }}
+          onClose={() => completionRef.current?.close()}
         />
 
         <ExplanationSheet
@@ -332,12 +341,11 @@ export default function TodoListScreen() {
           mentorReaction={explanationReaction}
           safetyFlag={explanationSafety}
           missCountThisWeek={missCountThisWeek}
-          onSubmit={(payload) => activeTask && explain(activeTask.id, payload)}
-          onClose={() => {
-            clearExplanationReaction();
-            explanationRef.current?.close();
-            setActiveTask(null);
+          onSubmit={(payload) => {
+            const t = actingTaskRef.current;
+            if (t) explain(t.id, payload);
           }}
+          onClose={() => explanationRef.current?.close()}
         />
       </Screen>
     );
