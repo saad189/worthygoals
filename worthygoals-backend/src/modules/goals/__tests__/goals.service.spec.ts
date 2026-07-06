@@ -1,8 +1,12 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { GoalCategory, GoalStatus } from 'src/common/constants';
-import { Goal } from 'src/database/models';
+import {
+  GoalCategory,
+  GoalStatus,
+  TaskRepeatFrequency,
+} from 'src/common/constants';
+import { Goal, Task } from 'src/database/models';
 import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
 import { GoalsService } from '../goals.service';
 import { UsersService } from '../../users/users.service';
@@ -41,6 +45,7 @@ describe('GoalsService', () => {
     merge: jest.Mock;
     remove: jest.Mock;
   };
+  let taskRepo: { create: jest.Mock; save: jest.Mock };
   let usersService: { findByAccountSub: jest.Mock };
   let gateway: { chat: jest.Mock };
 
@@ -53,6 +58,10 @@ describe('GoalsService', () => {
       merge: jest.fn(),
       remove: jest.fn(),
     };
+    taskRepo = {
+      create: jest.fn((x) => x),
+      save: jest.fn(),
+    };
     usersService = {
       findByAccountSub: jest.fn().mockResolvedValue({ id: USER_ID }),
     };
@@ -62,6 +71,7 @@ describe('GoalsService', () => {
       providers: [
         GoalsService,
         { provide: getRepositoryToken(Goal), useValue: repo },
+        { provide: getRepositoryToken(Task), useValue: taskRepo },
         { provide: UsersService, useValue: usersService },
         { provide: AiGatewayService, useValue: gateway },
       ],
@@ -116,6 +126,23 @@ describe('GoalsService', () => {
       expect(result.category).toBeUndefined();
     });
 
+    it('strips a past or malformed deadline', async () => {
+      gateway.chat
+        .mockResolvedValueOnce({
+          text: JSON.stringify({ title: 'Test', deadline: '2023-10-31' }),
+        })
+        .mockResolvedValueOnce({
+          text: JSON.stringify({ title: 'Test', deadline: 'someday' }),
+        });
+
+      expect(
+        (await service.propose(USER_SUB, { raw: 'Test' })).deadline,
+      ).toBeUndefined();
+      expect(
+        (await service.propose(USER_SUB, { raw: 'Test' })).deadline,
+      ).toBeUndefined();
+    });
+
     it('throws NotFoundException when user not found', async () => {
       usersService.findByAccountSub.mockResolvedValue(null);
       await expect(service.propose(USER_SUB, { raw: 'Test' })).rejects.toThrow(
@@ -136,6 +163,36 @@ describe('GoalsService', () => {
       expect(usersService.findByAccountSub).toHaveBeenCalledWith(USER_SUB);
       expect(repo.create).toHaveBeenCalledWith({ ...dto, userId: USER_ID });
       expect(result.title).toBe('Run daily');
+    });
+
+    it('seeds a first task due today from the goal repeatRule', async () => {
+      const goal = makeGoal({
+        title: 'Run daily',
+        repeatRule: { frequency: 'weekly' },
+      });
+      repo.create.mockReturnValue(goal);
+      repo.save.mockResolvedValue(goal);
+
+      await service.create(USER_SUB, { title: 'Run daily' } as any);
+
+      expect(taskRepo.save).toHaveBeenCalledTimes(1);
+      const task = taskRepo.create.mock.calls[0][0];
+      expect(task).toMatchObject({
+        goalId: goal.id,
+        title: 'Run daily',
+        repeatFrequency: TaskRepeatFrequency.WEEKLY,
+      });
+      expect(task.dueDate.getHours()).toBe(0); // start of today
+    });
+
+    it('seeds no task when the goal has no recognisable repeatRule', async () => {
+      const goal = makeGoal({ title: 'One-off', repeatRule: undefined });
+      repo.create.mockReturnValue(goal);
+      repo.save.mockResolvedValue(goal);
+
+      await service.create(USER_SUB, { title: 'One-off' } as any);
+
+      expect(taskRepo.save).not.toHaveBeenCalled();
     });
 
     it('throws NotFoundException when user not found', async () => {
