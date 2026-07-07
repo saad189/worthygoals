@@ -85,7 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       })
     );
 
-    const profile = await userService.getUserProfile();
+    const profile = await userService.getProfile();
 
     if (profile) {
       setUserProfile(profile);

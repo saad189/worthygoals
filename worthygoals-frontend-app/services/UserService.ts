@@ -1,6 +1,6 @@
 
 import ApiService from "./api.service";
-import { formatErrorMessage, getUserInStorage, setUserInStorage } from "@/helpers";
+import { formatErrorMessage, setUserInStorage } from "@/helpers";
 import { CreateUserModel, UserModel } from "@/models";
 import { HttpStatusCode } from "axios";
 
@@ -31,11 +31,6 @@ class UserService {
     //         throw new Error(formatErrorMessage(error));
     //     }
     // }
-
-    async getUserProfile(): Promise<UserModel | null> {
-        const user = await getUserInStorage();
-        return user ? user : this.getProfile();
-    }
 
     async getProfile(): Promise<UserModel | null> {
         try {
@@ -75,11 +70,13 @@ class UserService {
         }
     }
 
-    /** Persist the onboarding tone (soft | firm | intense) server-side so
-     *  voiced surfaces (notifications, personas) can scale to it (S47). */
-    async updateTone(tone: string): Promise<void> {
+    /** Persist the onboarding choices (tone + matched mentor) server-side so
+     *  "your mentor" and the voiced-surface tone survive a reinstall and are
+     *  the single source of truth — not local AsyncStorage (S47 tone, S51a
+     *  personalityId). Both fields ride the one profile PUT. */
+    async updateOnboarding(choice: { tone?: string; personalityId?: string }): Promise<void> {
         try {
-            await this.apiService.put(`${this.userEndPoint}/profile`, { tone });
+            await this.apiService.put(`${this.userEndPoint}/profile`, choice);
         } catch (error: any) {
             throw new Error(formatErrorMessage(error));
         }

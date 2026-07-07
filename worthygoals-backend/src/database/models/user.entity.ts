@@ -68,6 +68,15 @@ export class User {
   @Column({ length: 16, nullable: true })
   tone: string;
 
+  /**
+   * Onboarding-matched mentor (personality slug: marcus | lyra | goggs),
+   * persisted so "your mentor" survives a reinstall and is known before the
+   * first goal exists — decoupled from goal.mentorId (F2). Nullable: existing
+   * users fall back to the goal-derived mentor until they re-onboard.
+   */
+  @Column({ length: 64, nullable: true })
+  personalityId: string;
+
   @ManyToOne(() => Role, (role) => role.users, { eager: true })
   role: Role;
 

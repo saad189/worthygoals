@@ -2,9 +2,10 @@
  * me tab (Q4 · Hi-Fi nav · E-5 · U8 · flow ⑥).
  *
  * Profile / settings. Replaces the placeholder identity (the "Conor McGregor"
- * avatar and hardcoded name "AI") with the real signed-in user, drawn from
- * `useAuth().userProfile`. Assembled from the U1 ui/ primitives + tokens — no
- * raw hex, no legacy dark surface.
+ * avatar and hardcoded name "AI") with the real signed-in user. Identity,
+ * mentor and tone all come from the single `useProfile()` source (backend
+ * GET /users/profile) — not `useAuth().userProfile`, which was a second,
+ * staleable read path (F1). Assembled from the U1 ui/ primitives + tokens.
  *
  * U8 grows the U2 stub (identity + sign-out) into the full on-brand settings
  * surface: an identity card, a YOUR TEAM group that surfaces the
@@ -91,18 +92,18 @@ function SettingRow({
 
 export default function MeScreen() {
   const { colors, space, radius } = useAppTheme();
-  const { userProfile, logout } = useAuth();
-  // Mentor + tone from the global profile (backend-derived), not local
-  // onboarding storage — so they survive a reinstall and stay consistent with
+  const { logout } = useAuth();
+  // Identity, mentor + tone all from the single global profile source (backend
+  // GET /users/profile) — so they survive a reinstall and stay consistent with
   // the today screen and the goal's mentor.
-  const { mentor: persona, tone } = useProfile();
+  const { user, mentor: persona, tone } = useProfile();
 
-  const fullName = [userProfile?.firstName, userProfile?.lastName]
+  const fullName = [user?.firstName, user?.lastName]
     .filter(Boolean)
     .join(" ")
     .trim();
-  const displayName = fullName || userProfile?.email || "Your profile";
-  const initials = initialsOf(fullName || userProfile?.email || "");
+  const displayName = fullName || user?.email || "Your profile";
+  const initials = initialsOf(fullName || user?.email || "");
 
   const toneLabel = tone ? TONE_LABEL[tone as ToneKey] ?? tone : "not set";
   const version = Constants.expoConfig?.version ?? "1.0.0";
@@ -137,8 +138,8 @@ export default function MeScreen() {
           </View>
           <View style={[styles.identityText, { marginLeft: space["4"] }]}>
             <Text variant="title">{displayName}</Text>
-            {!!userProfile?.email && fullName ? (
-              <Text variant="muted">{userProfile.email}</Text>
+            {!!user?.email && fullName ? (
+              <Text variant="muted">{user.email}</Text>
             ) : null}
           </View>
         </View>

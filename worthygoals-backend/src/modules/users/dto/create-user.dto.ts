@@ -80,6 +80,15 @@ export class CreateUserDto {
   @IsIn(['soft', 'firm', 'intense'])
   readonly tone?: string;
 
+  @ApiProperty({
+    example: 'marcus',
+    description: "The user's onboarding-matched mentor (personality slug)",
+    required: false,
+  })
+  @IsOptional()
+  @IsIn(['marcus', 'lyra', 'goggs'])
+  readonly personalityId?: string;
+
   @IsOptional()
   parentId?: number;
 }
