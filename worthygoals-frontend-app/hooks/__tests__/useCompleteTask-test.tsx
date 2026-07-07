@@ -31,7 +31,7 @@ describe('useCompleteTask', () => {
 
   afterEach(() => client.clear());
 
-  it('on success: surfaces the mentor reaction and invalidates tasks, dashboard and board', async () => {
+  it('on success: surfaces the mentor reaction and invalidates tasks, dashboard, board and weekly-review', async () => {
     mockedTasks.complete.mockResolvedValue({
       mentorReaction: 'Knew you had it. Same time tomorrow.',
       safetyFlag: false,
@@ -51,7 +51,7 @@ describe('useCompleteTask', () => {
       ([f]) => (f as any).queryKey[0],
     );
     expect(invalidatedKeys).toEqual(
-      expect.arrayContaining(['tasks', 'dashboard', 'board']),
+      expect.arrayContaining(['tasks', 'dashboard', 'board', 'weekly-review']),
     );
     expect(onSuccess).toHaveBeenCalledWith('t1', true);
   });

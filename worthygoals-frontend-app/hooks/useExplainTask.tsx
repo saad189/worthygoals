@@ -16,6 +16,10 @@ export function useExplainTask(
       tasksService.explain(taskId, payload),
     onSuccess: (response, { taskId }) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      // a skip changes today's counts + this week's per-goal counts, so the
+      // dashboard ring/week-strip and the weekly review both go stale (F3)
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['weekly-review'] });
       const reactionText = response.mentorReaction ?? null;
       const wasSafetyFlag = response.safetyFlag ?? false;
       if (reactionText) setMentorReaction(reactionText);

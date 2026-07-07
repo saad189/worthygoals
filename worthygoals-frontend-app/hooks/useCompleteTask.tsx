@@ -19,6 +19,8 @@ export function useCompleteTask(
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       // completions with mood ≥ 🙂 create board win cards
       queryClient.invalidateQueries({ queryKey: ['board'] });
+      // a completion changes this week's per-goal counts (F3)
+      queryClient.invalidateQueries({ queryKey: ['weekly-review'] });
       const reactionText = response.mentorReaction ?? null;
       const wasSafetyFlag = response.safetyFlag ?? false;
       if (reactionText) setMentorReaction(reactionText);
