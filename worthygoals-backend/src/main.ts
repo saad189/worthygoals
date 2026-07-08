@@ -10,7 +10,6 @@ if (process.env.SENTRY_DSN) {
 }
 
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './modules/app/app.module';
@@ -35,14 +34,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Global validation — strip unknown fields, fail on unexpected ones
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
+  // Global validation is registered once via APP_PIPE in app.module (F11).
 
   // Global exception filter — consistent error shape
   app.useGlobalFilters(new AllExceptionsFilter());

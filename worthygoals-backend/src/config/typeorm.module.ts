@@ -49,18 +49,11 @@ export class TypeOrmDatabaseModule implements OnModuleInit {
       this.logger.warn(`pgvector type registration skipped: ${err?.message}`);
     }
 
-    if (this.dataSource.isInitialized) {
-      this.logger.log('🚀 Running seeders on server startup...');
-      try {
-        //  await runSeeders(this.dataSource);
-        this.logger.log('✅ Seeding completed successfully.');
-      } catch (error) {
-        this.logger.error('❌ Seeding failed:', error);
-      }
-    } else {
-      this.logger.error(
-        '❌ Database connection is not initialized. Skipping seeding.',
-      );
+    // Seeding is intentionally not run at boot — use the explicit `npm run seed`
+    // (seed-runner.ts, upsert-by-slug + retire). Boot-time seed-if-empty never
+    // reseeds a non-empty table, so it silently drifts (F8).
+    if (!this.dataSource.isInitialized) {
+      this.logger.error('❌ Database connection is not initialized.');
     }
   }
 }
