@@ -2,7 +2,6 @@ import { DataSource, Not, In } from 'typeorm';
 import { Seeder } from 'typeorm-extension';
 
 import { Mentor } from '../models/mentor.entity';
-import { MentorTagEntity } from '../models/mentor_tags.entity';
 import {
   MentorCommunicationStyle,
   MentorResponseLength,
@@ -28,14 +27,6 @@ function pickColumns<T extends object>(
   return picked as Partial<T>;
 }
 
-function hasRelation(repo: { metadata: any }, propertyName: string): boolean {
-  return (
-    repo.metadata.relations?.some(
-      (r: any) => r.propertyName === propertyName,
-    ) ?? false
-  );
-}
-
 /**
  * Worthy Goals roster (Q1 · UI re-arch U2).
  *
@@ -48,7 +39,7 @@ function hasRelation(repo: { metadata: any }, propertyName: string): boolean {
  * `injectPersonality()`); these `promptBlocks` are the catalog-level fallback.
  * `slug === personalityId` so the gateway, memory and evals all line up.
  */
-const MENTOR_DATA: Array<Partial<Mentor> & { tagSlugs?: string[] }> = [
+const MENTOR_DATA: Array<Partial<Mentor>> = [
   {
     slug: 'marcus',
     personalityId: 'marcus',
@@ -207,57 +198,20 @@ const ACTIVE_SLUGS = MENTOR_DATA.map((m) => m.slug as string);
 export default class MentorSeeder implements Seeder {
   public async run(dataSource: DataSource): Promise<void> {
     const mentorRepository = dataSource.getRepository(Mentor);
-    const tagRepository = dataSource.getRepository(MentorTagEntity);
-
-    // Cache tags by slug for quick attach
-    const tagSlugsNeeded = new Set<string>();
-    for (const m of MENTOR_DATA) {
-      for (const s of m.tagSlugs ?? []) tagSlugsNeeded.add(s);
-    }
-
-    let tagsBySlug = new Map<string, MentorTagEntity>();
-    if (tagSlugsNeeded.size > 0) {
-      const tags = await tagRepository.find({
-        where: Array.from(tagSlugsNeeded).map((slug) => ({ slug })) as any,
-      });
-      tagsBySlug = new Map(tags.map((t) => [t.slug, t]));
-    }
-
-    const canAttachTags = hasRelation(mentorRepository, 'tags');
 
     for (const seed of MENTOR_DATA) {
-      const { tagSlugs, ...mentorFields } = seed;
-
       const existing = seed.slug
-        ? await mentorRepository.findOne({
-            where: { slug: seed.slug } as any,
-            relations: canAttachTags ? (['tags'] as any) : undefined,
-          })
+        ? await mentorRepository.findOne({ where: { slug: seed.slug } as any })
         : null;
 
-      const picked = pickColumns<Mentor>(mentorRepository, mentorFields);
+      const picked = pickColumns<Mentor>(mentorRepository, seed);
 
       if (!existing) {
-        const created = mentorRepository.create(picked);
-
-        if (canAttachTags && tagSlugs?.length) {
-          created.tags = tagSlugs
-            .map((s) => tagsBySlug.get(s))
-            .filter(Boolean) as MentorTagEntity[];
-        }
-
-        await mentorRepository.save(created);
+        await mentorRepository.save(mentorRepository.create(picked));
         continue;
       }
 
       mentorRepository.merge(existing, picked);
-
-      if (canAttachTags && tagSlugs) {
-        existing.tags = tagSlugs
-          .map((s) => tagsBySlug.get(s))
-          .filter(Boolean) as MentorTagEntity[];
-      }
-
       await mentorRepository.save(existing);
     }
 

@@ -18,11 +18,8 @@ import {
   Index,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToMany,
-  JoinTable,
   OneToMany,
 } from 'typeorm';
-import { MentorTagEntity } from './mentor_tags.entity';
 import { Conversation } from './conversation.entity';
 import { Message } from './message.entity';
 
@@ -136,14 +133,6 @@ export class Mentor {
 
   @Column({ type: 'int', default: 0 })
   totalSessions: number;
-
-  @ManyToMany(() => MentorTagEntity, (t) => t.mentors, { cascade: true })
-  @JoinTable({
-    name: 'mentor_to_tags',
-    joinColumn: { name: 'mentorId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'tagId', referencedColumnName: 'id' },
-  })
-  tags: MentorTagEntity[];
 
   @OneToMany(() => Conversation, (c) => c.mentor)
   conversations!: Conversation[];

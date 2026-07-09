@@ -3,15 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PersonalityLoader } from './personality.loader';
 import { PersonalitySchema } from './personality.schema';
-import { Personality } from 'src/database/models/personality.entity';
 import { UserPersonality } from 'src/database/models/user-personality.entity';
 
 @Injectable()
 export class PersonalityService {
   constructor(
     private readonly loader: PersonalityLoader,
-    @InjectRepository(Personality)
-    private readonly personalityRepo: Repository<Personality>,
     @InjectRepository(UserPersonality)
     private readonly userPersonalityRepo: Repository<UserPersonality>,
   ) {}
