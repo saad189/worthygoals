@@ -10,4 +10,6 @@ export class ResponseUserDto {
   age: number;
   /** Onboarding tone preference (soft | firm | intense); null until chosen. */
   tone?: string | null;
+  /** Onboarding-matched mentor (personality slug); null until chosen. */
+  personalityId?: string | null;
 }

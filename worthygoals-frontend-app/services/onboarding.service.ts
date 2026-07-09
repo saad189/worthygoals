@@ -40,11 +40,15 @@ export const onboardingService = {
     } as SavedMentor);
     await Storage.setItem(ONBOARDING_COMPLETE, true);
 
-    // Best-effort backend sync — the tone shapes voiced surfaces server-side.
-    // A failure (offline, cold start) never blocks onboarding; the local copy
-    // stays the app's read path.
+    // Best-effort backend sync — tone shapes voiced surfaces server-side and
+    // the matched mentor (personalityId) is the reinstall-proof source of
+    // truth for "your mentor" (F2). A failure (offline, cold start) never
+    // blocks onboarding; the local copy is the offline bootstrap.
     try {
-      await userService.updateTone(choice.tone);
+      await userService.updateOnboarding({
+        tone: choice.tone,
+        personalityId: choice.mentorSlug,
+      });
     } catch {
       // Swallowed by design — re-synced next time the profile is updated.
     }

@@ -256,6 +256,7 @@ export class UsersService {
       longitude,
       dateOfBirth,
       tone,
+      personalityId,
     } = user;
 
     const role = await this.roleRepository.findOne({
@@ -272,6 +273,7 @@ export class UsersService {
       id,
       age,
       tone: tone ?? null,
+      personalityId: personalityId ?? null,
       role: {
         id: role.id,
         name: role.name,

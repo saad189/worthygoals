@@ -9,6 +9,7 @@ import { View } from 'react-native';
 import { CommonActions, ParamListBase } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { Button, MentorAvatar, Screen, Text } from '@/components/ui';
 import { ROUTE_NAMES } from '@/constants/Routes';
@@ -26,6 +27,7 @@ const CONFIRM_LINE: Record<PersonalitySlug, string> = {
 export default function ConfirmScreen() {
   const { space } = useAppTheme();
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
+  const queryClient = useQueryClient();
   const { slug, name, mentorId } = useLocalSearchParams<{
     slug?: string;
     name?: string;
@@ -42,10 +44,16 @@ export default function ConfirmScreen() {
         mentorSlug: persona.slug,
         mentorId: mentorId ? Number(mentorId) : null,
       })
+      .then(() => {
+        // The save persisted tone + personalityId to the backend; refetch the
+        // single profile source so `today`/`me` show the matched mentor now,
+        // not on the next natural refetch (F1 tail).
+        queryClient.invalidateQueries({ queryKey: ['profile'] });
+      })
       .catch(() => {
         /* persistence is best-effort; the user can still proceed. */
       });
-  }, [persona, mentorId]);
+  }, [persona, mentorId, queryClient]);
 
   const enter = () =>
     navigation.dispatch(
