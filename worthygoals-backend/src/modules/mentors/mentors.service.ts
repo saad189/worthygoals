@@ -22,7 +22,6 @@ export class MentorsService {
   ) {}
 
   private static readonly allowedIncludePaths = new Set([
-    'tags',
     'conversations',
     'conversations.messages',
     'conversations.summaries',
@@ -58,12 +57,7 @@ export class MentorsService {
   private buildRelations(include?: string | string[]) {
     const includes = new Set(this.normalizeInclude(include));
 
-    // Backwards-compatible default: tags
-    includes.add('tags');
-
     const relations: any = {};
-
-    if (includes.has('tags')) relations.tags = true;
 
     if (
       includes.has('conversations') ||

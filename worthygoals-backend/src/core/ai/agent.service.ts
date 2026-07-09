@@ -83,7 +83,6 @@ export class AgentService implements OnModuleInit {
   async buildAgentInstructionsByMentorId(mentorId: number): Promise<string> {
     const mentor = await this.mentorRepository.findOne({
       where: { id: mentorId },
-      relations: { tags: true },
     });
 
     if (!mentor) {
@@ -96,10 +95,6 @@ export class AgentService implements OnModuleInit {
   buildAgentInstructions(mentor: MentorEntity): string {
     const traitLine = mentor.personalityTraits
       ? `Traits JSON: ${JSON.stringify(mentor.personalityTraits)}`
-      : '';
-
-    const tagLine = mentor.tags?.length
-      ? `Tags: ${mentor.tags.map((t) => t.label).join(', ')}`
       : '';
 
     const personalityPrompt = mentor.promptBlocks?.systemPrompt ?? '';
@@ -123,8 +118,6 @@ ${behaviorPrompt}
 ${contextPrompt}
 
 ${safetyPrompt}
-
-${tagLine}
 
 ${traitLine}
 `.trim();
@@ -176,7 +169,6 @@ ${traitLine}
 
     const mentor = await this.mentorRepository.findOne({
       where: { id: conversation.mentorId },
-      relations: { tags: true },
     });
 
     if (!mentor) {

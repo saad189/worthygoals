@@ -14,7 +14,6 @@ export * from './task.entity';
 export * from './task-completion.entity';
 export * from './task-explanation.entity';
 export * from './ai-call.entity';
-export * from './personality.entity';
 export * from './user-personality.entity';
 export * from './memory-embedding.entity';
 export * from './memory-digest.entity';
