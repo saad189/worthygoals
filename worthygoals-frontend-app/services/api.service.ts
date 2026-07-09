@@ -23,11 +23,26 @@ const apiClient = axios.create({
   timeout: 10000,
 });
 
+// Single-flight guard: while a refresh is in progress, concurrent callers
+// await the same promise instead of each starting their own — otherwise
+// refresh-token rotation invalidates the token the others are using and
+// cascades into spurious logouts on a cold foreground (F4).
+let refreshInFlight: Promise<string | null> | null = null;
+
+const refreshAccessToken = (): Promise<string | null> => {
+  if (!refreshInFlight) {
+    refreshInFlight = doRefreshAccessToken().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
+};
+
 /**
  *  Function to refresh the access token using the refresh token.
  * @returns {string|null}
  */
-const refreshAccessToken = async (): Promise<string | null> => {
+const doRefreshAccessToken = async (): Promise<string | null> => {
   const [refreshToken, accessToken] = await Promise.all([
     Storage.getItem(REFRESH_TOKEN),
     Storage.getItem(ACCESS_TOKEN),
@@ -114,12 +129,13 @@ apiClient.interceptors.response.use(
     }
 
     if (error.response) {
-      console.log("Error response data:", error.response.data);
+      // Don't leak server error payloads (may carry PII) to prod device logs (F7).
+      if (__DEV__) console.log("Error response data:", error.response.data);
     } else if (error.request) {
-      console.log("Error request:", error.request);
+      if (__DEV__) console.log("Error request:", error.request);
       error.message = "Could not connect to Server, check Internet Connection!";
     } else {
-      console.log("Error message:", error.message);
+      if (__DEV__) console.log("Error message:", error.message);
       error.message = "Something went wrong";
     }
     return Promise.reject(error);
