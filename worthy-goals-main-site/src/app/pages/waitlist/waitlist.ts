@@ -8,6 +8,7 @@ import { MentorCard } from '../../components/mentor-card/mentor-card';
 import { MissCard } from '../../components/miss-card/miss-card';
 import { BenefitCard } from '../../components/benefit-card/benefit-card';
 import { FaqItem } from '../../components/faq-item/faq-item';
+import { TaskFlow } from '../../components/task-flow/task-flow';
 import { RevealDirective } from '../../shared/reveal.directive';
 import { BENEFITS, CAPTURE, CTA, FAILURE, FAQ, HERO, HOW, MENTORS, PROBLEM } from '../../data/content';
 
@@ -17,7 +18,7 @@ import { BENEFITS, CAPTURE, CTA, FAILURE, FAQ, HERO, HOW, MENTORS, PROBLEM } fro
   standalone: true,
   imports: [
     NavBar, SiteFooter, EmailCapture, MentorMessageCard, StepCard,
-    MentorCard, MissCard, BenefitCard, FaqItem, RevealDirective,
+    MentorCard, MissCard, BenefitCard, FaqItem, TaskFlow, RevealDirective,
   ],
   templateUrl: './waitlist.html',
   styleUrl: './waitlist.scss',
