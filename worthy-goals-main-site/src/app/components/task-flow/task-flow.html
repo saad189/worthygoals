@@ -69,10 +69,9 @@
           </div>
           <div>
             <div style="font-family:var(--mono); font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(26,23,20,0.42); margin-bottom:9px;">Your memory picture</div>
-            <div style="position:relative; aspect-ratio:16/10; border-radius:12px; background:var(--surface); border:1px solid rgba(26,23,20,0.08); display:flex; align-items:center; justify-content:center; overflow:hidden;">
-              <span style="width:34px; height:34px; border-radius:50%; border:2px solid rgba(26,23,20,0.28); display:inline-flex; align-items:center; justify-content:center;">
-                <span style="width:10px; height:10px; border-radius:50%; border:2px solid rgba(26,23,20,0.28); display:inline-block;"></span>
-              </span>
+            <div style="position:relative; aspect-ratio:16/12; border-radius:12px; background:var(--surface); border:1px solid rgba(26,23,20,0.08); overflow:hidden;">
+              <img [src]="memoryPhoto" alt="A moment worth remembering" loading="lazy"
+                   style="width:100%; height:100%; object-fit:cover; display:block;">
             </div>
           </div>
           <div style="display:flex; gap:11px; align-items:flex-start;">

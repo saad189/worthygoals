@@ -17,4 +17,7 @@ import { RevealDirective } from '../../shared/reveal.directive';
   templateUrl: './task-flow.html',
   styleUrl: './task-flow.scss',
 })
-export class TaskFlow {}
+export class TaskFlow {
+  /** "Your memory picture" — random on each page load so the demo feels alive. */
+  readonly memoryPhoto = ['/memory/girl.jpg', '/memory/guy.jpg'][Math.floor(Math.random() * 2)];
+}

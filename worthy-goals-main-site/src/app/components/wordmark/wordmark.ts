@@ -1,15 +1,16 @@
 import { Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { LogoMark } from '../logo-mark/logo-mark';
 import { BRAND } from '../../data/content';
 
-/** The Worthy Goals logotype: rust dot + name. Links home by default. */
+/** The Worthy Goals logotype: cradle mark + name. Links home by default. */
 @Component({
   selector: 'wg-wordmark',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, LogoMark],
   template: `
     <a [routerLink]="link" class="wordmark" [attr.aria-label]="brand.name + ' home'">
-      <span class="dot" aria-hidden="true"></span>{{ brand.name }}
+      <wg-logo-mark [size]="22" [animate]="animate" />{{ brand.name }}
     </a>
   `,
   styles: [`
@@ -20,19 +21,13 @@ import { BRAND } from '../../data/content';
       text-decoration: none;
       display: inline-flex;
       align-items: center;
-      gap: 9px;
-    }
-    .dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: var(--rust);
-      display: inline-block;
-      transform: translateY(1px);
+      gap: 8px;
     }
   `],
 })
 export class Wordmark {
   @Input() link = '/';
+  /** Play the mark's draw-on once (used by the top nav on page load). */
+  @Input() animate = false;
   readonly brand = BRAND;
 }

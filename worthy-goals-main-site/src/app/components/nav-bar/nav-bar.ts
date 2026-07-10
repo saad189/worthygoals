@@ -9,7 +9,7 @@ import { CTA } from '../../data/content';
   imports: [Wordmark],
   template: `
     <div class="wrap nav-inner">
-      <wg-wordmark />
+      <wg-wordmark [animate]="true" />
       <a href="#join" class="btn btn-primary" (click)="scrollToJoin($event)">{{ cta.buttonLabel }}</a>
     </div>
   `,
