@@ -15,7 +15,7 @@ import { CAPTURE } from '../../data/content';
   standalone: true,
   imports: [ReactiveFormsModule],
   template: `
-    <form class="capture" [style.max-width.px]="maxWidth" (ngSubmit)="onSubmit()" novalidate>
+    <form class="capture" [style.max-width.px]="maxWidth" (submit)="onSubmit($event)" novalidate>
       <div class="capture-row">
         <label [for]="inputId" class="sr-only">Email address</label>
         <input
@@ -92,7 +92,11 @@ export class EmailCapture {
 
   constructor(private router: Router) {}
 
-  onSubmit(): void {
+  onSubmit(event?: Event): void {
+    // ponytail: native submit + preventDefault — only ReactiveFormsModule is
+    // imported, so there's no NgForm to give us (ngSubmit); without this the
+    // browser does a full-page GET submit and onSubmit never runs.
+    event?.preventDefault();
     this.message.set('');
     const value = this.email.value.trim();
     if (this.email.invalid || !value) {
