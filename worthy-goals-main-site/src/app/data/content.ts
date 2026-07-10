@@ -68,7 +68,7 @@ export const HERO = {
       time: 'delivered yesterday', offset: 18,
     },
     {
-      initial: 'D', name: 'The Drill', role: 'The Hardass', color: MENTOR_COLOR.drill,
+      initial: 'S', name: 'The Sergeant', role: 'The Hardass', color: MENTOR_COLOR.drill,
       body: '"Comfort is the enemy. You said 6am. It\'s 6am. Get up."',
       time: 'delivered 6:00 AM', offset: 4,
     },
@@ -123,7 +123,7 @@ export interface MentorCardData {
 
 export const MENTORS = {
   eyebrow: 'Meet your roster',
-  headingLines: ['Three voices. Pick who', 'you need on the hard days.'],
+  headingLines: ['Three voices (more coming). Pick who', 'you need on the hard days.'],
   cards: <MentorCardData[]>[
     {
       initial: 'M', name: 'Marcus', archetype: 'The Strategist', color: MENTOR_COLOR.marcus,
@@ -136,7 +136,7 @@ export const MENTORS = {
       quoteLabel: 'After silence', quote: '"Noticed you\'ve been quiet. No judgment. When you\'re ready."',
     },
     {
-      initial: 'D', name: 'The Drill', archetype: 'The Hardass', color: MENTOR_COLOR.drill,
+      initial: 'S', name: 'The Sergeant', archetype: 'The Hardass', color: MENTOR_COLOR.drill,
       philosophy: "Relentless and intense. He's not here to make you comfortable — he's here to make you move.",
       quoteLabel: 'When you stall', quote: '"Comfort is the enemy. Get up."',
     },
@@ -161,7 +161,7 @@ export const FAILURE = {
   responses: <MissResponse[]>[
     { tag: 'Empathy', tagClass: 'tag-warm', who: 'Lyra', body: '"Some weeks just take more out of you than they give. You showed up here — that counts. Tomorrow, we start small."' },
     { tag: 'A nudge', tagClass: 'tag-nudge', who: 'Marcus', body: '"One miss is an event. Two is a pattern. Let\'s keep it an event — what\'s the smallest version you can do tonight?"' },
-    { tag: 'Real talk', tagClass: 'tag-real', who: 'The Drill', body: '"You didn\'t fail today. You negotiated with yourself and lost. Different problem. Fix that."' },
+    { tag: 'Real talk', tagClass: 'tag-real', who: 'The Sergeant', body: '"You didn\'t fail today. You negotiated with yourself and lost. Different problem. Fix that."' },
   ],
 };
 
@@ -223,8 +223,11 @@ export const FAQ = {
 
 /* ---------- waitlist form ---------- */
 export const CAPTURE = {
+  // Cloudflare Worker that files the email into Brevo. Paste the URL that
+  // `wrangler deploy` prints (https://worthy-goals-subscribe.<you>.workers.dev).
+  subscribeUrl: 'https://worthy-goals-subscribe.worthygoals-v1.workers.dev',
   placeholder: 'you@email.com',
-  heroButton: 'Request access',
+  heroButton: 'Join Waitlist',
   reassure: 'Early access. No spam. Leave whenever.',
   invalidMsg: 'Please enter a valid email address.',
   errorMsg: 'Something went wrong. Please try again.',
@@ -293,6 +296,6 @@ export const THANK_YOU = {
   teaserQuotes: <MentorQuote[]>[
     { initial: 'M', color: MENTOR_COLOR.marcus, who: 'Marcus · The Strategist', quote: '"We don\'t chase motivation. We keep appointments. Yours is tomorrow."' },
     { initial: 'L', color: MENTOR_COLOR.lyra, who: 'Lyra · The Believer', quote: '"You don\'t have to feel ready. You just have to let me walk in with you."' },
-    { initial: 'D', color: MENTOR_COLOR.drill, who: 'The Drill · The Hardass', quote: '"Comfort is the enemy. The list got you in the door — now earn the title."' },
+    { initial: 'S', color: MENTOR_COLOR.drill, who: 'The Sergeant · The Hardass', quote: '"Comfort is the enemy. The list got you in the door — now earn the title."' },
   ],
 };

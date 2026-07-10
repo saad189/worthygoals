@@ -83,7 +83,7 @@ export class EmailCapture {
   /** Optional max-width override (px). */
   @Input() maxWidth?: number;
   /** POST URL of your form provider; null simulates success. */
-  @Input() endpoint: string | null = null;
+  @Input() endpoint: string | null = CAPTURE.subscribeUrl;
 
   readonly copy = CAPTURE;
   readonly email = new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] });

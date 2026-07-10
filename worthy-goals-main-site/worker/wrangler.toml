@@ -1,0 +1,8 @@
+name = "worthy-goals-subscribe"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# BREVO_LIST_ID is not secret. BREVO_API_KEY is set via:
+#   wrangler secret put BREVO_API_KEY
+[vars]
+BREVO_LIST_ID = "3"
