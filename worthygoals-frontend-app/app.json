@@ -4,7 +4,7 @@
     "slug": "worthygoals-frontend-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/evolve-icon.png",
+    "icon": "./assets/images/worthy-goals-icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "light",
     "splash": {
@@ -18,8 +18,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/evolve-icon.png",
-        "backgroundColor": "#464546"
+        "foregroundImage": "./assets/images/worthy-goals-adaptive.png",
+        "backgroundColor": "#C04124"
       },
       "package": "com.saad189.worthygoalsfrontendapp"
     },
@@ -31,7 +31,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/evolve-icon.png"
+      "favicon": "./assets/images/worthy-goals-favicon.png"
     },
     "plugins": [
       "expo-router",
