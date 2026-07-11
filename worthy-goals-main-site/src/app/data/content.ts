@@ -48,7 +48,7 @@ export const HERO = {
   eyebrow: 'Early access · 2026',
   headingLines: ['You are unworthy', 'of this title — '],
   headingEm: 'earn it.',
-  sub: 'Worthy Goals pairs every goal with an AI mentor who holds you to it — checking in, pushing, comforting, or escalating in their own voice. Accountability that actually knows you.',
+  sub: `${BRAND.name} pairs every goal with an AI mentor who holds you to it — checking in, pushing, comforting, or escalating in their own voice. Accountability that actually knows you.`,
   trustText: 'Join 2,000+ people building a worthier year.',
   trustAvatars: <TrustAvatar[]>[
     { initials: 'JL', color: '#6B5B4A' },
@@ -204,7 +204,7 @@ export const FAQ = {
   items: <FaqItem[]>[
     {
       q: 'Is this just ChatGPT with a face?',
-      a: 'No. The model is the engine, not the product. Worthy Goals is built around persistent characters with real points of view, memory of your history, and a theory of how accountability actually works — so a check-in lands like it\'s from someone who knows you, not a chatbot you\'re prompting.',
+      a: `No. The model is the engine, not the product. ${BRAND.name} is built around persistent characters with real points of view, memory of your history, and a theory of how accountability actually works — so a check-in lands like it's from someone who knows you, not a chatbot you're prompting.`,
     },
     {
       q: 'Will it shame me when I slip?',
@@ -286,7 +286,7 @@ export const THANK_YOU = {
   shareHeading: 'Worthy goals are easier with someone watching.',
   shareSay: 'Bring a friend onto the list. Accountability is a team sport — start picking yours.',
   inviteLabel: 'Your invite',
-  inviteText: 'I just joined the waitlist for Worthy Goals — a goal app that pairs every goal with an AI mentor who actually holds you to it. Get on the early-access list with me:',
+  inviteText: `I just joined the waitlist for ${BRAND.name} — a goal app that pairs every goal with an AI mentor who actually holds you to it. Get on the early-access list with me:`,
   copyDefault: 'Copy invite link',
   copyDone: 'Copied — go share it',
   copyLive: 'Invite copied to your clipboard.',

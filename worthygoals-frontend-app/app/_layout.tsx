@@ -86,15 +86,18 @@ function RootLayout() {
   }, [error]);
 
   useEffect(() => {
-    // Simulate splash screen duration (e.g., 3 seconds)
-    const timer = setTimeout(() => {
+    // Hide the native (static) splash on the first JS frame so the animated
+    // CradleMark splash continues it seamlessly; the JS splash then calls
+    // onDone when the mark finishes drawing (see below). A long fallback timer
+    // guarantees we never strand on the splash if that callback is missed.
+    const fallback = setTimeout(() => {
       setIsSplashVisible(false);
-    }, 320); // Adjust duration as needed
+    }, 3000);
 
     if (loaded) {
       SplashScreen.hideAsync();
     }
-    return () => clearTimeout(timer); // Cleanup timer
+    return () => clearTimeout(fallback);
   }, [loaded]);
 
   if (!loaded) {
@@ -108,7 +111,11 @@ function RootLayout() {
     <GestureHandlerRootView
       style={{ flex: 1, backgroundColor: Colors.light.background }}
     >
-      {isSplashVisible || !loaded ? <CustomSplashScreen /> : <RootLayoutNav />}
+      {isSplashVisible || !loaded ? (
+        <CustomSplashScreen onDone={() => setIsSplashVisible(false)} />
+      ) : (
+        <RootLayoutNav />
+      )}
     </GestureHandlerRootView>
   );
 }

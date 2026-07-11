@@ -1,11 +1,8 @@
 /**
  * Worthy Goals — brand constants
  * ─────────────────────────────────────────────────────────────
- * Single source of truth for the app/brand name (Q2). No screen should
- * hardcode a brand literal ("Evolve" / "Worthy Goals" / "MentlyAI") — read
- * APP_NAME from here so a rename is a one-line change.
- *
- * "Worthy Goals" is the functionality; this is the app/brand name shown to
- * users. Tentative value MentlyAI ("Mentors AI"); change here to rebrand.
+ * Single source of truth for the app/brand name. No screen should hardcode a
+ * brand literal ("Evolve" / "MentlyAI") — read APP_NAME from here so a rename
+ * is a one-line change.
  */
-export const APP_NAME = 'MentlyAI';
+export const APP_NAME = 'Worthy Goals';
