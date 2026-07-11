@@ -6,6 +6,8 @@ import { clearTokens, decodeJwtToken, getUserLocationAsync } from "@/helpers";
 import { CommonActions, ParamListBase } from "@react-navigation/native";
 
 import { authEmitter } from "@/core";
+import { queryClient } from "@/core/queryClient";
+import onboardingService from "@/services/onboarding.service";
 import { LocationCoordinates, UserModel } from "@/models";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useNavigation } from "expo-router";
@@ -102,6 +104,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const logout = async () => {
     await clearTokens();
+    // Drop everything user-scoped so the next account on this device can't
+    // rehydrate the previous user's data: the persisted query cache
+    // (WG_QUERY_CACHE — dashboard/tasks/goals/board/profile) and onboarding.
+    queryClient.clear();
+    await onboardingService.reset();
     setIsAuthenticated(false);
     showInfoMessage("Logged out!");
     navigation.dispatch(
