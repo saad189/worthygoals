@@ -28,9 +28,9 @@ export default function CustomSplashScreen({ onDone }: Props) {
       <Text variant="eyebrow" style={{ marginBottom: space['3'] }}>
         {`${APP_NAME} · V1`}
       </Text>
-      <Text variant="display" style={{ textAlign: 'center' }}>
+      {/* <Text variant="display" style={{ textAlign: 'center' }}>
         {"Find someone who'll\nactually hold you to it."}
-      </Text>
+      </Text> */}
     </Screen>
   );
 }

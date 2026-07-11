@@ -9,6 +9,7 @@
     "web": "expo start --web",
     "test": "jest --watchAll",
     "android:clean": "expo prebuild --clean && expo run:android",
+    "ios:clean": "expo prebuild --clean && expo run:ios",
     "generate-icons": "node ./scripts/generate-icons.js",
     "hex-lint": "bash ./scripts/hex-lint.sh",
     "generate:api": "openapi-typescript ../worthygoals-backend/openapi.json -o types/api.gen.ts",
