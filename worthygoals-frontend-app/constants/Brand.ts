@@ -6,3 +6,11 @@
  * is a one-line change.
  */
 export const APP_NAME = 'Worthy Goals';
+
+/**
+ * Stable namespace for persisted storage keys (SecureStore + AsyncStorage).
+ * Intentionally NOT derived from APP_NAME: SecureStore rejects spaces, and a
+ * rebrand must NOT rotate keys (that orphans every stored value → logs users
+ * out). Keep this alphanumeric + ".-_" and effectively permanent.
+ */
+export const STORAGE_NS = 'worthy-goals';
