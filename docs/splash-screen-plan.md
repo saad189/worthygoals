@@ -1,6 +1,12 @@
 # Animated Splash Plan — the Cradle mark draws itself on
 
-_Status: PLAN (not yet implemented). Last updated 2026-07-11._
+_Status: **Section A (RN app) IMPLEMENTED** 2026-07-11. Section B (site overlay) still
+optional/not built — the nav draw-on already covers "logo animates on load."_
+
+> Note: `ios/` and `android/` native folders already exist (prebuilt), so the
+> app-icon/splash **image** changes in `app.json` won't reach a native build until
+> `npx expo prebuild --clean` (or EAS build) regenerates those folders. The
+> animated JS splash (`CradleMark`) works immediately in Expo Go / dev client.
 
 The brand mark is **1C "The Cradle"**: an arc (the mentor holding the space, `--ink`),
 a stem rising out of it (`--acc`/rust), and two sprout leaves (rust + ink). The
