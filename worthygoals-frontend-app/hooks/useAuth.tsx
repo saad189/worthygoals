@@ -10,7 +10,7 @@ import { queryClient } from "@/core/queryClient";
 import onboardingService from "@/services/onboarding.service";
 import { LocationCoordinates, UserModel } from "@/models";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { useNavigation } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import userService from "@/services/UserService";
 import { useToast } from "./useToastNotification";
 
@@ -80,25 +80,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const onSuccessfulLogin = async () => {
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [{ name: ROUTE_NAMES.TABS.self }],
-      })
-    );
-
     const profile = await userService.getProfile();
 
+    // expo-router: navigate to tab screens by path via `router` (react-nav's
+    // navigate('(tabs)', {screen}) doesn't resolve the group). `replace` drops
+    // the auth stack so Back can't return to login.
     if (profile) {
       setUserProfile(profile);
-      navigation.navigate(ROUTE_NAMES.TABS.self, {
-        screen: ROUTE_NAMES.TABS.HOME_SCREEN,
-      });
-    } else {
-      navigation.navigate(
-        `${ROUTE_NAMES.PROFILE.self}/${ROUTE_NAMES.PROFILE.REGISTER_PROFILE}`
+      router.replace(
+        `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.HOME_SCREEN}` as never
       );
-      return;
+    } else {
+      router.replace(
+        `/${ROUTE_NAMES.PROFILE.self}/${ROUTE_NAMES.PROFILE.REGISTER_PROFILE}` as never
+      );
     }
   };
 
