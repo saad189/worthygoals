@@ -11,14 +11,14 @@ import { ParamListBase, useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import Animated, {
   Easing,
-  useAnimatedGestureHandler,
   useAnimatedStyle,
   useSharedValue,
   runOnJS,
   withTiming,
 } from "react-native-reanimated";
 import {
-  PinchGestureHandler,
+  Gesture,
+  GestureDetector,
   GestureHandlerRootView,
 } from "react-native-gesture-handler";
 
@@ -59,15 +59,15 @@ const ImageViewerModalComponent = forwardRef<
     };
 
     const maxScale = 2;
-    // Gesture handler
-    const pinchHandler = useAnimatedGestureHandler({
-      onActive: (event: any) => {
+    // Gesture handler — reanimated 4 dropped useAnimatedGestureHandler; use the
+    // gesture-handler v2 Gesture API instead.
+    const pinchHandler = Gesture.Pinch()
+      .onUpdate((event) => {
         scale.value = event.scale > maxScale ? maxScale : event.scale;
-      },
-      onEnd: () => {
+      })
+      .onEnd(() => {
         if (scale.value < 1) scale.value = withTiming(1, animateProps);
-      },
-    });
+      });
 
     // Animated styles
     // console.log('DATA:', { width, height })
@@ -108,14 +108,16 @@ const ImageViewerModalComponent = forwardRef<
     return (
       <GestureHandlerRootView style={{ flex: 1 }} pointerEvents="box-none">
         <View style={styles.container} pointerEvents="box-none">
-          <PinchGestureHandler onGestureEvent={pinchHandler}>
+          {/* ponytail: shared-element transition (sharedTransitionTag) removed —
+              reanimated 4 dropped the API with no drop-in replacement; image
+              still renders, just without the cross-screen morph. */}
+          <GestureDetector gesture={pinchHandler}>
             {closeOnPress ? (
               <Pressable onPress={requestClose}>
                 <Animated.Image
                   source={{
                     uri: imageUri,
                   }}
-                  sharedTransitionTag={tag}
                   style={[
                     extraStyles ? extraStyles : styles.profileImage,
                     animatedStyle,
@@ -127,14 +129,13 @@ const ImageViewerModalComponent = forwardRef<
                 source={{
                   uri: imageUri,
                 }}
-                sharedTransitionTag={tag}
                 style={[
                   extraStyles ? extraStyles : styles.profileImage,
                   animatedStyle,
                 ]}
               />
             )}
-          </PinchGestureHandler>
+          </GestureDetector>
         </View>
       </GestureHandlerRootView>
     );

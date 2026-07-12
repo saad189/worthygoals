@@ -245,7 +245,6 @@ export default function ChatViewScreen() {
             <Animated.Image
               source={{ uri: item.content }}
               resizeMode="cover"
-              sharedTransitionTag={`${item.id}-tag`}
               style={staticStyles.imageMessage}
             />
           </TouchableOpacity>

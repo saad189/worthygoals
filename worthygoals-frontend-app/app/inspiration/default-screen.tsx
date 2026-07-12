@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import Skeleton from '@/components/Common/Skeleton';
 import { Image } from 'expo-image';
-import { MasonryFlashList } from '@shopify/flash-list';
+import { FlashList } from '@shopify/flash-list';
 import { useNavigation } from 'expo-router';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { ParamListBase } from '@react-navigation/native';
@@ -193,12 +193,12 @@ const MotivationalBoardScreen: React.FC = () => {
           </Text>
         </View>
       ) : (
-        <MasonryFlashList
+        <FlashList
+          masonry
           data={items}
           numColumns={2}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
-          estimatedItemSize={160}
           contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={refresh} />
