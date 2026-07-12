@@ -8,6 +8,7 @@ export { default as Card } from './Card';
 export { default as Button } from './Button';
 export { default as Field } from './Field';
 export { default as MentorAvatar } from './MentorAvatar';
+export { default as UserAvatar, initialsOf } from './UserAvatar';
 export { default as ProgressRing } from './ProgressRing';
 export { default as StepDots } from './StepDots';
 export { default as Text } from './Text';

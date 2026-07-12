@@ -13,7 +13,7 @@ import { View, StyleSheet, RefreshControl, Pressable } from "react-native";
 import type { ViewStyle } from "react-native";
 import { router } from "expo-router";
 import Svg, { Path } from "react-native-svg";
-import { Screen, Text, Card, MentorAvatar, ProgressRing } from "@/components/ui";
+import { Screen, Text, Card, MentorAvatar, UserAvatar, ProgressRing } from "@/components/ui";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import useDashboard from "@/hooks/useDashboard";
 import { useProfile } from "@/hooks/useProfile";
@@ -65,8 +65,10 @@ const DashboardScreen = () => {
   // The mentor pacing the day comes from the global profile (derived from the
   // user's goals), so it's the real matched mentor and survives a reinstall.
   // Falls back to Marcus only until the profile/goals load.
-  const { mentorSlug } = useProfile();
+  const { mentorSlug, user } = useProfile();
   const mentor = (mentorSlug ?? "marcus") as MentorId;
+  const userName =
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ") || user?.email || "";
   const mentorName = personaBySlug(mentor)?.name ?? "Marcus";
 
   const goals: GoalSummary[] = data?.goals ?? [];
@@ -168,7 +170,7 @@ const DashboardScreen = () => {
               accessibilityLabel="Open your profile"
               style={({ pressed }) => pressed && { opacity: 0.7 }}
             >
-              <MentorAvatar mentor={mentor} size={32} />
+              <UserAvatar name={userName} size={32} />
             </Pressable>
           </View>
         </View>
