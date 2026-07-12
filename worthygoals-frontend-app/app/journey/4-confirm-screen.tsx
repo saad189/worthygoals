@@ -6,9 +6,7 @@
  */
 import React, { useEffect } from 'react';
 import { View } from 'react-native';
-import { CommonActions, ParamListBase } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { Button, MentorAvatar, Screen, Text } from '@/components/ui';
@@ -26,7 +24,6 @@ const CONFIRM_LINE: Record<PersonalitySlug, string> = {
 
 export default function ConfirmScreen() {
   const { space } = useAppTheme();
-  const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
   const queryClient = useQueryClient();
   const { slug, name, mentorId } = useLocalSearchParams<{
     slug?: string;
@@ -56,8 +53,8 @@ export default function ConfirmScreen() {
   }, [persona, mentorId, queryClient]);
 
   const enter = () =>
-    navigation.dispatch(
-      CommonActions.reset({ index: 0, routes: [{ name: ROUTE_NAMES.TABS.self }] }),
+    router.replace(
+      `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.HOME_SCREEN}` as never,
     );
 
   const displayName = name ?? persona?.name ?? 'Your mentor';

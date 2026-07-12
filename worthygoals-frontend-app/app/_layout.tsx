@@ -1,5 +1,5 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { Theme as NavTheme, ThemeProvider } from "@react-navigation/native";
+import { DefaultTheme, Theme as NavTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Redirect, Stack, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -53,6 +53,8 @@ function buildNavTheme(scheme: 'light' | 'dark'): NavTheme {
       border:       c.border,
       notification: c.tint,
     },
+    // react-navigation v7 made `fonts` a required Theme field; reuse the defaults.
+    fonts: DefaultTheme.fonts,
   };
 }
 

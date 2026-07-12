@@ -17,7 +17,7 @@ const mockedTasks = tasksService as jest.Mocked<typeof tasksService>;
 
 describe('useExplainTask', () => {
   let client: QueryClient;
-  let wrapper: ({ children }: { children: React.ReactNode }) => JSX.Element;
+  let wrapper: ({ children }: { children: React.ReactNode }) => React.JSX.Element;
 
   beforeEach(() => {
     jest.clearAllMocks();

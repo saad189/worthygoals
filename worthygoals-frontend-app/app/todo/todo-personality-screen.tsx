@@ -8,9 +8,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, View } from 'react-native';
-import { useNavigation, useLocalSearchParams } from 'expo-router';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { ParamListBase } from '@react-navigation/native';
+import { router, useLocalSearchParams } from 'expo-router';
 
 import { Button, Card, Header, MentorAvatar, Screen, StepDots, Text } from '@/components/ui';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -22,7 +20,6 @@ import { ROUTE_NAMES } from '@/constants/Routes';
 
 export default function TodoPersonalityScreen() {
   const { space, colors } = useAppTheme();
-  const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
   const { goalData } = useLocalSearchParams<{ goalData: string }>();
 
   const parsedGoal = useMemo(() => (goalData ? JSON.parse(goalData) : {}), [goalData]);
@@ -65,9 +62,9 @@ export default function TodoPersonalityScreen() {
         ...parsedGoal,
         mentorId: mentorIds[selected],
       });
-      navigation.navigate(ROUTE_NAMES.TABS.self as any, {
-        screen: ROUTE_NAMES.TABS.TODO_LIST_SCREEN,
-      });
+      router.replace(
+        `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.TODO_LIST_SCREEN}` as never,
+      );
     } catch {
       Alert.alert('Could not save', 'Something went wrong saving your goal. Please try again.');
     }
