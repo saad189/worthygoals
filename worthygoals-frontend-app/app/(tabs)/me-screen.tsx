@@ -17,7 +17,7 @@ import { View, StyleSheet, Pressable } from "react-native";
 import Constants from "expo-constants";
 import { router } from "expo-router";
 
-import { Screen, Header, Card, Text, Button, MentorAvatar } from "@/components/ui";
+import { Screen, Header, Card, Text, Button, MentorAvatar, UserAvatar } from "@/components/ui";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { APP_NAME } from "@/constants/Brand";
 import { ROUTE_NAMES } from "@/constants/Routes";
@@ -30,13 +30,6 @@ const TONE_LABEL: Record<ToneKey, string> = {
   firm: "firm — direct, accountable",
   intense: "intense — loud, no excuses",
 };
-
-function initialsOf(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "·";
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-}
 
 /** A single editorial settings row: mono label, value, and an optional tap. */
 function SettingRow({
@@ -103,7 +96,6 @@ export default function MeScreen() {
     .join(" ")
     .trim();
   const displayName = fullName || user?.email || "Your profile";
-  const initials = initialsOf(fullName || user?.email || "");
 
   const toneLabel = tone ? TONE_LABEL[tone as ToneKey] ?? tone : "not set";
   const version = Constants.expoConfig?.version ?? "1.0.0";
@@ -126,16 +118,7 @@ export default function MeScreen() {
 
       <Card>
         <View style={styles.identity}>
-          <View
-            style={[
-              styles.avatar,
-              { backgroundColor: colors.text, borderRadius: radius.lg },
-            ]}
-          >
-            <Text variant="title" color="textWhite">
-              {initials}
-            </Text>
-          </View>
+          <UserAvatar name={fullName || user?.email} size={56} />
           <View style={[styles.identityText, { marginLeft: space["4"] }]}>
             <Text variant="title">{displayName}</Text>
             {!!user?.email && fullName ? (

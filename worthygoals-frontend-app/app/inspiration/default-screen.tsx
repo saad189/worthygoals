@@ -4,6 +4,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
+  Text as RNText,
 } from 'react-native';
 import Skeleton from '@/components/Common/Skeleton';
 import { Image } from 'expo-image';
@@ -60,7 +61,7 @@ const MotivationalBoardScreen: React.FC = () => {
             ]}
             accessibilityLabel={`${MILESTONE_LABEL[kind]} milestone for ${item.goalTitle}`}
           >
-            <Text style={styles.milestoneEmoji}>{MILESTONE_EMOJI[kind]}</Text>
+            <RNText style={styles.milestoneEmoji}>{MILESTONE_EMOJI[kind]}</RNText>
             <Text variant="eyebrow" style={[styles.milestoneLabel, { color: accent }]}>
               {MILESTONE_LABEL[kind]}
             </Text>
@@ -122,9 +123,9 @@ const MotivationalBoardScreen: React.FC = () => {
             <View
               style={[styles.cardOverlay, { backgroundColor: colors.overlayBlack }]}
             >
-              <Text style={styles.moodEmoji}>
+              <RNText style={styles.moodEmoji}>
                 {MOOD_EMOJI[item.moodScore ?? 3]}
-              </Text>
+              </RNText>
               {item.goalTitle ? (
                 <Text
                   variant="eyebrow"
@@ -173,7 +174,7 @@ const MotivationalBoardScreen: React.FC = () => {
   return (
     <Screen padded={false} edges={['top']} style={styles.container}>
       <View style={styles.titleContainer}>
-        <Header title="feed" eyebrow="your wins" />
+        <Header title="feed" eyebrow="your wins" onBack={() => navigation.goBack()} />
       </View>
 
       {error ? (
@@ -184,7 +185,9 @@ const MotivationalBoardScreen: React.FC = () => {
 
       {items.length === 0 && !loading ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyEmoji}>🌱</Text>
+          {/* ponytail: OS Text, not the brand-font Text — an emoji through the
+              custom font falls back to the font's .notdef box, not colour emoji. */}
+          <RNText style={styles.emptyEmoji}>🌱</RNText>
           <Text variant="display" style={styles.emptyTitle}>
             nothing here yet.
           </Text>
