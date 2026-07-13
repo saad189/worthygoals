@@ -21,11 +21,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'yarn'
-          cache-dependency-path: worthygoals-frontend-app/yarn.lock
+          cache: 'npm'
+          cache-dependency-path: worthygoals-frontend-app/package-lock.json
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci --fetch-retries 5 --fetch-retry-mintimeout 20000 --fetch-retry-maxtimeout 120000
 
       - name: Typecheck
         run: npx tsc --noEmit
@@ -34,7 +34,7 @@ jobs:
         run: bash scripts/hex-lint.sh
 
       - name: Unit tests
-        run: yarn jest --ci --passWithNoTests
+        run: npx jest --ci --passWithNoTests
 
   # ── Backend ──────────────────────────────────────────────────────────────
   backend:
