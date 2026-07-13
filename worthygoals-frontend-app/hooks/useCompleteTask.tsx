@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { tasksService } from '@/services/tasks.service';
 import { enqueueComplete } from '@/helpers/taskOutbox';
+import { syncPushToken } from '@/services/push.service';
 import { CompleteTaskPayload } from '@/models';
 
 export function useCompleteTask(
@@ -15,6 +16,9 @@ export function useCompleteTask(
     mutationFn: ({ taskId, payload }: { taskId: string; payload: CompleteTaskPayload }) =>
       tasksService.complete(taskId, payload),
     onSuccess: (response, { taskId }) => {
+      // Prime push permission after a value moment — the OS shows the dialog
+      // only once, and syncPushToken no-ops if already granted/registered.
+      void syncPushToken({ prompt: true });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       // completions with mood ≥ 🙂 create board win cards
