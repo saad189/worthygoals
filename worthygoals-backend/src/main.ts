@@ -5,7 +5,7 @@ if (process.env.SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV ?? 'local',
-    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
+    tracesSampleRate: process.env.NODE_ENV === 'prod' ? 0.2 : 1.0,
   });
 }
 
@@ -18,7 +18,9 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const PORT = process.env.PORT || 3000;
-  const isProduction = process.env.NODE_ENV === 'production';
+  // env.validation only permits local|lazy|dev|prod — 'production' never matches,
+  // which is why Swagger was exposed in prod. The production tier is 'prod'.
+  const isProduction = process.env.NODE_ENV === 'prod';
 
   // Security headers
   app.use(helmet());

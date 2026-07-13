@@ -17,8 +17,15 @@ import { initSentry, SentryWrap, POSTHOG_KEY } from "@/services/observability";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { queryClient, asyncStoragePersister } from "@/core/queryClient";
 import { useOutboxDrain } from "@/hooks/useOutboxDrain";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 initSentry();
+
+// Wires notification-tap deep links; must live inside the nav tree for `router`.
+function PushBridge() {
+  usePushNotifications();
+  return null;
+}
 
 // PostHog is optional — without a key, render children with no provider.
 function AnalyticsProvider({ children }: { children: React.ReactNode }) {
@@ -222,6 +229,7 @@ function RootLayoutNav() {
             <ToastProvider>
               <AuthProvider>
                 <LoaderProvider>
+                  <PushBridge />
                   <Stacks />
                 </LoaderProvider>
               </AuthProvider>

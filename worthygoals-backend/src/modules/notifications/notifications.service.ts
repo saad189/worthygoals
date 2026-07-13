@@ -101,13 +101,16 @@ export class NotificationsService {
       const existing = await this.notifQueue.getJob(jobId);
       if (existing) continue;
 
-      const delayMs = fromZonedTime(candidate, tz).getTime() - Date.now();
+      // candidate holds local wall-clock fields; its own toISOString() is off by
+      // the server-vs-user tz skew. fromZonedTime gives the true UTC instant.
+      const scheduledUtc = fromZonedTime(candidate, tz);
+      const delayMs = scheduledUtc.getTime() - Date.now();
       if (delayMs < 0) continue;
 
       const data: NotificationJobData = {
         userId,
         kind: slot.kind,
-        scheduledFor: candidate.toISOString(),
+        scheduledFor: scheduledUtc.toISOString(),
       };
 
       await this.notifQueue.add(slot.kind, data, {
@@ -199,7 +202,8 @@ export class NotificationsService {
       const existing = await this.notifQueue.getJob(jobId);
       if (existing) continue;
 
-      const delayMs = fromZonedTime(candidate, tz).getTime() - Date.now();
+      const scheduledUtc = fromZonedTime(candidate, tz);
+      const delayMs = scheduledUtc.getTime() - Date.now();
       if (delayMs < 0) continue;
 
       await this.notifQueue.add(
@@ -207,7 +211,7 @@ export class NotificationsService {
         {
           userId: row.userId,
           kind: 're_engage',
-          scheduledFor: candidate.toISOString(),
+          scheduledFor: scheduledUtc.toISOString(),
           payload: { daysSince },
         },
         { jobId, delay: delayMs, removeOnComplete: true, removeOnFail: 100 },

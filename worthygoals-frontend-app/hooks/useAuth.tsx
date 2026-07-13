@@ -12,6 +12,7 @@ import { LocationCoordinates, UserModel } from "@/models";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { router, useNavigation } from "expo-router";
 import userService from "@/services/UserService";
+import { syncPushToken, unregisterPushToken } from "@/services/push.service";
 import { useToast } from "./useToastNotification";
 
 interface AuthContextProps {
@@ -85,6 +86,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     // expo-router: navigate to tab screens by path via `router` (react-nav's
     // navigate('(tabs)', {screen}) doesn't resolve the group). `replace` drops
     // the auth stack so Back can't return to login.
+    // Re-sync this device's push token silently — never prompt at login; a new
+    // user gets asked after their first completion (see useCompleteTask).
+    void syncPushToken({ prompt: false });
+
     if (profile) {
       setUserProfile(profile);
       router.replace(
@@ -98,6 +103,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const logout = async () => {
+    // Deactivate the token server-side while we still hold a valid access token.
+    await unregisterPushToken();
     await clearTokens();
     // Drop everything user-scoped so the next account on this device can't
     // rehydrate the previous user's data: the persisted query cache

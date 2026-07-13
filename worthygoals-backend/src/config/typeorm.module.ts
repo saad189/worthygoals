@@ -21,6 +21,10 @@ import { DatabaseService } from 'src/database/database.service';
 
         return {
           ...dbConfig.databaseConfig,
+          // Entities co-located with their module (e.g. Media) aren't caught by
+          // the src/database-rooted glob — pull in anything registered via
+          // forFeature so its metadata is built. Fixes GDPR export 500.
+          autoLoadEntities: true,
           seeds: ['src/database/seeds/**/*{.ts,.js}'],
           factories: ['src/database/factories/**/*{.ts,.js}'],
         };
