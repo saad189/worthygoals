@@ -10,6 +10,6 @@ export type NotificationJobKind =
 export interface NotificationJobData {
   userId: number;
   kind: NotificationJobKind;
-  scheduledFor: string; // ISO string in user's local time
+  scheduledFor: string; // ISO 8601 UTC instant of the scheduled delivery
   payload?: Record<string, unknown>;
 }

@@ -47,7 +47,7 @@ export class NotificationProcessor extends WorkerHost {
       .filter((t) => Expo.isExpoPushToken(t.token))
       .map((t) => ({
         to: t.token,
-        title: 'Evolve',
+        title: 'Worthy Goals',
         body,
         data: { kind, scheduledFor },
       }));
