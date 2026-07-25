@@ -3,7 +3,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  OnModuleInit,
+  OnApplicationBootstrap,
   Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -18,7 +18,7 @@ import { AiGatewayService } from './gateway/ai-gateway.service';
 import { PersonalityService } from 'src/core/personalities/personality.service';
 
 @Injectable()
-export class AgentService implements OnModuleInit {
+export class AgentService implements OnApplicationBootstrap {
   private readonly logger = new Logger(AgentService.name);
 
   constructor(
@@ -34,7 +34,13 @@ export class AgentService implements OnModuleInit {
     @Optional() private readonly personalityService?: PersonalityService,
   ) {}
 
-  async onModuleInit(): Promise<void> {
+  // onApplicationBootstrap, not onModuleInit: this validates against
+  // PersonalityLoader's map, which that loader fills in its OWN onModuleInit.
+  // Nest gave no ordering guarantee between the two (PersonalityService is
+  // @Optional() here), and AgentService ran first — so every boot reported all
+  // mentors invalid, and a genuine mismatch could never be distinguished from
+  // the noise. onApplicationBootstrap runs after every module has initialized.
+  async onApplicationBootstrap(): Promise<void> {
     if (!this.personalityService) {
       // M-3: optional for tests only — a missing wiring must be loud.
       this.logger.warn(
