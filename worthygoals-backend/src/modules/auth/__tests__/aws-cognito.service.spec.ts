@@ -31,18 +31,27 @@ describe('AWSCognitoService error normalisation', () => {
 
   function serviceWithSendResult(result: Promise<unknown>) {
     const service = new AWSCognitoService();
-    (service as any).cognitoClient = { send: jest.fn().mockReturnValue(result) };
+    (service as any).cognitoClient = {
+      send: jest.fn().mockReturnValue(result),
+    };
     return service;
   }
 
   it('omits SECRET_HASH when no client secret is configured', async () => {
     const service = new AWSCognitoService();
     const send = jest.fn().mockResolvedValue({
-      AuthenticationResult: { AccessToken: 'a', IdToken: 'b', RefreshToken: 'c' },
+      AuthenticationResult: {
+        AccessToken: 'a',
+        IdToken: 'b',
+        RefreshToken: 'c',
+      },
     });
     (service as any).cognitoClient = { send };
 
-    await service.loginUser({ email: 'user@example.com', password: 'pw' } as any);
+    await service.loginUser({
+      email: 'user@example.com',
+      password: 'pw',
+    } as any);
 
     const params = send.mock.calls[0][0].input.AuthParameters;
     expect(params).not.toHaveProperty('SECRET_HASH');

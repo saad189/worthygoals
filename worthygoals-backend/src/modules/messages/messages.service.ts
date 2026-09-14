@@ -138,10 +138,12 @@ export class MessagesService {
     dto: SendTextMessageDto;
   }): Promise<Message> {
     try {
-      const { userId, conversationId } = await this.assertConversationOwnership({
-        sub: params.sub,
-        conversationId: params.dto.conversationId,
-      });
+      const { userId, conversationId } = await this.assertConversationOwnership(
+        {
+          sub: params.sub,
+          conversationId: params.dto.conversationId,
+        },
+      );
 
       const message = this.messageRepository.create({
         conversationId,

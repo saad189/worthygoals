@@ -101,7 +101,9 @@ export class MediaService {
     userId: number,
   ): Promise<string | null> {
     if (!this.s3) return null;
-    const media = await this.mediaRepo.findOne({ where: { id: mediaId, userId } });
+    const media = await this.mediaRepo.findOne({
+      where: { id: mediaId, userId },
+    });
     if (!media) return null;
     const command = new GetObjectCommand({
       Bucket: this.bucket,

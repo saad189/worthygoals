@@ -84,8 +84,7 @@ export class AWSCognitoService {
    */
   private toHttpException(error: any): HttpException {
     if (error instanceof HttpException) return error;
-    const status =
-      error?.status ?? error?.$metadata?.httpStatusCode ?? 500;
+    const status = error?.status ?? error?.$metadata?.httpStatusCode ?? 500;
     return new HttpException(error?.message ?? 'Authentication error', status);
   }
 
