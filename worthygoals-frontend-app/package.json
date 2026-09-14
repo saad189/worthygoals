@@ -15,19 +15,10 @@
     "generate:api": "openapi-typescript ../worthygoals-backend/openapi.json -o types/api.gen.ts",
     "ci:check-api": "npm run generate:api && git diff --exit-code types/api.gen.ts"
   },
-  "jest": {
-    "preset": "jest-expo",
-    "setupFiles": [
-      "./jest.setup.js"
-    ],
-    "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/$1"
-    }
-  },
   "dependencies": {
     "@aws-amplify/auth": "^6.7.0",
     "@expo/vector-icons": "^15.0.3",
-    "@gorhom/bottom-sheet": "^4",
+    "@gorhom/bottom-sheet": "^5.2.14",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
     "@react-native-community/slider": "5.0.1",

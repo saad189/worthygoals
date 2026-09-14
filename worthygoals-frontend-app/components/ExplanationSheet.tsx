@@ -241,6 +241,10 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
         ref={sheetRef}
         index={-1}
         snapPoints={snapPoints}
+        // v5 defaults enableDynamicSizing to true, which adds a content-height
+        // detent and measures BottomSheetView's children. This sheet sizes from
+        // its snap point and its content is flex: 1 — keep the v4 behaviour.
+        enableDynamicSizing={false}
         enablePanDownToClose
         backdropComponent={renderBackdrop}
         onClose={onClose}
