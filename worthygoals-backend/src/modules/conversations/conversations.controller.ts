@@ -1,5 +1,6 @@
 import {
   Body,
+  ClassSerializerInterceptor,
   Controller,
   Delete,
   Get,
@@ -9,6 +10,7 @@ import {
   Query,
   Request,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/common/guards';
@@ -20,6 +22,10 @@ import { Conversation } from 'src/database/models/conversation.entity';
 @Controller('conversations')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+// ?include=mentor is the second read path onto Mentor. Without this the
+// entity's @Exclude decorators never run and promptBlocks ships in the
+// response body.
+@UseInterceptors(ClassSerializerInterceptor)
 export class ConversationsController {
   constructor(private readonly conversationsService: ConversationsService) {}
 

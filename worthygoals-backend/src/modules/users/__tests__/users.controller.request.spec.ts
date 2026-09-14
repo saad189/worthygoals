@@ -46,7 +46,10 @@ describe('POST /users (request level)', () => {
         { provide: UsersService, useValue: { createForAccount } },
         { provide: GdprService, useValue: {} },
         // The real global pipe, from the same options object AppModule uses.
-        { provide: APP_PIPE, useValue: new ValidationPipe(GLOBAL_VALIDATION_PIPE_OPTIONS) },
+        {
+          provide: APP_PIPE,
+          useValue: new ValidationPipe(GLOBAL_VALIDATION_PIPE_OPTIONS),
+        },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -67,7 +70,10 @@ describe('POST /users (request level)', () => {
   });
 
   it('accepts a valid body and forwards only declared fields', async () => {
-    await request(app.getHttpServer()).post('/users').send(VALID_BODY).expect(201);
+    await request(app.getHttpServer())
+      .post('/users')
+      .send(VALID_BODY)
+      .expect(201);
 
     expect(createForAccount).toHaveBeenCalledWith({
       accountSub: ATTACKER_SUB,
@@ -80,14 +86,17 @@ describe('POST /users (request level)', () => {
     ['a primary key', { id: 42 }],
     ['a billing column', { tier: 'paid' }],
     ['an undeclared column', { role: 'admin' }],
-  ])('rejects %s with 400 and never reaches the service', async (_label, injected) => {
-    await request(app.getHttpServer())
-      .post('/users')
-      .send({ ...VALID_BODY, ...injected })
-      .expect(400);
+  ])(
+    'rejects %s with 400 and never reaches the service',
+    async (_label, injected) => {
+      await request(app.getHttpServer())
+        .post('/users')
+        .send({ ...VALID_BODY, ...injected })
+        .expect(400);
 
-    expect(createForAccount).not.toHaveBeenCalled();
-  });
+      expect(createForAccount).not.toHaveBeenCalled();
+    },
+  );
 
   it('rejects a malformed email', async () => {
     await request(app.getHttpServer())

@@ -9,8 +9,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Mentor } from 'src/database/models';
 import { MentorVisibility } from 'src/common/constants';
-import { CreateMentorDto } from './dto/create-mentor.dto';
-import { UpdateMentorDto } from './dto/update-mentor.dto';
 
 @Injectable()
 export class MentorsService {
@@ -117,43 +115,6 @@ export class MentorsService {
     } catch (error) {
       this.logger.log(
         `${MentorsService.name}:${this.findOne.name}: ${JSON.stringify(error.message)}`,
-      );
-      throw new HttpException(error.message, error.status);
-    }
-  }
-
-  async create(createMentorDto: CreateMentorDto): Promise<Mentor> {
-    try {
-      const mentor = this.mentorRepository.create(createMentorDto);
-      return await this.mentorRepository.save(mentor);
-    } catch (error) {
-      this.logger.log(
-        `${MentorsService.name}:${this.create.name}: ${JSON.stringify(error.message)}`,
-      );
-      throw new HttpException(error.message, error.status);
-    }
-  }
-
-  async update(id: number, updateMentorDto: UpdateMentorDto): Promise<Mentor> {
-    try {
-      const mentor = await this.findOne(id);
-      this.mentorRepository.merge(mentor, updateMentorDto);
-      return await this.mentorRepository.save(mentor);
-    } catch (error) {
-      this.logger.log(
-        `${MentorsService.name}:${this.update.name}: ${JSON.stringify(error.message)}`,
-      );
-      throw new HttpException(error.message, error.status);
-    }
-  }
-
-  async remove(id: number): Promise<void> {
-    try {
-      const mentor = await this.findOne(id);
-      await this.mentorRepository.remove(mentor);
-    } catch (error) {
-      this.logger.log(
-        `${MentorsService.name}:${this.remove.name}: ${JSON.stringify(error.message)}`,
       );
       throw new HttpException(error.message, error.status);
     }

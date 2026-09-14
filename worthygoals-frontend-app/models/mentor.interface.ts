@@ -1,3 +1,6 @@
+// Catalog shape only. The server excludes promptBlocks and the
+// topic/safety/memory/model policies from every mentor response, so they are
+// deliberately absent here — the app never rendered them.
 export interface Mentor {
   id: number;
   slug: string;
@@ -15,12 +18,6 @@ export interface Mentor {
 
   communicationStyle?: string;
   responseLength?: string;
-
-  personalityTraits?: any;
-  promptBlocks?: any;
-  topicPolicy?: Record<string, any>;
-  safetyPolicy?: Record<string, any>;
-  memoryPolicy?: Record<string, any>;
 
   isActive?: boolean;
   visibility?: string;
