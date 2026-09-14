@@ -235,3 +235,68 @@ describe('MessagesGateway — safety gate', () => {
     });
   });
 });
+
+/**
+ * Guards B4. joinConversation joined any supplied conversation id unchecked,
+ * and the room it joins receives messageChunk — a live read of another user's
+ * private mentor chat.
+ */
+describe('MessagesGateway — joinConversation ownership', () => {
+  let gateway: MessagesGateway;
+  const assertConversationOwnership = jest.fn();
+
+  beforeEach(async () => {
+    assertConversationOwnership.mockReset();
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        MessagesGateway,
+        { provide: MessagesService, useValue: { assertConversationOwnership } },
+        { provide: AgentService, useValue: {} },
+        { provide: SafetyService, useValue: {} },
+      ],
+    }).compile();
+
+    gateway = module.get<MessagesGateway>(MessagesGateway);
+  });
+
+  it('checks ownership before joining the room', async () => {
+    assertConversationOwnership.mockResolvedValue({
+      userId: 42,
+      conversationId: CONV_ID,
+    });
+    const client = makeSocket();
+
+    await gateway.joinConversation(client, { conversationId: CONV_ID });
+
+    expect(assertConversationOwnership).toHaveBeenCalledWith({
+      sub: SUB,
+      conversationId: CONV_ID,
+    });
+    expect(client.join).toHaveBeenCalledWith(`conversation:${CONV_ID}`);
+  });
+
+  it("does not join a room for someone else's conversation", async () => {
+    assertConversationOwnership.mockRejectedValue(
+      new Error('Cannot access this conversation'),
+    );
+    const client = makeSocket();
+
+    await expect(
+      gateway.joinConversation(client, { conversationId: 'someone-elses' }),
+    ).rejects.toThrow();
+
+    expect(client.join).not.toHaveBeenCalled();
+  });
+
+  it('rejects an unauthenticated socket', async () => {
+    const client = { handshake: {}, join: jest.fn() } as any;
+
+    await expect(
+      gateway.joinConversation(client, { conversationId: CONV_ID }),
+    ).rejects.toThrow(WsException);
+
+    expect(client.join).not.toHaveBeenCalled();
+    expect(assertConversationOwnership).not.toHaveBeenCalled();
+  });
+});

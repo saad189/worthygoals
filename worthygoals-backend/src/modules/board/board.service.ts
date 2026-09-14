@@ -68,6 +68,7 @@ export class BoardService {
           mediaUrl =
             (await this.mediaService.getPresignedGetUrl(
               row.c_memoryPictureId,
+              userId,
             )) ?? undefined;
         }
         const createdAt =

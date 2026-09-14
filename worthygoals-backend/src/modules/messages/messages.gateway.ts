@@ -38,6 +38,16 @@ export class MessagesGateway {
     const conversationId = body?.conversationId;
     if (!conversationId) throw new WsException('conversationId is required');
 
+    const sub = (client.handshake as any)?.user?.sub;
+    if (!sub) throw new WsException('Unauthorized');
+
+    // The room receives messageChunk and messageCreated. Joining it unchecked
+    // was a live read of another user's private mentor chat.
+    await this.messagesService.assertConversationOwnership({
+      sub,
+      conversationId,
+    });
+
     await client.join(this.roomForConversation(conversationId));
 
     return { ok: true };

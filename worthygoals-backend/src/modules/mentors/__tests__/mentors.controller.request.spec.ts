@@ -66,7 +66,10 @@ describe('/mentors (request level)', () => {
       controllers: [MentorsController],
       providers: [
         { provide: MentorsService, useValue: { findAll, findOne } },
-        { provide: APP_PIPE, useValue: new ValidationPipe(GLOBAL_VALIDATION_PIPE_OPTIONS) },
+        {
+          provide: APP_PIPE,
+          useValue: new ValidationPipe(GLOBAL_VALIDATION_PIPE_OPTIONS),
+        },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -76,7 +79,9 @@ describe('/mentors (request level)', () => {
     app = moduleRef.createNestApplication();
     // The controller carries @UseInterceptors(ClassSerializerInterceptor), but
     // it needs a Reflector that a bare testing module does not wire up.
-    app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+    app.useGlobalInterceptors(
+      new ClassSerializerInterceptor(app.get(Reflector)),
+    );
     await app.init();
   });
 
@@ -87,15 +92,18 @@ describe('/mentors (request level)', () => {
   it.each([
     ['GET /mentors', '/mentors'],
     ['GET /mentors/1', '/mentors/1'],
-  ])('%s never returns the system prompt or any policy block', async (_label, url) => {
-    const res = await request(app.getHttpServer()).get(url).expect(200);
-    const body = JSON.stringify(res.body);
+  ])(
+    '%s never returns the system prompt or any policy block',
+    async (_label, url) => {
+      const res = await request(app.getHttpServer()).get(url).expect(200);
+      const body = JSON.stringify(res.body);
 
-    for (const field of SECRET_FIELDS) {
-      expect(body).not.toContain(field);
-    }
-    expect(body).not.toContain('TOP SECRET SYSTEM PROMPT');
-  });
+      for (const field of SECRET_FIELDS) {
+        expect(body).not.toContain(field);
+      }
+      expect(body).not.toContain('TOP SECRET SYSTEM PROMPT');
+    },
+  );
 
   it('still returns the catalog fields the app renders', async () => {
     const res = await request(app.getHttpServer()).get('/mentors').expect(200);
