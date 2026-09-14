@@ -218,9 +218,17 @@ export class UsersService {
 
       const roleName = user.isAdmin ? ADMIN : USER;
 
-      return await this.roleRepository.findOne({
+      const role = await this.roleRepository.findOne({
         where: { name: roleName },
       });
+      // The roles table is seeded with both rows; a miss means the database
+      // was never seeded, which must not produce a user with no role.
+      if (!role) {
+        throw new NotFoundException(
+          `Role "${roleName}" not found. Seed the roles table.`,
+        );
+      }
+      return role;
     } catch (error) {
       rethrowSafe(error, this.logger, `${UsersService.name}:getRole`);
     }
@@ -245,6 +253,13 @@ export class UsersService {
     const role = await this.roleRepository.findOne({
       where: { id: user.role.id },
     });
+    // Looked up by the user's own role id, so a miss means the row was deleted
+    // out from under an existing user.
+    if (!role) {
+      throw new NotFoundException(
+        `Role ${user.role.id} not found for user ${id}.`,
+      );
+    }
 
     const age = calculateAge(dateOfBirth);
 

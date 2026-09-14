@@ -28,6 +28,7 @@ import {
   GlobalSignOutCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 import * as crypto from 'crypto';
+import { requireEnv } from 'src/common/env';
 import { SignUpAuthDto } from './dto/sign-up.dto';
 import { AuthTokens, LoginAuthDto } from './dto/sign-in.dto';
 
@@ -36,19 +37,20 @@ export class AWSCognitoService {
   private logger = new Logger(AWSCognitoService.name);
   private cognitoClient: CognitoIdentityProviderClient;
   private clientId: string;
-  private clientSecret: string;
+  /** Optional: a Cognito app client may have no secret (see generateSecretHash). */
+  private clientSecret: string | undefined;
   private userPoolId: string;
 
   constructor() {
     // Read these from your environment variables
-    this.clientId = process.env.AWS_COGNITO_APP_CLIENT_ID;
+    this.clientId = requireEnv('AWS_COGNITO_APP_CLIENT_ID');
     this.clientSecret = process.env.AWS_COGNITO_APP_CLIENT_SECRET;
-    this.userPoolId = process.env.AWS_COGNITO_USER_POOL_ID;
+    this.userPoolId = requireEnv('AWS_COGNITO_USER_POOL_ID');
     this.cognitoClient = new CognitoIdentityProviderClient({
       region: process.env.AWS_REGION || 'eu-north-1',
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        accessKeyId: requireEnv('AWS_ACCESS_KEY_ID'),
+        secretAccessKey: requireEnv('AWS_SECRET_ACCESS_KEY'),
       },
     });
   }
@@ -109,11 +111,19 @@ export class AWSCognitoService {
         throw new UnauthorizedException('Authentication failed');
       }
 
-      // Return tokens (AccessToken, IdToken, RefreshToken) to the client.
+      // The AWS types mark each token optional even when AuthenticationResult
+      // is present. A response missing any of them is a failed sign-in, not a
+      // partially populated success.
+      const { AccessToken, IdToken, RefreshToken } =
+        response.AuthenticationResult;
+      if (!AccessToken || !IdToken || !RefreshToken) {
+        throw new UnauthorizedException('Authentication failed');
+      }
+
       return {
-        accessToken: response.AuthenticationResult.AccessToken,
-        idToken: response.AuthenticationResult.IdToken,
-        refreshToken: response.AuthenticationResult.RefreshToken,
+        accessToken: AccessToken,
+        idToken: IdToken,
+        refreshToken: RefreshToken,
       };
     } catch (error) {
       this.logger.error(
@@ -145,9 +155,14 @@ export class AWSCognitoService {
         throw new UnauthorizedException('Authentication failed');
       }
 
+      const { AccessToken, IdToken } = response.AuthenticationResult;
+      if (!AccessToken || !IdToken) {
+        throw new UnauthorizedException('Authentication failed');
+      }
+
       return {
-        accessToken: response.AuthenticationResult.AccessToken,
-        idToken: response.AuthenticationResult.IdToken,
+        accessToken: AccessToken,
+        idToken: IdToken,
         refreshToken,
       };
     } catch (error) {
@@ -277,7 +292,7 @@ export class AWSCognitoService {
         UserPoolId: this.userPoolId,
       });
       const response = await this.cognitoClient.send(command);
-      return response.Users;
+      return response.Users ?? [];
     } catch (error) {
       this.logger.error(
         `${AWSCognitoService.name}:${this.findAll.name}: ${JSON.stringify(error.message)}`,

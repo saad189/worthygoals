@@ -19,6 +19,10 @@ describe('AWSCognitoService error normalisation', () => {
     jest.resetModules();
     process.env = {
       ...ENV,
+      // All four are Joi.string().required() in env.validation, so the
+      // constructor reads them through requireEnv and throws without them.
+      AWS_ACCESS_KEY_ID: 'test-key-id',
+      AWS_SECRET_ACCESS_KEY: 'test-secret',
       AWS_COGNITO_APP_CLIENT_ID: 'client-id',
       AWS_COGNITO_USER_POOL_ID: 'pool-id',
     };

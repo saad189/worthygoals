@@ -30,9 +30,11 @@ export class CircuitBreaker {
   }
 
   private state(provider: string): ProviderState {
-    if (!this.states.has(provider)) {
-      this.states.set(provider, { failures: 0, openedAt: null });
+    let existing = this.states.get(provider);
+    if (!existing) {
+      existing = { failures: 0, openedAt: null };
+      this.states.set(provider, existing);
     }
-    return this.states.get(provider);
+    return existing;
   }
 }

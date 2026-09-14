@@ -257,6 +257,9 @@ export class TasksService {
 
     let created = 0;
     for (const parent of candidates) {
+      // The filter above already requires a dueDate; this keeps that fact
+      // visible to the compiler rather than asserting it away.
+      if (!parent.dueDate) continue;
       const nextDue = this.nextDueDate(parent.dueDate, parent.repeatFrequency);
 
       // Skip if a future occurrence already exists

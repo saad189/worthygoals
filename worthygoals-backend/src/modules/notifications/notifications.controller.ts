@@ -36,7 +36,10 @@ export class NotificationsController {
   private async resolveUserId(req: {
     user?: { sub?: string };
   }): Promise<number> {
-    const user = await this.usersService.findByAccountSub(req.user?.sub);
+    const sub = req.user?.sub;
+    if (!sub) throw new BadRequestException('Unauthenticated request.');
+
+    const user = await this.usersService.findByAccountSub(sub);
     if (!user) {
       throw new BadRequestException(
         'User profile not found for this token. Create your user profile first.',

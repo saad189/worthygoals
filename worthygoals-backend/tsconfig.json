@@ -12,11 +12,17 @@
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
-    "strictNullChecks": false,
+    "strictNullChecks": true,
+    // noImplicitAny stays off for now: measured at 47 errors, and its shadow
+    // is the 514 no-unsafe-* lint findings parked in .eslintrc.js. Flip it and
+    // fix those together, then the type-checked lint family can come on.
     "noImplicitAny": false,
-    "strictBindCallApply": false,
+    "strictBindCallApply": true,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
-    "types": ["jest", "node"]
+    "types": [
+      "jest",
+      "node"
+    ]
   }
 }
