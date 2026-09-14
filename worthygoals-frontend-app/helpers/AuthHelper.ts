@@ -1,4 +1,4 @@
-import { ACCESS_TOKEN, REFRESH_TOKEN, ID_TOKEN, USER_PROFILE, } from "@/constants";
+import { ACCESS_TOKEN, REFRESH_TOKEN, ID_TOKEN, USER_PROFILE, USER_CREDENTIALS, } from "@/constants";
 import SecureStorage from '@/helpers/SecureStorageUtil';
 
 
@@ -56,5 +56,9 @@ export const clearTokens = async () => {
         SecureStorage.removeItem(REFRESH_TOKEN),
         SecureStorage.removeItem(ID_TOKEN),
         SecureStorage.removeItem(USER_PROFILE),
+        // Signing out must not leave the remembered sign-in behind. This key
+        // used to hold the user's plaintext password and survived logout
+        // entirely, because nothing ever removed it.
+        SecureStorage.removeItem(USER_CREDENTIALS),
     ]);
 }
