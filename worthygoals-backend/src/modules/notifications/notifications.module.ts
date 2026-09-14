@@ -14,6 +14,7 @@ import { NotificationScheduler } from './notification-scheduler.cron';
 import { NotificationVoicingService } from './notification-voicing.service';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
+import { UsersModule } from 'src/modules/users/users.module';
 import { NOTIFICATION_QUEUE } from './types/notification-job.types';
 
 @Module({
@@ -36,6 +37,7 @@ import { NOTIFICATION_QUEUE } from './types/notification-job.types';
     BullModule.registerQueue({ name: NOTIFICATION_QUEUE }),
     ScheduleModule.forRoot(),
     PersonalityModule,
+    UsersModule,
   ],
 
   controllers: [NotificationsController],

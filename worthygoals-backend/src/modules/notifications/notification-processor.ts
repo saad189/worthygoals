@@ -5,7 +5,7 @@ import Expo from 'expo-server-sdk';
 import { ConfigService } from '@nestjs/config';
 import { NotificationsService } from './notifications.service';
 import { NotificationVoicingService } from './notification-voicing.service';
-import { PersonalityService } from 'src/core/personalities/personality.service';
+import { UsersService } from 'src/modules/users/users.service';
 import {
   NOTIFICATION_QUEUE,
   NotificationJobData,
@@ -19,8 +19,8 @@ export class NotificationProcessor extends WorkerHost {
   constructor(
     private readonly notifService: NotificationsService,
     private readonly config: ConfigService,
+    private readonly usersService: UsersService,
     @Optional() private readonly voicingService?: NotificationVoicingService,
-    @Optional() private readonly personalityService?: PersonalityService,
   ) {
     super();
     this.expo = new Expo({
@@ -32,7 +32,16 @@ export class NotificationProcessor extends WorkerHost {
     const { userId, kind, scheduledFor } = job.data;
 
     const tokens = await this.notifService.getTokens(userId);
-    if (!tokens.length) return;
+    if (!tokens.length) {
+      // Returning silently here is why token registration being broken went
+      // unnoticed for two months: the queue drained green while sending
+      // nothing at all.
+      this.logger.warn(
+        `No active push tokens for user ${userId} — dropping ${kind}. ` +
+          'The device has not registered, or registration is failing.',
+      );
+      return;
+    }
 
     const tz = tokens[0].timezone ?? 'UTC';
     const allowed = await this.notifService.checkPacingAllowed(userId, tz);
@@ -86,18 +95,26 @@ export class NotificationProcessor extends WorkerHost {
     kind: NotificationJobData['kind'],
     payload?: Record<string, unknown>,
   ): Promise<string> {
-    if (!this.voicingService || !this.personalityService) {
+    if (!this.voicingService) {
       return this.fallbackBody(kind);
     }
 
     try {
-      const userPersonality =
-        await this.personalityService.getUserPersonality(userId);
-      if (!userPersonality?.personalityId) return this.fallbackBody(kind);
+      // users.personalityId, not user_personalities. The latter's only writer,
+      // setUserPersonality, has zero callers in the monorepo and the table is
+      // empty, so this lookup always returned null and every push shipped the
+      // generic fallback — the whole voicing pipeline was unreachable.
+      const user = await this.usersService.findOne(userId);
+      if (!user?.personalityId) {
+        this.logger.debug(
+          `User ${userId} has no personalityId — using fallback copy for ${kind}`,
+        );
+        return this.fallbackBody(kind);
+      }
 
       const context: Record<string, unknown> = payload ?? {};
       const { body } = await this.voicingService.getOrGenerateCopy(
-        userPersonality.personalityId,
+        user.personalityId,
         kind,
         context,
       );

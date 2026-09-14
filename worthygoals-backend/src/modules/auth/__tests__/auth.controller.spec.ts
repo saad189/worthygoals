@@ -45,7 +45,9 @@ describe('AuthService — account-existence responses are uniform', () => {
   const NOT_REGISTERED = Object.assign(new Error('User does not exist.'), {
     name: 'UserNotFoundException',
   });
-  const ALREADY_CONFIRMED = new BadRequestException('User is already confirmed');
+  const ALREADY_CONFIRMED = new BadRequestException(
+    'User is already confirmed',
+  );
   const SENT = { CodeDeliveryDetails: { DeliveryMedium: 'EMAIL' } };
 
   it('answers confirmation-code identically for every account state', async () => {
@@ -77,13 +79,11 @@ describe('AuthService — account-existence responses are uniform', () => {
   });
 
   it('does not reveal whether a failed login was a bad address or a bad password', async () => {
-    aws.loginUser
-      .mockRejectedValueOnce(NOT_REGISTERED)
-      .mockRejectedValueOnce(
-        Object.assign(new Error('Incorrect username or password.'), {
-          name: 'NotAuthorizedException',
-        }),
-      );
+    aws.loginUser.mockRejectedValueOnce(NOT_REGISTERED).mockRejectedValueOnce(
+      Object.assign(new Error('Incorrect username or password.'), {
+        name: 'NotAuthorizedException',
+      }),
+    );
 
     const errors = await Promise.all(
       ['nobody@example.com', 'real@example.com'].map((email) =>
