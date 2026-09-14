@@ -14,9 +14,13 @@
 // expo-server-sdk ships ESM, which ts-jest's CommonJS transform cannot load.
 jest.mock('expo-server-sdk', () => {
   class MockExpo {
-    static isExpoPushToken = (t: string) => typeof t === 'string' && t.startsWith('ExponentPushToken');
-    chunkPushNotifications = (messages: unknown[]) => (messages.length ? [messages] : []);
-    sendPushNotificationsAsync = jest.fn().mockResolvedValue([{ status: 'ok' }]);
+    static isExpoPushToken = (t: string) =>
+      typeof t === 'string' && t.startsWith('ExponentPushToken');
+    chunkPushNotifications = (messages: unknown[]) =>
+      messages.length ? [messages] : [];
+    sendPushNotificationsAsync = jest
+      .fn()
+      .mockResolvedValue([{ status: 'ok' }]);
   }
   return { __esModule: true, default: MockExpo };
 });
@@ -86,7 +90,10 @@ describe('NotificationProcessor', () => {
     notifService.getTokens.mockResolvedValue([
       { token: 'ExponentPushToken[xxx]', timezone: 'Europe/London' },
     ]);
-    usersService.findOne.mockResolvedValue({ id: USER_ID, personalityId: 'goggs' });
+    usersService.findOne.mockResolvedValue({
+      id: USER_ID,
+      personalityId: 'goggs',
+    });
     voicingService.getOrGenerateCopy.mockResolvedValue({ body: 'GET UP.' });
 
     await processor.process(job());
@@ -103,7 +110,10 @@ describe('NotificationProcessor', () => {
     notifService.getTokens.mockResolvedValue([
       { token: 'ExponentPushToken[xxx]', timezone: 'UTC' },
     ]);
-    usersService.findOne.mockResolvedValue({ id: USER_ID, personalityId: null });
+    usersService.findOne.mockResolvedValue({
+      id: USER_ID,
+      personalityId: null,
+    });
 
     await processor.process(job());
 

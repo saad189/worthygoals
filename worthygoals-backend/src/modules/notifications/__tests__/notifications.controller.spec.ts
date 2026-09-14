@@ -44,7 +44,9 @@ describe('NotificationsController', () => {
   });
 
   it('registers the token against the numeric user id, never the Cognito sub', async () => {
-    await controller.registerToken(req, { token: 'ExponentPushToken[x]' } as any);
+    await controller.registerToken(req, {
+      token: 'ExponentPushToken[x]',
+    } as any);
 
     expect(usersService.findByAccountSub).toHaveBeenCalledWith(SUB);
     expect(notifService.registerToken).toHaveBeenCalledWith(USER_ID, {

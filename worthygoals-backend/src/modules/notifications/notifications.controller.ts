@@ -33,7 +33,9 @@ export class NotificationsController {
    * threw and nothing was written: push_tokens stayed empty, so every
    * notification had zero tokens to send to.
    */
-  private async resolveUserId(req: { user?: { sub?: string } }): Promise<number> {
+  private async resolveUserId(req: {
+    user?: { sub?: string };
+  }): Promise<number> {
     const user = await this.usersService.findByAccountSub(req.user?.sub);
     if (!user) {
       throw new BadRequestException(
