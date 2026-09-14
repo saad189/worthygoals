@@ -13,6 +13,19 @@ import { authEmitter } from "@/core";
 
 const BASE_URL = config.apiUrl;
 
+// With no baseURL axios issues relative requests, which fail as generic network
+// errors — the app then reports "check Internet Connection" on working Wi-Fi.
+// EAS does not read .env*.local, so an EAS build with no `env` block in
+// eas.json lands here, and the misconfiguration is indistinguishable from a
+// real outage. Say which one it is.
+if (!BASE_URL) {
+  console.error(
+    '[api] EXPO_PUBLIC_API_URL is not set — every request will fail and be' +
+    ' reported as a connection problem. Local builds read .env.local (see' +
+    ' .env.local.example); EAS builds read the `env` block in eas.json.',
+  );
+}
+
 interface InternalAxiosRequestConfig
   extends OriginalInternalAxiosRequestConfig {
   _retry?: boolean;

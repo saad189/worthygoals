@@ -1,43 +1,74 @@
-// {
-//   "cli": {
-//     "version": ">= 12.5.1",
-//     "appVersionSource": "remote"
-//   },
-//   "build": {
-//     "development": {
-//       "developmentClient": true,
-//       "distribution": "internal"
-//     },
-//     "preview": {
-//       "distribution": "internal"
-//     },
-//     "production": {
-//       "autoIncrement": true
-//     }
-//   },
-//   "submit": {
-//     "production": {}
-//   }
-// }
-
+// EAS does NOT read .env*.local — those are gitignored and never uploaded.
+// Anything a build needs must be either in an `env` block below or, for
+// secrets, an EAS environment variable set in the project settings
+// (https://expo.dev → project → Environment variables), which EAS injects
+// into the build automatically.
+//
+// Required by the app:
+//   EXPO_PUBLIC_API_URL     — no default; without it every request fails and
+//                             is reported to the user as a connection problem
+//   EXPO_PUBLIC_SENTRY_DSN  — secret; set as an EAS environment variable
+//   EXPO_PUBLIC_POSTHOG_KEY — secret; set as an EAS environment variable
+//
+// EXPO_PUBLIC_API_URL is intentionally left unset here: the backend has no
+// deployed environment yet (tracker E1). Set it per profile once there is a
+// URL, or pass it for a one-off build with
+//   EXPO_PUBLIC_API_URL=http://<lan-ip>:3000 eas build --profile smoke
 {
+  "cli": {
+    "version": ">= 12.5.1",
+    "appVersionSource": "remote"
+  },
   "build": {
+    // Dev client for on-device verification (bottom sheets, push permission
+    // → token → tap loop). Needs a reachable EXPO_PUBLIC_API_URL: `localhost`
+    // resolves to the phone, so use the dev machine's LAN IP.
+    "smoke": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_ENV": "smoke"
+      }
+    },
     "preview": {
+      "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_ENV": "preview"
       }
     },
     "preview2": {
+      "distribution": "internal",
       "android": {
         "gradleCommand": ":app:assembleRelease"
+      },
+      "env": {
+        "EXPO_PUBLIC_ENV": "preview"
       }
     },
     "preview3": {
-      "developmentClient": true
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_ENV": "preview"
+      }
     },
     "preview4": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_ENV": "preview"
+      }
     },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_ENV": "production"
+      }
+    }
+  },
+  "submit": {
     "production": {}
   }
 }
