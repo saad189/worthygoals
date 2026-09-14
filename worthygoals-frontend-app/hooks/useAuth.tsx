@@ -5,7 +5,7 @@ import { ID_TOKEN, ROUTE_NAMES } from "@/constants";
 import { clearTokens, decodeJwtToken, getUserLocationAsync } from "@/helpers";
 
 import { authEmitter } from "@/core";
-import { queryClient } from "@/core/queryClient";
+import { asyncStoragePersister, queryClient } from "@/core/queryClient";
 import onboardingService from "@/services/onboarding.service";
 import { LocationCoordinates, UserModel } from "@/models";
 import { router } from "expo-router";
@@ -134,8 +134,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Drop everything user-scoped so the next account on this device can't
     // rehydrate the previous user's data: the persisted query cache
-    // (WG_QUERY_CACHE — dashboard/tasks/goals/board/profile) and onboarding.
+    // (WG_QUERY_CACHE) and onboarding.
+    //
+    // queryClient.clear() alone only empties memory and relies on the
+    // persister's throttled write to catch up — if the app is killed first,
+    // the previous user's cache is still on disk at next launch. removeClient()
+    // deletes the stored copy outright.
     queryClient.clear();
+    try {
+      await asyncStoragePersister.removeClient();
+    } catch (error) {
+      console.warn('Could not remove the persisted query cache:', error);
+    }
     try {
       await onboardingService.reset();
     } catch (error) {
