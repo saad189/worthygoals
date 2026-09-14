@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { Wordmark } from '../../components/wordmark/wordmark';
 import { RevealDirective } from '../../shared/reveal.directive';
+import { SeoService } from '../../shared/seo.service';
 import { BRAND, THANK_YOU } from '../../data/content';
 
 /** Post-signup confirmation: next steps, referral share, and a mentor teaser. */
@@ -11,12 +12,26 @@ import { BRAND, THANK_YOU } from '../../data/content';
   templateUrl: './thank-you.html',
   styleUrl: './thank-you.scss',
 })
-export class ThankYou {
+export class ThankYou implements OnInit {
+  private readonly seo = inject(SeoService);
+
   readonly brand = BRAND;
   readonly content = THANK_YOU;
   readonly year = new Date().getFullYear();
 
   private readonly shareText = `${THANK_YOU.inviteText} ${BRAND.landingUrl}`;
+
+  ngOnInit(): void {
+    this.seo.apply({
+      title: `You're in — ${BRAND.name}`,
+      description: THANK_YOU.inviteText,
+      path: 'thank-you',
+      // A post-signup confirmation has no business in search results, and it
+      // previously carried the site's single shared description with no
+      // noindex at all.
+      noindex: true,
+    });
+  }
 
   readonly copyLabel = signal(THANK_YOU.copyDefault);
   readonly copied = signal(false);
