@@ -153,7 +153,10 @@ export class TasksService {
     // double-counting the streak, double-firing indexCompletion and
     // double-charging an AI call. Insert first, let the constraint decide.
     const completion = await this.insertOrConflict(
-      () => this.completionRepo.save(this.completionRepo.create({ taskId, ...dto })),
+      () =>
+        this.completionRepo.save(
+          this.completionRepo.create({ taskId, ...dto }),
+        ),
       'Task already completed today',
     );
 
@@ -203,7 +206,10 @@ export class TasksService {
     // Same as complete(): uq_task_explanations_task_day is the idempotency
     // guarantee, not a preceding SELECT.
     const explanation = await this.insertOrConflict(
-      () => this.explanationRepo.save(this.explanationRepo.create({ taskId, ...dto })),
+      () =>
+        this.explanationRepo.save(
+          this.explanationRepo.create({ taskId, ...dto }),
+        ),
       'Task already explained today',
     );
 

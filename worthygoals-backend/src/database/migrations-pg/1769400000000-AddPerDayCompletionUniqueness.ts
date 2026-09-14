@@ -54,6 +54,8 @@ export class AddPerDayCompletionUniqueness1769400000000
     await queryRunner.query(
       `DROP INDEX IF EXISTS uq_task_explanations_task_day`,
     );
-    await queryRunner.query(`DROP INDEX IF EXISTS uq_task_completions_task_day`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS uq_task_completions_task_day`,
+    );
   }
 }

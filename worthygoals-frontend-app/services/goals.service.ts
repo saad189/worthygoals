@@ -1,6 +1,6 @@
 import { ApiGoal, GoalProposal } from "@/models";
 import type { ApiCreateGoalPayload, ApiCreateGoalResponse } from '@/types/api';
-import ApiService from "./api.service";
+import ApiService, { AI_REQUEST_TIMEOUT_MS } from "./api.service";
 
 const GOALS_BASE = '/goals';
 
@@ -11,7 +11,11 @@ export const goalsApiService = {
   },
 
   propose: async (raw: string): Promise<GoalProposal> => {
-    const { data } = await ApiService.post<GoalProposal>(`${GOALS_BASE}/propose`, { raw });
+    const { data } = await ApiService.post<GoalProposal>(
+      `${GOALS_BASE}/propose`,
+      { raw },
+      { timeout: AI_REQUEST_TIMEOUT_MS },
+    );
     return data;
   },
 

@@ -3,6 +3,16 @@ import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { ChatProviderParams, ChatProviderResult, IChatProvider } from './types';
 
+/**
+ * Hard ceiling on a single model call.
+ *
+ * There was none. A request the client had already abandoned kept generating
+ * server-side and kept billing — and the client's own 10s default timeout made
+ * abandonment the normal case. The SDK cancels the underlying request when
+ * this fires, so the tokens stop.
+ */
+const AI_REQUEST_TIMEOUT_MS = 45_000;
+
 @Injectable()
 export class OpenAiProvider implements IChatProvider {
   readonly name = 'openai';
@@ -28,12 +38,15 @@ export class OpenAiProvider implements IChatProvider {
   async chat(params: ChatProviderParams): Promise<ChatProviderResult> {
     if (!this.client) throw new Error('OpenAI provider is not configured');
 
-    const completion = await this.client.chat.completions.create({
-      model: params.model ?? this.defaultModel,
-      messages: params.messages,
-      temperature: params.temperature,
-      max_tokens: params.maxTokens,
-    });
+    const completion = await this.client.chat.completions.create(
+      {
+        model: params.model ?? this.defaultModel,
+        messages: params.messages,
+        temperature: params.temperature,
+        max_tokens: params.maxTokens,
+      },
+      { timeout: AI_REQUEST_TIMEOUT_MS },
+    );
 
     const usage: any = (completion as any).usage;
 
@@ -55,14 +68,17 @@ export class OpenAiProvider implements IChatProvider {
   ): Promise<ChatProviderResult> {
     if (!this.client) throw new Error('OpenAI provider is not configured');
 
-    const stream = await this.client.chat.completions.create({
-      model: params.model ?? this.defaultModel,
-      messages: params.messages,
-      temperature: params.temperature,
-      max_tokens: params.maxTokens,
-      stream: true,
-      stream_options: { include_usage: true },
-    });
+    const stream = await this.client.chat.completions.create(
+      {
+        model: params.model ?? this.defaultModel,
+        messages: params.messages,
+        temperature: params.temperature,
+        max_tokens: params.maxTokens,
+        stream: true,
+        stream_options: { include_usage: true },
+      },
+      { timeout: AI_REQUEST_TIMEOUT_MS },
+    );
 
     let text = '';
     let tokensIn: number | null = null;
