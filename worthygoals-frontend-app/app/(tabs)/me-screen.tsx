@@ -12,7 +12,7 @@
  * onboarding-matched mentor + saved tone (tap-through to the team tab), and an
  * ABOUT group with the app version. Sign-out stays the closing accent CTA.
  */
-import React from "react";
+import React, { useState } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import Constants from "expo-constants";
 import { router } from "expo-router";
@@ -86,6 +86,19 @@ function SettingRow({
 export default function MeScreen() {
   const { colors, space, radius } = useAppTheme();
   const { logout } = useAuth();
+  // Sign-out awaits a network call (deactivating the push token) under a 10s
+  // timeout, so the button has to be unavailable while it runs.
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await logout();
+    } finally {
+      setSigningOut(false);
+    }
+  };
   // Identity, mentor + tone all from the single global profile source (backend
   // GET /users/profile) — so they survive a reinstall and stay consistent with
   // the today screen and the goal's mentor.
@@ -186,7 +199,13 @@ export default function MeScreen() {
       </Card>
 
       <View style={{ marginTop: space["6"] }}>
-        <Button label="Sign out" variant="accent" onPress={logout} />
+        <Button
+          label="Sign out"
+          variant="accent"
+          onPress={handleSignOut}
+          loading={signingOut}
+          disabled={signingOut}
+        />
       </View>
     </Screen>
   );

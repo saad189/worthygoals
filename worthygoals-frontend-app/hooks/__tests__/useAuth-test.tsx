@@ -15,6 +15,9 @@ import { router } from 'expo-router';
 
 
 import userService from '@/services/UserService';
+import { clearTokens } from '@/helpers';
+import { unregisterPushToken } from '@/services/push.service';
+import { queryClient } from '@/core/queryClient';
 import { AuthProvider, useAuth } from '../useAuth';
 
 jest.mock('expo-router', () => ({
@@ -92,5 +95,73 @@ describe('useAuth.login', () => {
 
     await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
     expect(String(mockReplace.mock.calls[0][0])).toContain('profile');
+  });
+});
+
+
+/**
+ * Guards D4: sign-out issued three competing navigations, and any of its three
+ * unguarded awaits rejecting skipped the cache clear, the state change, the
+ * toast and all navigation — leaving the user signed in with tokens partially
+ * cleared, invisibly, because the context typed logout as `() => void` while
+ * it was async.
+ */
+describe('useAuth.logout', () => {
+  const mockClearTokens = clearTokens as jest.Mock;
+  const mockUnregister = unregisterPushToken as jest.Mock;
+  const mockQueryClear = queryClient.clear as jest.Mock;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockClearTokens.mockResolvedValue(undefined);
+    mockUnregister.mockResolvedValue(undefined);
+  });
+
+  async function signedInHook() {
+    mockUserService.getProfile.mockResolvedValue({ id: 1 } as never);
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await act(async () => {
+      await result.current.login('user@example.com');
+    });
+    await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
+    return result;
+  }
+
+  it('signs the user out', async () => {
+    const result = await signedInHook();
+
+    await act(async () => {
+      await result.current.logout();
+    });
+
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(mockQueryClear).toHaveBeenCalled();
+  });
+
+  it.each([
+    ['the push-token call rejects', () => mockUnregister.mockRejectedValue(new Error('offline'))],
+    ['the keychain rejects', () => mockClearTokens.mockRejectedValue(new Error('keychain'))],
+  ])('still completes sign-out when %s', async (_label, arrange) => {
+    const result = await signedInHook();
+    arrange();
+
+    await act(async () => {
+      await result.current.logout();
+    });
+
+    // The whole point: a failing step must not strand the user signed in.
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(mockQueryClear).toHaveBeenCalled();
+  });
+
+  it('clears tokens even when the push-token call fails first', async () => {
+    const result = await signedInHook();
+    mockUnregister.mockRejectedValue(new Error('offline'));
+
+    await act(async () => {
+      await result.current.logout();
+    });
+
+    expect(mockClearTokens).toHaveBeenCalled();
   });
 });

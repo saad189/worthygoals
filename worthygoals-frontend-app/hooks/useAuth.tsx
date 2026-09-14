@@ -3,14 +3,12 @@ import React, { createContext, useState, useEffect, useContext } from "react";
 import Storage from "@/helpers/SecureStorageUtil";
 import { ID_TOKEN, ROUTE_NAMES } from "@/constants";
 import { clearTokens, decodeJwtToken, getUserLocationAsync } from "@/helpers";
-import { CommonActions, ParamListBase } from "@react-navigation/native";
 
 import { authEmitter } from "@/core";
 import { queryClient } from "@/core/queryClient";
 import onboardingService from "@/services/onboarding.service";
 import { LocationCoordinates, UserModel } from "@/models";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { router, useNavigation } from "expo-router";
+import { router } from "expo-router";
 import userService from "@/services/UserService";
 import { syncPushToken, unregisterPushToken } from "@/services/push.service";
 import { useToast } from "./useToastNotification";
@@ -18,7 +16,7 @@ import { useToast } from "./useToastNotification";
 interface AuthContextProps {
   isAuthenticated: boolean;
   login: (email: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   setAuthenticated: (value: boolean) => void;
   userProfile: Partial<UserModel> | null;
   userLocation?: LocationCoordinates;
@@ -32,11 +30,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
   const [userProfile, setUserProfile] = useState<Partial<UserModel> | null>(
     null
   );
-  const { showInfoMessage } = useToast();
+  const { showInfoMessage, showErrorMessage } = useToast();
 
   // Create a custom Navigator that will be used throughout the app, so that it checks for routes and roles
   // On app start, check if tokens exist
@@ -104,24 +101,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   };
 
-  const logout = async () => {
-    // Deactivate the token server-side while we still hold a valid access token.
-    await unregisterPushToken();
-    await clearTokens();
+  /**
+   * Sign out.
+   *
+   * Every step here is best-effort and independent. Previously all three
+   * awaits were unguarded, so one rejection — a keychain error, an offline
+   * device — skipped the cache clear, the state change, the toast and all
+   * navigation, leaving the user signed in with tokens partially cleared and
+   * no indication anything had happened. The context typed this `() => void`
+   * while it was async, so no caller could have noticed.
+   *
+   * A failure to clear tokens is reported rather than swallowed: leaving
+   * credentials on the device is exactly what sign-out is for.
+   */
+  const logout = async (): Promise<void> => {
+    // Deactivate the token server-side while we still hold a valid access
+    // token. Never blocking: the server-side row going stale is recoverable,
+    // a user stuck signed in is not.
+    try {
+      await unregisterPushToken();
+    } catch (error) {
+      console.warn("Could not unregister push token:", error);
+    }
+
+    let tokensCleared = true;
+    try {
+      await clearTokens();
+    } catch (error) {
+      tokensCleared = false;
+      console.error("Could not clear stored tokens:", error);
+    }
+
     // Drop everything user-scoped so the next account on this device can't
     // rehydrate the previous user's data: the persisted query cache
     // (WG_QUERY_CACHE — dashboard/tasks/goals/board/profile) and onboarding.
     queryClient.clear();
-    await onboardingService.reset();
+    try {
+      await onboardingService.reset();
+    } catch (error) {
+      console.warn("Could not reset onboarding state:", error);
+    }
+
+    setUserProfile(null);
     setIsAuthenticated(false);
-    showInfoMessage("Logged out!");
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [{ name: ROUTE_NAMES.AUTH.self }],
-      })
-    );
-    navigation.replace(ROUTE_NAMES.AUTH.LOGIN);
+
+    if (tokensCleared) {
+      showInfoMessage("Logged out!");
+    } else {
+      showErrorMessage(
+        "Signed out, but your saved credentials could not be removed from this device.",
+      );
+    }
+
+    // Navigation is the Stacks() guard's job — flipping isAuthenticated
+    // renders its <Redirect>. The two imperative calls that used to follow
+    // raced it, and navigation.replace('login') named a route that is not
+    // root-level.
   };
 
   return (
