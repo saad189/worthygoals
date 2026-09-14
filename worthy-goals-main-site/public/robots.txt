@@ -1,0 +1,8 @@
+# Worthy Goals — https://worthygoals.web.app
+User-agent: *
+Allow: /
+
+# Post-signup confirmation; also noindex via meta.
+Disallow: /thank-you
+
+Sitemap: https://worthygoals.web.app/sitemap.xml
