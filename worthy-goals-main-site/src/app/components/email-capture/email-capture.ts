@@ -1,4 +1,4 @@
-import { Component, Input, signal } from '@angular/core';
+import { Component, Input, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CAPTURE } from '../../data/content';
@@ -18,6 +18,10 @@ import { CAPTURE } from '../../data/content';
     <form class="capture" [style.max-width.px]="maxWidth" (submit)="onSubmit($event)" novalidate>
       <div class="capture-row">
         <label [for]="inputId" class="sr-only">Email address</label>
+        <!-- aria-invalid + aria-describedby tie the message to the input.
+             Without them the alert is announced once and a screen reader
+             returning to the field hears nothing about why it was rejected
+             (WCAG 3.3.1); aria-describedby had 0 occurrences site-wide. -->
         <input
           [id]="inputId"
           [formControl]="email"
@@ -25,14 +29,16 @@ import { CAPTURE } from '../../data/content';
           inputmode="email"
           autocomplete="email"
           [placeholder]="copy.placeholder"
+          [attr.aria-invalid]="message() ? 'true' : null"
+          [attr.aria-describedby]="describedBy()"
           required
         />
         <button type="submit" class="btn btn-primary" [disabled]="sending()">
           {{ sending() ? copy.sendingLabel : buttonLabel }}
         </button>
       </div>
-      <p class="form-msg" [class.error]="!!message()" role="alert" aria-live="polite">{{ message() }}</p>
-      <p class="reassure">{{ copy.reassure }}</p>
+      <p [id]="messageId" class="form-msg" [class.error]="!!message()" role="alert" aria-live="polite">{{ message() }}</p>
+      <p [id]="reassureId" class="reassure">{{ copy.reassure }}</p>
     </form>
   `,
   styles: [`
@@ -89,6 +95,23 @@ export class EmailCapture {
   readonly email = new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] });
   readonly sending = signal(false);
   readonly message = signal('');
+
+  get messageId(): string {
+    return `${this.inputId}-message`;
+  }
+
+  get reassureId(): string {
+    return `${this.inputId}-reassure`;
+  }
+
+  /**
+   * Point the input at its error when there is one, and at the reassurance
+   * line otherwise — the helper text stays reachable instead of being
+   * replaced by the error.
+   */
+  readonly describedBy = computed(() =>
+    this.message() ? `${this.messageId} ${this.reassureId}` : this.reassureId,
+  );
 
   constructor(private router: Router) {}
 
