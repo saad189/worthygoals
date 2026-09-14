@@ -78,6 +78,13 @@ jobs:
       - name: Docker build
         run: docker build -t worthygoals-backend:ci .
 
+      # No dependency gate existed, which is how @nestjs/common sat two years
+      # behind on a published RCE advisory. Critical-only for now: the express /
+      # path-to-regexp / multer chain needs a @nestjs/platform-express major and
+      # is scheduled separately (tracker I4 · TD-6).
+      - name: Dependency audit (critical)
+        run: npm audit --audit-level=critical
+
   # ── Eval harness ─────────────────────────────────────────────────────────
   eval:
     name: Eval harness — personality tone gate
