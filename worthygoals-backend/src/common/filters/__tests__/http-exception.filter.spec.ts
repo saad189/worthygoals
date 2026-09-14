@@ -79,7 +79,6 @@ describe('AllExceptionsFilter', () => {
   });
 });
 
-
 /**
  * Guards E4. Sentry.init in main.ts was the only Sentry call in the backend.
  * This filter catches everything, so nothing ever reached Express's error
@@ -107,7 +106,7 @@ describe('AllExceptionsFilter — error reporting', () => {
     expect(captureException).toHaveBeenCalledTimes(1);
   });
 
-  it('does not report 4xx — they are the client\'s problem', () => {
+  it("does not report 4xx — they are the client's problem", () => {
     filter.catch(
       new HttpException('Not found', HttpStatus.NOT_FOUND),
       buildHost(),
