@@ -300,3 +300,67 @@ describe('MessagesGateway — joinConversation ownership', () => {
     expect(assertConversationOwnership).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * Guards D8 server-side. Nest emits gateway errors as an `exception` event,
+ * but a raw error becomes the generic "Internal server error" — and hitting
+ * the 20/day free-tier quota is routine, not a fault. The user could not tell
+ * "you hit today's limit" from "the app is broken".
+ */
+describe('MessagesGateway — mentor reply failures', () => {
+  let gateway: MessagesGateway;
+  const messagesService = {
+    sendUserTextMessage: jest.fn(),
+    createMentorTextMessage: jest.fn(),
+  };
+  const agentService = { generateMentorReply: jest.fn() };
+  const safetyService = {
+    isCrisisSignal: jest.fn().mockReturnValue(false),
+    getCrisisResponse: jest.fn(),
+  };
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    safetyService.isCrisisSignal.mockReturnValue(false);
+    messagesService.sendUserTextMessage.mockResolvedValue(makeUserMessage());
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        MessagesGateway,
+        { provide: MessagesService, useValue: messagesService },
+        { provide: AgentService, useValue: agentService },
+        { provide: SafetyService, useValue: safetyService },
+      ],
+    }).compile();
+
+    gateway = module.get<MessagesGateway>(MessagesGateway);
+    gateway.server = { to: () => ({ emit: jest.fn() }) } as any;
+    jest.spyOn((gateway as any).logger, 'error').mockImplementation(() => undefined);
+  });
+
+  it('tells the user they hit the daily limit', async () => {
+    agentService.generateMentorReply.mockRejectedValue(
+      Object.assign(new Error('Daily AI quota exceeded'), { code: 'quota_exceeded' }),
+    );
+
+    await expect(
+      gateway.handleSendMessage(makeSocket(), {
+        conversationId: CONV_ID,
+        text: 'hello',
+      }),
+    ).rejects.toThrow(/today's message limit/);
+  });
+
+  it('reports any other failure without leaking internals', async () => {
+    agentService.generateMentorReply.mockRejectedValue(
+      new Error('ECONNRESET talking to openai.com'),
+    );
+
+    await expect(
+      gateway.handleSendMessage(makeSocket(), {
+        conversationId: CONV_ID,
+        text: 'hello',
+      }),
+    ).rejects.toThrow(/could not reply just now/);
+  });
+});

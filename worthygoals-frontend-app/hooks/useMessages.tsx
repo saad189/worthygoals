@@ -165,6 +165,21 @@ export function useMessages(conversationId?: string) {
               // Don't hard-fail the UI; REST still works.
               setError(err?.message ?? "Realtime connection failed");
             },
+            onServerException: (message) => {
+              if (cancelled) return;
+              // The reply is not coming — stop pretending the mentor is
+              // composing one, and say why.
+              clearTypingTimeout();
+              setIsMentorTyping(false);
+              setError(message);
+
+              // Any send still waiting on an ack will never get one.
+              for (const [key, pending] of pendingSendRef.current.entries()) {
+                clearTimeout(pending.timeoutId);
+                pending.reject(new Error(message));
+                pendingSendRef.current.delete(key);
+              }
+            },
           },
         });
 

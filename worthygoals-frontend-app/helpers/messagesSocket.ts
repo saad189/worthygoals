@@ -8,6 +8,8 @@ export type MessagesSocketHandlers = {
   onMessageCreated?: (msg: ApiMessage) => void;
   onMentorTyping?: (conversationId: string) => void;
   onConnectError?: (err: any) => void;
+  /** A server-side error on this socket (see the `exception` listener below). */
+  onServerException?: (message: string) => void;
 };
 
 export async function connectMessagesSocket(params: {
@@ -38,6 +40,18 @@ export async function connectMessagesSocket(params: {
 
   socket.on("connect_error", (err: any) => {
     params.handlers?.onConnectError?.(err);
+  });
+
+  // Nest emits every gateway error as an `exception` event. Nothing in the app
+  // listened, so socket.io discarded them: a QuotaExceededException — routine
+  // on the 20/day free tier — left the typing indicator running for 30s and
+  // then silence, indistinguishable from the app being broken.
+  socket.on("exception", (err: any) => {
+    const message =
+      typeof err === "string"
+        ? err
+        : (err?.message ?? "Your mentor could not reply just now.");
+    params.handlers?.onServerException?.(message);
   });
 
   return socket;
