@@ -3,69 +3,35 @@ import { getCachedData, setCachedData } from './CacheUtil';
 import { LocationCoordinates } from '@/models';
 import { getTimeLeftTillEndOfDay } from './DateUtil';
 import { USER_LOCATION } from '@/constants';
-import { Alert, BackHandler, Linking } from 'react-native';
 
 /**
- * Checks for existing location permission and requests it if not granted.
- * Then retrieves the user's current location.
- * 
- * @returns {Promise<LocationCoordinates>} An object containing `latitude` and `longitude`.
- * @throws An error if permission is denied or there's an issue fetching location.
+ * Best-effort read of the user's coordinates.
+ *
+ * Location is optional everywhere it lands: the column is nullable, the
+ * backend DTO marks latitude/longitude optional, and no feature requires
+ * them yet. So a refused permission returns null — it must never block,
+ * loop, or close the app. It previously did all three: a permanently
+ * denied permission raised a non-cancelable alert whose *both* buttons
+ * called BackHandler.exitApp(), and a plain denial recursed into an
+ * endless modal. The only live caller is the mandatory profile step,
+ * which has no back affordance, so that was an unrecoverable exit.
+ *
+ * @returns coordinates, or null when unavailable for any reason.
  */
-export async function getUserLocationAsync(): Promise<LocationCoordinates> {
-    const cacheKey = USER_LOCATION;
-    const cachedData = await getCachedData(cacheKey);
+export async function getUserLocationAsync(): Promise<LocationCoordinates | null> {
+    const cachedData = await getCachedData(USER_LOCATION);
+    if (cachedData) return cachedData;
 
-    return cachedData ? cachedData : await getUserLocaltionLocal()
-        .then(data => { setCachedData(cacheKey, data, getTimeLeftTillEndOfDay()); return data });
+    const coords = await getUserLocaltionLocal();
+    if (coords) setCachedData(USER_LOCATION, coords, getTimeLeftTillEndOfDay());
+    return coords;
 }
 
-export async function getUserLocaltionLocal(): Promise<LocationCoordinates> {
+export async function getUserLocaltionLocal(): Promise<LocationCoordinates | null> {
     try {
-        // Request foreground location permission.
-        const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== Location.PermissionStatus.GRANTED) return null;
 
-        if (status !== Location.PermissionStatus.GRANTED) {
-            if (!canAskAgain) {
-                // User has chosen "Never ask again" (or similar), prompt them to open settings.
-                Alert.alert(
-                    'Location Permission Required',
-                    'This app needs location access to function. Please enable it in your device settings. The app will now close.',
-                    [
-                        { text: 'Cancel', style: 'cancel', onPress: () => BackHandler.exitApp() },
-                        { text: 'Open Settings', onPress: () => { Linking.openSettings(); BackHandler.exitApp(); } },
-                    ],
-                    { cancelable: false }
-                );
-            } else {
-                // If the user simply denied the permission, prompt them again.
-
-                return new Promise<LocationCoordinates>((resolve, reject) => {
-                    Alert.alert(
-                        'Location Permission Required',
-                        'Location permission is required for this app to work properly. Please allow location access.',
-                        [
-                            {
-                                text: 'OK',
-                                onPress: async () => {
-                                    try {
-                                        const result = await getUserLocaltionLocal();
-                                        resolve(result);
-                                    } catch (error) {
-                                        reject(error);
-                                    }
-                                },
-                            },
-                        ],
-                        { cancelable: false }
-                    );
-                });
-            }
-            // Throw an error to halt further execution if permission isn't granted.
-            throw new Error('Location permission not granted');
-        }
-
-        // With permission granted, fetch the current position.
         const location = await Location.getCurrentPositionAsync({
             accuracy: Location.Accuracy.High,
         });
@@ -75,14 +41,13 @@ export async function getUserLocaltionLocal(): Promise<LocationCoordinates> {
             longitude: location.coords.longitude,
         };
     } catch (error: any) {
-        console.error('Error fetching user location:', error);
-        throw new Error(error?.message ?? 'An error occurred while fetching location');
+        console.warn('Could not fetch user location:', error?.message ?? error);
+        return null;
     }
 }
 
 /**
- * Optional: Helper function to check if location permission is already granted,
- * without prompting the user.
+ * Checks whether location permission is already granted, without prompting.
  */
 export async function hasLocationPermissionAsync(): Promise<boolean> {
     try {
