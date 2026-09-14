@@ -64,10 +64,11 @@ export class UsersController {
   }
 
   @Post()
-  async create(@Request() req, @Body() createUserDto: Partial<CreateUserDto>) {
+  @ApiOperation({ summary: 'Create the profile for the authenticated account' })
+  async create(@Request() req, @Body() createUserDto: CreateUserDto) {
     return this.usersService.createForAccount({
       accountSub: req.user.sub,
-      dto: createUserDto as CreateUserDto,
+      dto: createUserDto,
     });
   }
 }

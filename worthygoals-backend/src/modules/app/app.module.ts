@@ -1,4 +1,5 @@
 import { Module, ValidationPipe } from '@nestjs/common';
+import { GLOBAL_VALIDATION_PIPE_OPTIONS } from 'src/common/validation-pipe.options';
 import { APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { EntitySchema } from 'typeorm';
@@ -56,11 +57,7 @@ const entities = [
     AppService,
     {
       provide: APP_PIPE,
-      useValue: new ValidationPipe({
-        whitelist: true,
-        transform: true,
-        forbidNonWhitelisted: true,
-      }),
+      useValue: new ValidationPipe(GLOBAL_VALIDATION_PIPE_OPTIONS),
     },
     {
       provide: APP_GUARD,
