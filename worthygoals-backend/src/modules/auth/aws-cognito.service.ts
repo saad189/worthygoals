@@ -54,14 +54,39 @@ export class AWSCognitoService {
   }
 
   /**
-   * Computes the secret hash required when using a client secret.
-   * The algorithm is: Base64( HMAC-SHA256(clientSecret, username + clientId) )
+   * Computes the secret hash required when the Cognito app client has a client
+   * secret: Base64( HMAC-SHA256(clientSecret, username + clientId) ).
+   *
+   * Returns undefined when no secret is configured. AWS_COGNITO_APP_CLIENT_SECRET
+   * is optional in env.validation because an app client may legitimately have
+   * no secret — and in that case SECRET_HASH must be omitted, not sent empty.
+   * Previously this called createHmac('SHA256', undefined), which throws a bare
+   * TypeError; it ran inside the same try as the Cognito call, so a deployment
+   * that legitimately omitted the secret booted clean and then failed every
+   * login with an error raised while handling the original error.
    */
-  private generateSecretHash(username: string): string {
+  private generateSecretHash(username: string): string | undefined {
+    if (!this.clientSecret) return undefined;
     return crypto
       .createHmac('SHA256', this.clientSecret)
       .update(username + this.clientId)
       .digest('base64');
+  }
+
+  /**
+   * Normalises anything thrown on a Cognito path into an HttpException.
+   *
+   * Cognito errors carry their status on $metadata; a non-AWS error carries
+   * neither .status nor .$metadata, and reading $metadata.httpStatusCode
+   * unguarded threw a fresh TypeError from inside the catch — erasing the real
+   * error, on the unauthenticated login path. HttpExceptions pass through
+   * untouched so callers keep the status they chose.
+   */
+  private toHttpException(error: any): HttpException {
+    if (error instanceof HttpException) return error;
+    const status =
+      error?.status ?? error?.$metadata?.httpStatusCode ?? 500;
+    return new HttpException(error?.message ?? 'Authentication error', status);
   }
 
   async loginUser({ email, password }: LoginAuthDto): Promise<AuthTokens> {
@@ -74,7 +99,7 @@ export class AWSCognitoService {
         AuthParameters: {
           USERNAME: email,
           PASSWORD: password,
-          SECRET_HASH: secretHash,
+          ...(secretHash ? { SECRET_HASH: secretHash } : {}),
         },
       });
 
@@ -95,10 +120,7 @@ export class AWSCognitoService {
       this.logger.error(
         `${AWSCognitoService.name}:${this.loginUser.name}: ${JSON.stringify(error.message)}`,
       );
-      throw new HttpException(
-        error.message,
-        error.status || error.$metadata.httpStatusCode,
-      );
+      throw this.toHttpException(error);
     }
   }
 
@@ -113,7 +135,7 @@ export class AWSCognitoService {
         ClientId: this.clientId,
         AuthParameters: {
           REFRESH_TOKEN: refreshToken,
-          SECRET_HASH: secretHash,
+          ...(secretHash ? { SECRET_HASH: secretHash } : {}),
           USERNAME: identity,
         },
       });
@@ -133,10 +155,7 @@ export class AWSCognitoService {
       this.logger.error(
         `${AWSCognitoService.name}:${this.refreshTokens.name}: ${JSON.stringify(error.message)}`,
       );
-      throw new HttpException(
-        error.message,
-        error.status || error.$metadata.httpStatusCode,
-      );
+      throw this.toHttpException(error);
     }
   }
 
@@ -150,10 +169,7 @@ export class AWSCognitoService {
       this.logger.error(
         `${AWSCognitoService.name}:${this.logoutUser.name}: ${JSON.stringify(error.message)}`,
       );
-      throw new HttpException(
-        error.message,
-        error.status || error.$metadata.httpStatusCode,
-      );
+      throw this.toHttpException(error);
     }
   }
   /**
@@ -169,7 +185,7 @@ export class AWSCognitoService {
         ClientId: this.clientId,
         Username: auth.email, // Using email as the username; adjust as needed.
         Password: auth.password,
-        SecretHash: secretHash,
+        ...(secretHash ? { SecretHash: secretHash } : {}),
         UserAttributes: [{ Name: 'email', Value: auth.email }],
       });
 
@@ -180,10 +196,7 @@ export class AWSCognitoService {
       this.logger.log(
         `${AWSCognitoService.name}:${this.signUpUser.name}: ${JSON.stringify(error.message)}`,
       );
-      throw new HttpException(
-        error.message,
-        error.status || error.$metadata.httpStatusCode,
-      );
+      throw this.toHttpException(error);
     }
   }
 
@@ -201,7 +214,7 @@ export class AWSCognitoService {
         ClientId: this.clientId,
         Username: username,
         ConfirmationCode: code,
-        SecretHash: secretHash,
+        ...(secretHash ? { SecretHash: secretHash } : {}),
       });
       const response = await this.cognitoClient.send(command);
       return response;
@@ -209,10 +222,7 @@ export class AWSCognitoService {
       this.logger.error(
         `${AWSCognitoService.name}:${this.confirmSignUp.name}: ${JSON.stringify(error.message)}`,
       );
-      throw new HttpException(
-        error.message,
-        error.status || error.$metadata.httpStatusCode,
-      );
+      throw this.toHttpException(error);
     }
   }
 
@@ -234,7 +244,7 @@ export class AWSCognitoService {
       const command = new ResendConfirmationCodeCommand({
         ClientId: this.clientId,
         Username: username,
-        SecretHash: secretHash,
+        ...(secretHash ? { SecretHash: secretHash } : {}),
       });
       const response = await this.cognitoClient.send(command);
       return response;
@@ -243,10 +253,7 @@ export class AWSCognitoService {
         `${AWSCognitoService.name}:${this.resendConfirmationCode.name}: ${JSON.stringify(error.message)}`,
       );
 
-      throw new HttpException(
-        error.message,
-        error.status || error.$metadata.httpStatusCode,
-      );
+      throw this.toHttpException(error);
     }
   }
 
@@ -276,10 +283,7 @@ export class AWSCognitoService {
       this.logger.error(
         `${AWSCognitoService.name}:${this.findAll.name}: ${JSON.stringify(error.message)}`,
       );
-      throw new HttpException(
-        error.message,
-        error.status || error.$metadata.httpStatusCode,
-      );
+      throw this.toHttpException(error);
     }
   }
 
@@ -295,10 +299,7 @@ export class AWSCognitoService {
       this.logger.error(
         `${AWSCognitoService.name}:${this.findOne.name}: ${JSON.stringify(error.message)}`,
       );
-      throw new HttpException(
-        error.message,
-        error.status || error.$metadata.httpStatusCode,
-      );
+      throw this.toHttpException(error);
     }
   }
 
@@ -310,7 +311,7 @@ export class AWSCognitoService {
       const command = new ForgotPasswordCommand({
         ClientId: this.clientId,
         Username: email,
-        SecretHash: secretHash,
+        ...(secretHash ? { SecretHash: secretHash } : {}),
       });
       const response = await this.cognitoClient.send(command);
 
@@ -319,10 +320,7 @@ export class AWSCognitoService {
       this.logger.error(
         `${AWSCognitoService.name}:${this.triggerForgotPassword.name}: ${JSON.stringify(error.message)}`,
       );
-      throw new HttpException(
-        error.message,
-        error.status || error.$metadata.httpStatusCode,
-      );
+      throw this.toHttpException(error);
     }
   }
 
@@ -338,7 +336,7 @@ export class AWSCognitoService {
         Username: email,
         ConfirmationCode: code,
         Password: newPassword,
-        SecretHash: secretHash,
+        ...(secretHash ? { SecretHash: secretHash } : {}),
       });
       const response = await this.cognitoClient.send(command);
       return response;
@@ -346,10 +344,7 @@ export class AWSCognitoService {
       this.logger.error(
         `${AWSCognitoService.name}:${this.confirmForgotPassword.name}: ${JSON.stringify(error.message)}`,
       );
-      throw new HttpException(
-        error.message,
-        error.status || error.$metadata.httpStatusCode,
-      );
+      throw this.toHttpException(error);
     }
   }
 
@@ -364,10 +359,7 @@ export class AWSCognitoService {
       this.logger.error(
         `${AWSCognitoService.name}:${this.remove.name}: ${JSON.stringify(error.message)}`,
       );
-      throw new HttpException(
-        error.message,
-        error.status || error.$metadata.httpStatusCode,
-      );
+      throw this.toHttpException(error);
     }
   }
 }
