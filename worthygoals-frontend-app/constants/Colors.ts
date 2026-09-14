@@ -24,6 +24,7 @@ export const Colors = {
     textFaint:    Palette.inkFaint,       // placeholders, disabled
     textWhite:    Palette.white,          // text on dark/accent surfaces
     textInactive: Palette.inkFaint,
+    textAccent:   Palette.accentText,     // accent used AS TEXT (not as a fill)
 
     // ── Interactive ────────────────────────────────────────────
     tint:            Palette.accent,
@@ -110,6 +111,7 @@ export const Colors = {
     textFaint:    Palette.inkFaintDark,
     textWhite:    Palette.white,
     textInactive: Palette.inkMutedDark,
+    textAccent:   Palette.accentTextDark, // accent used AS TEXT (not as a fill)
 
     // ── Interactive ────────────────────────────────────────────
     tint:            Palette.accent,
