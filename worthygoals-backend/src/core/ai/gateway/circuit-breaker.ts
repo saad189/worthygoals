@@ -33,6 +33,6 @@ export class CircuitBreaker {
     if (!this.states.has(provider)) {
       this.states.set(provider, { failures: 0, openedAt: null });
     }
-    return this.states.get(provider)!;
+    return this.states.get(provider);
   }
 }

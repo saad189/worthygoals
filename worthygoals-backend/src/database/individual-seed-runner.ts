@@ -54,4 +54,9 @@ export async function seedDatabaseIndividual() {
   }
 }
 
-seedDatabaseIndividual();
+// Surface a rejection as a non-zero exit rather than an unhandled-rejection
+// warning that still exits 0.
+seedDatabaseIndividual().catch((error) => {
+  console.error('❌ Seeding failed:', error);
+  process.exit(1);
+});

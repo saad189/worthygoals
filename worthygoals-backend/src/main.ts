@@ -58,4 +58,9 @@ async function bootstrap() {
   await app.listen(PORT, '0.0.0.0');
   console.log(`Server running on port ${PORT}`);
 }
-bootstrap();
+bootstrap().catch((error) => {
+  // Without this a failed boot surfaced as an unhandled rejection warning and
+  // a process that never exits non-zero — so no orchestrator would restart it.
+  console.error('Failed to start the application', error);
+  process.exit(1);
+});

@@ -46,7 +46,7 @@ export class AnthropicProvider implements IChatProvider {
 
     const text = response.content
       .filter((block) => block.type === 'text')
-      .map((block) => (block as Anthropic.TextBlock).text)
+      .map((block) => block.text)
       .join('');
 
     return {

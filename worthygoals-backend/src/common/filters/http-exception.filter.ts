@@ -45,7 +45,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         exception instanceof Error ? exception.stack : String(exception),
       );
       this.report(exception, request, status);
-    } else if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
+    } else if (status >= Number(HttpStatus.INTERNAL_SERVER_ERROR)) {
       // 4xx are the client's problem and would drown the signal; 5xx are ours.
       this.report(exception, request, status);
     }

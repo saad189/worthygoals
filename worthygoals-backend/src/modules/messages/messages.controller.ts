@@ -42,7 +42,7 @@ export class MessagesController {
       before: before ? new Date(before) : undefined,
     });
 
-    return messages.map(MessageResponseDto.fromEntity);
+    return messages.map((message) => MessageResponseDto.fromEntity(message));
   }
 
   @Post()

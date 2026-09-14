@@ -48,7 +48,7 @@ export class BoardService {
   }
 
   private async fetchWinCards(userId: number): Promise<BoardItemDto[]> {
-    const rows = (await this.completionRepo
+    const rows = await this.completionRepo
       .createQueryBuilder('c')
       .innerJoin('c.task', 't')
       .innerJoin('t.goal', 'g')
@@ -59,7 +59,7 @@ export class BoardService {
       .addSelect('g.category', 'goalCategory')
       .orderBy('c.createdAt', 'DESC')
       .limit(WIN_CARD_LIMIT)
-      .getRawMany()) as RawWinRow[];
+      .getRawMany<RawWinRow>();
 
     return Promise.all(
       rows.map(async (row) => {

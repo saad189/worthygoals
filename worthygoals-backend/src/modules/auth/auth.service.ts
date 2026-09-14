@@ -64,7 +64,7 @@ export class AuthService {
       const { username, refreshToken } = refreshDto;
       if (!username || !refreshToken) throw new BadRequestException();
 
-      return this.awsService.refreshTokens(username, refreshToken);
+      return await this.awsService.refreshTokens(username, refreshToken);
     } catch (error) {
       this.logger.log(
         `${AuthService.name}:${this.refreshTokens.name}: ${JSON.stringify(error.message)}`,
