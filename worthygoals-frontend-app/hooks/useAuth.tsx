@@ -74,32 +74,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const login = async (email: string) => {
-    //   showSuccessMessage(`Logged In as ${email}`);
     setUserProfile({ email });
-    setIsAuthenticated(true);
-    await onSuccessfulLogin();
-  };
 
-  const onSuccessfulLogin = async () => {
+    // The profile fetch is awaited before isAuthenticated is committed.
+    // Setting the flag first meant a rejection here left the user "logged in"
+    // while app/index.tsx recovered the rejection and routed to start-auth —
+    // the Stacks() guard never corrects that direction, and login.tsx
+    // suppresses its remembered-email prefill whenever isAuthenticated is
+    // true, so the sign-in screen read as a first launch.
     const profile = await userService.getProfile();
 
-    // expo-router: navigate to tab screens by path via `router` (react-nav's
-    // navigate('(tabs)', {screen}) doesn't resolve the group). `replace` drops
-    // the auth stack so Back can't return to login.
+    if (profile) setUserProfile(profile);
+
+    // Committed before navigating, not after: the Stacks() guard redirects
+    // away from any non-auth route while this is false.
+    setIsAuthenticated(true);
+
     // Re-sync this device's push token silently — never prompt at login; a new
     // user gets asked after their first completion (see useCompleteTask).
     void syncPushToken({ prompt: false });
 
-    if (profile) {
-      setUserProfile(profile);
-      router.replace(
-        `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.HOME_SCREEN}` as never
-      );
-    } else {
-      router.replace(
-        `/${ROUTE_NAMES.PROFILE.self}/${ROUTE_NAMES.PROFILE.REGISTER_PROFILE}` as never
-      );
-    }
+    // expo-router: navigate to tab screens by path via `router` (react-nav's
+    // navigate('(tabs)', {screen}) doesn't resolve the group). `replace` drops
+    // the auth stack so Back can't return to login.
+    router.replace(
+      profile
+        ? (`/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.HOME_SCREEN}` as never)
+        : (`/${ROUTE_NAMES.PROFILE.self}/${ROUTE_NAMES.PROFILE.REGISTER_PROFILE}` as never)
+    );
   };
 
   const logout = async () => {
