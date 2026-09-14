@@ -335,12 +335,16 @@ describe('MessagesGateway — mentor reply failures', () => {
 
     gateway = module.get<MessagesGateway>(MessagesGateway);
     gateway.server = { to: () => ({ emit: jest.fn() }) } as any;
-    jest.spyOn((gateway as any).logger, 'error').mockImplementation(() => undefined);
+    jest
+      .spyOn((gateway as any).logger, 'error')
+      .mockImplementation(() => undefined);
   });
 
   it('tells the user they hit the daily limit', async () => {
     agentService.generateMentorReply.mockRejectedValue(
-      Object.assign(new Error('Daily AI quota exceeded'), { code: 'quota_exceeded' }),
+      Object.assign(new Error('Daily AI quota exceeded'), {
+        code: 'quota_exceeded',
+      }),
     );
 
     await expect(

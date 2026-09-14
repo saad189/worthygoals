@@ -5,6 +5,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { EntitySchema } from 'typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
+import { HealthController } from './health.controller';
 import { AppService } from './app.service';
 import { CoreModule } from 'src/core';
 import { CustomConfigModule, TypeOrmDatabaseModule } from 'src/config';
@@ -52,7 +53,7 @@ const entities = [
     TypeOrmModule.forFeature(entities),
     CoreModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [
     AppService,
     {

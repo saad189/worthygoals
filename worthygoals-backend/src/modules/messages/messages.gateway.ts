@@ -147,7 +147,9 @@ export class MessagesGateway {
     // client. An error thrown raw becomes Nest's generic "Internal server
     // error", which the user cannot tell apart from the app being broken —
     // and hitting the 20/day free-tier quota is routine, not a fault.
-    let reply: Awaited<ReturnType<typeof this.agentService.generateMentorReply>>;
+    let reply: Awaited<
+      ReturnType<typeof this.agentService.generateMentorReply>
+    >;
     try {
       reply = await this.agentService.generateMentorReply({
         conversationId,

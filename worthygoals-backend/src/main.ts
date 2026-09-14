@@ -55,6 +55,12 @@ async function bootstrap() {
     SwaggerModule.setup('api-docs', app, document);
   }
 
+  // Without this, a SIGTERM kills the process outright: in-flight HTTP,
+  // Socket.IO connections, the TypeORM pool and BullMQ jobs all die where they
+  // stand. BullMQ re-delivers a job once its lock expires, so a rolling deploy
+  // could duplicate push notifications.
+  app.enableShutdownHooks();
+
   await app.listen(PORT, '0.0.0.0');
   console.log(`Server running on port ${PORT}`);
 }
