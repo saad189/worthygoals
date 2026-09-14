@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import * as Sentry from '@sentry/node';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -34,11 +35,19 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? rawStatus
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
+    // This filter catches everything, so nothing ever reaches Express's error
+    // middleware and Sentry's auto-instrumentation never saw a single server
+    // error — Sentry.init in main.ts was the only Sentry call in the backend.
+    // Report here, which is the one place every unhandled error passes through.
     if (!(exception instanceof HttpException)) {
       this.logger.error(
         'Unhandled exception',
         exception instanceof Error ? exception.stack : String(exception),
       );
+      this.report(exception, request, status);
+    } else if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
+      // 4xx are the client's problem and would drown the signal; 5xx are ours.
+      this.report(exception, request, status);
     }
 
     const exceptionResponse =
@@ -55,5 +64,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
       path: request.url,
       ...body,
     });
+  }
+
+  /** Never let error reporting become a source of errors. */
+  private report(exception: unknown, request: Request, status: number): void {
+    try {
+      Sentry.captureException(exception, {
+        tags: { path: request.route?.path ?? request.url, status },
+        extra: { method: request.method, url: request.url },
+      });
+    } catch (err) {
+      this.logger.warn(`Failed to report exception to Sentry: ${err}`);
+    }
   }
 }

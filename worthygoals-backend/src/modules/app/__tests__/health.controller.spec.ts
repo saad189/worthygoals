@@ -21,7 +21,10 @@ describe('HealthController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [HealthController],
       providers: [
-        { provide: getDataSourceToken(), useValue: { query } as Partial<DataSource> },
+        {
+          provide: getDataSourceToken(),
+          useValue: { query } as Partial<DataSource>,
+        },
       ],
     }).compile();
 

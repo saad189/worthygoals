@@ -23,9 +23,7 @@ import { DataSource } from 'typeorm';
 @ApiExcludeController()
 @Controller()
 export class HealthController {
-  constructor(
-    @InjectDataSource() private readonly dataSource: DataSource,
-  ) {}
+  constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
   /** Liveness: the process is up. Deliberately touches nothing. */
   @Get('health')
