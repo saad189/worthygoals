@@ -60,10 +60,23 @@ jobs:
         run: npm run lint
 
       - name: Typecheck
-        run: npx tsc --noEmit -p tsconfig.build.json
+        run: npx tsc --noEmit
 
       - name: Unit tests
         run: npm test -- --passWithNoTests --testPathIgnorePatterns='.*\\.e2e-spec\\.ts$'
+
+      # The build was never gated, which is how the dist/main.js vs dist/src/main.js
+      # mismatch (and the missing personality YAMLs) survived to Sep 2026.
+      - name: Build
+        run: npm run build
+
+      - name: Verify runnable artifact
+        run: |
+          test -f dist/main.js || { echo "::error::dist/main.js missing — Dockerfile CMD and start:prod both run 'node dist/main'"; exit 1; }
+          test -d dist/core/personalities/data || { echo "::error::personality YAMLs not next to the loader — PersonalityLoader will throw ENOENT at boot"; exit 1; }
+
+      - name: Docker build
+        run: docker build -t worthygoals-backend:ci .
 
   # ── Eval harness ─────────────────────────────────────────────────────────
   eval:
