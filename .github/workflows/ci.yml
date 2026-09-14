@@ -85,6 +85,57 @@ jobs:
       - name: Dependency audit (critical)
         run: npm audit --audit-level=critical
 
+  # ── API contract ─────────────────────────────────────────────────────────
+  contract:
+    name: API contract — spec matches the backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worthygoals-backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: worthygoals-backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --fetch-retries 5 --fetch-retry-mintimeout 20000 --fetch-retry-maxtimeout 120000
+
+      # openapi.json was hand-authored and had drifted to documenting 8 of 45
+      # operations. The old `ci:check-api` only asserted that the generated
+      # client matched the committed spec — it never compared the spec to the
+      # backend, so it passed against a spec describing 17% of the API.
+      #
+      # spec:export runs in Nest preview mode, so it registers every route
+      # without instantiating a provider: no database, no Redis, no real
+      # credentials. These values only have to satisfy Joi.
+      - name: Regenerate the OpenAPI spec
+        env:
+          NODE_ENV: local
+          DB_HOST: localhost
+          DB_PORT: '5432'
+          DB_USERNAME: ci
+          DB_PASSWORD: ci
+          DB_NAME: ci
+          AWS_REGION: eu-north-1
+          AWS_ACCESS_KEY_ID: ci
+          AWS_SECRET_ACCESS_KEY: ci
+          AWS_COGNITO_USER_POOL_ID: ci
+          AWS_COGNITO_APP_CLIENT_ID: ci
+          OPENAI_API_KEY: ci
+        run: npm run spec:export
+
+      - name: Fail if the committed spec is stale
+        run: |
+          if ! git diff --exit-code --stat openapi.json; then
+            echo "::error::openapi.json does not match the backend. Run 'npm run spec:export' and commit the result."
+            exit 1
+          fi
+
   # ── Eval harness ─────────────────────────────────────────────────────────
   eval:
     name: Eval harness — personality tone gate
