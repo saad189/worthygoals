@@ -7,13 +7,19 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { corsOrigin } from './common/cors';
+import { AppLogger, requestIdMiddleware } from './common/logging/app-logger';
 import { logDisabledTiers } from './config/optional-tiers';
 import helmet from 'helmet';
 import { AppModule } from './modules/app/app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bufferLogs: true,
+  });
+  app.useLogger(new AppLogger());
+  // Before everything else, so every log line of a request carries its id.
+  app.use(requestIdMiddleware);
   // The deploy target (Railway) terminates TLS at one proxy. Without this,
   // req.ip is the proxy's address, so every per-IP throttle bucket collapses
   // into one shared by all users.
