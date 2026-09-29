@@ -7,7 +7,11 @@ import {
 } from 'typeorm';
 
 @Entity('memory_digests')
-@Index(['userId', 'personalityId', 'createdAt'])
+@Index('idx_memory_digests_user_personality_created', [
+  'userId',
+  'personalityId',
+  'createdAt',
+])
 export class MemoryDigest {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -27,6 +31,6 @@ export class MemoryDigest {
   @Column({ type: 'date' })
   periodEnd: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 }

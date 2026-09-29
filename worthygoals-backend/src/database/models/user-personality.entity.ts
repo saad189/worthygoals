@@ -6,10 +6,12 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity('user_personalities')
+@Index('idx_user_personalities_user_id', ['userId'])
 export class UserPersonality {
   @PrimaryGeneratedColumn()
   id: number;
@@ -20,22 +22,25 @@ export class UserPersonality {
   @Column({ length: 64 })
   personalityId: string;
 
-  @Column({ type: 'json', default: '{}' })
+  @Column({ type: 'jsonb', default: '{}' })
   relationshipState: Record<string, unknown>;
 
   @Column({ type: 'float', default: 0.0 })
   escalationSlope: number;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   activatedAt: Date;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({
+    name: 'userId',
+    foreignKeyConstraintName: 'fk_user_personalities_user',
+  })
   user: User;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 }

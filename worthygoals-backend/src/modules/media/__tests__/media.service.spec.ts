@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { MediaService } from '../media.service';
-import { Media } from '../media.entity';
+import { Media } from 'src/database/models/media.entity';
 import { UsersService } from '../../users/users.service';
 
 const mockRepo = () => ({

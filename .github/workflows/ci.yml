@@ -136,6 +136,61 @@ jobs:
             exit 1
           fi
 
+  # ── Schema drift ─────────────────────────────────────────────────────────
+  schema:
+    name: Schema — entities match the migrations
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worthygoals-backend
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      DB_USERNAME: ci
+      DB_PASSWORD: ci
+      DB_NAME: ci
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: worthygoals-backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --fetch-retries 5 --fetch-retry-mintimeout 20000 --fetch-retry-maxtimeout 120000
+
+      - name: Apply every migration to an empty database
+        run: npm run typeorm:run
+
+      - name: Revert and re-apply the newest migration
+        run: npm run typeorm:revert && npm run typeorm:run
+
+      # Entity decorators disagreed with the shipped DDL on nearly every table
+      # (timestamp vs timestamptz, json vs jsonb, enum vs varchar, unnamed vs
+      # named constraints), so `typeorm:generate` — the documented workflow —
+      # emitted a destructive, table-rewriting migration. --check fails the
+      # build if the entities and the migrations disagree again.
+      - name: Fail if entities and migrations have drifted
+        run: npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate src/database/migrations-pg/SchemaDrift --check -d src/database/dataSource.ts
+
   # ── Eval harness ─────────────────────────────────────────────────────────
   eval:
     name: Eval harness — personality tone gate

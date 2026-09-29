@@ -1,6 +1,8 @@
 import { differenceInYears, startOfDay, endOfDay } from 'date-fns';
 
-export function calculateAge(dob: string) {
+/** Null when there is no date of birth — `new Date(null)` is 1970, i.e. age 56. */
+export function calculateAge(dob: Date | string | null): number | null {
+  if (!dob) return null;
   return differenceInYears(new Date(), new Date(dob));
 }
 

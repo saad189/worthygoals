@@ -13,7 +13,13 @@ export enum MemorySourceType {
 }
 
 @Entity('memory_embeddings')
-@Index(['userId', 'personalityId', 'createdAt'])
+@Index('idx_memory_embeddings_user_personality_created', [
+  'userId',
+  'personalityId',
+  'createdAt',
+])
+// HNSW (vector_cosine_ops) — not expressible in TypeORM, so unsynchronised.
+@Index('idx_memory_embeddings_hnsw', { synchronize: false })
 export class MemoryEmbedding {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -30,12 +36,21 @@ export class MemoryEmbedding {
   @Column({ type: 'text' })
   embeddingText: string;
 
-  // embedding (vector(1536)) is managed via raw SQL — not declared here so
-  // TypeORM never tries to read/write it through the ORM layer.
+  // Written and searched via raw SQL only. Declared so migration:generate
+  // stops proposing to DROP it; select/insert/update off keep the ORM from
+  // ever reading or writing it.
+  @Column({
+    type: 'vector',
+    length: 1536,
+    select: false,
+    insert: false,
+    update: false,
+  })
+  embedding: number[];
 
   @Column({ type: 'varchar', length: 64, nullable: true })
   personalityId: string | null;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 }

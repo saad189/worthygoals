@@ -22,6 +22,7 @@ import { MessageFeedback } from './message-feedback.entity';
   'archivedAt',
 ])
 @Index('idx_messages_conversation_id_id', ['conversationId', 'id'])
+@Index('idx_messages_user_created_at', ['userId', 'createdAt'])
 export class Message {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -31,7 +32,10 @@ export class Message {
   conversationId!: string;
 
   @ManyToOne(() => Conversation, (c) => c.messages, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'conversationId' })
+  @JoinColumn({
+    name: 'conversationId',
+    foreignKeyConstraintName: 'fk_messages_conversation',
+  })
   conversation!: Conversation;
 
   @Column({ type: 'varchar', length: 16 })
@@ -51,7 +55,11 @@ export class Message {
     onDelete: 'SET NULL',
     nullable: true,
   })
-  @JoinColumn({ name: 'userId', referencedColumnName: 'id' })
+  @JoinColumn({
+    name: 'userId',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'fk_messages_user',
+  })
   user!: User | null;
 
   @Column({ type: 'int', nullable: true })
@@ -62,7 +70,10 @@ export class Message {
     onDelete: 'SET NULL',
     nullable: true,
   })
-  @JoinColumn({ name: 'mentorId' })
+  @JoinColumn({
+    name: 'mentorId',
+    foreignKeyConstraintName: 'fk_messages_mentor',
+  })
   mentor!: Mentor | null;
 
   @Column({ type: 'varchar', length: 16, default: MessageContentType.TEXT })
@@ -71,7 +82,7 @@ export class Message {
   @Column({ type: 'text', nullable: true })
   text!: string | null;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   content!: Record<string, any> | null;
 
   @Column({ type: 'varchar', length: 64, nullable: true })
@@ -86,7 +97,7 @@ export class Message {
   @Column({ type: 'int', nullable: true })
   tokensOut!: number | null;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   safetyFlags!: Record<string, any> | null;
 
   @Column({ type: 'timestamptz', nullable: true })

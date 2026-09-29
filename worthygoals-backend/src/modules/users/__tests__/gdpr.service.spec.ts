@@ -17,8 +17,11 @@ import {
   TaskExplanation,
   User,
   UserPersonality,
+  StatusPost,
+  DriftSample,
 } from 'src/database/models';
-import { Media } from '../../media/media.entity';
+import { ConfigService } from '@nestjs/config';
+import { Media } from 'src/database/models/media.entity';
 import { AWSCognitoService } from '../../auth/aws-cognito.service';
 
 const queryBuilderMock = () => {
@@ -76,6 +79,8 @@ describe('GdprService', () => {
       NotificationLog,
       AiCall,
       Media,
+      StatusPost,
+      DriftSample,
     ];
 
     const module: TestingModule = await Test.createTestingModule({
@@ -83,6 +88,11 @@ describe('GdprService', () => {
         GdprService,
         { provide: getDataSourceToken(), useValue: dataSource },
         { provide: AWSCognitoService, useValue: cognito },
+        // No S3 credentials: tests that need storage set it directly.
+        {
+          provide: ConfigService,
+          useValue: { get: (_k: string, d?: string) => d },
+        },
         ...entities.map((entity) => ({
           provide: getRepositoryToken(entity),
           useValue: repoMock(),
@@ -96,6 +106,39 @@ describe('GdprService', () => {
   });
 
   describe('deleteAccount', () => {
+    it("purges the user's uploaded objects after the DB deletion", async () => {
+      const send = jest.fn().mockResolvedValue({});
+      (service as any).storage = { s3: { send }, bucket: 'b' };
+      const mediaRepo = (service as any).mediaRepo;
+      mediaRepo.find.mockResolvedValue([
+        { s3Key: 'drafts/42/1.jpg' },
+        { s3Key: 'drafts/42/2.jpg' },
+      ]);
+
+      await service.deleteAccount('sub-123');
+
+      expect(send).toHaveBeenCalledTimes(1);
+      expect(send.mock.calls[0][0].input).toEqual({
+        Bucket: 'b',
+        Delete: {
+          Objects: [{ Key: 'drafts/42/1.jpg' }, { Key: 'drafts/42/2.jpg' }],
+          Quiet: true,
+        },
+      });
+    });
+
+    it('does not undo the DB deletion when the object purge fails', async () => {
+      const send = jest.fn().mockRejectedValue(new Error('r2 down'));
+      (service as any).storage = { s3: { send }, bucket: 'b' };
+      (service as any).mediaRepo.find.mockResolvedValue([{ s3Key: 'k' }]);
+      const error = jest
+        .spyOn((service as any).logger, 'error')
+        .mockImplementation(() => undefined);
+
+      await expect(service.deleteAccount('sub-123')).resolves.toBeUndefined();
+      expect(error.mock.calls[0][0]).toContain('media purge FAILED');
+    });
+
     it('purges the FK-less tables inside the transaction', async () => {
       await service.deleteAccount('sub-123');
 

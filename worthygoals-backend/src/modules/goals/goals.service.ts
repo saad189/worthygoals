@@ -217,7 +217,7 @@ export class GoalsService {
       failureText,
       deadline,
       repeatRule,
-      stakeAmount: stakeAmount ? Number(stakeAmount) : undefined,
+      stakeAmount: stakeAmount ?? undefined,
       imageUri,
       createdAt,
       updatedAt,

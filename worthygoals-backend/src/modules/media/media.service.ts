@@ -15,7 +15,8 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { EntityManager, Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { CreateUploadUrlDto } from './dto/create-upload-url.dto';
-import { Media } from './media.entity';
+import { Media } from 'src/database/models/media.entity';
+import { createObjectStorage } from './object-storage';
 
 const PRESIGNED_URL_TTL_SECONDS = 300;
 
@@ -31,22 +32,12 @@ export class MediaService {
     private readonly usersService: UsersService,
     private readonly config: ConfigService,
   ) {
-    this.bucket = config.get<string>('S3_BUCKET_NAME', '');
-    const accessKeyId = config.get<string>('S3_ACCESS_KEY_ID', '');
-    const secretAccessKey = config.get<string>('S3_SECRET_ACCESS_KEY', '');
-
-    if (!this.bucket || !accessKeyId || !secretAccessKey) {
+    const storage = createObjectStorage(config);
+    if (!storage) {
       this.logger.warn('S3 credentials not configured — media upload disabled');
-      this.s3 = null;
-      return;
     }
-
-    const endpoint = config.get<string>('S3_ENDPOINT');
-    this.s3 = new S3Client({
-      region: config.get<string>('S3_REGION', 'auto'),
-      ...(endpoint ? { endpoint } : {}),
-      credentials: { accessKeyId, secretAccessKey },
-    });
+    this.s3 = storage?.s3 ?? null;
+    this.bucket = storage?.bucket ?? '';
   }
 
   async createUploadUrl(

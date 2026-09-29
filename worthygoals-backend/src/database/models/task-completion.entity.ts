@@ -11,6 +11,9 @@ import { Task } from './task.entity';
 
 @Entity('task_completions')
 @Index('idx_completions_task_id', ['taskId'])
+// Expression index on (taskId, UTC day) — see AddPerDayCompletionUniqueness.
+// TypeORM cannot express it, so it is declared unsynchronised.
+@Index('uq_task_completions_task_day', { synchronize: false })
 export class TaskCompletion {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -33,9 +36,12 @@ export class TaskCompletion {
   mentorReaction?: string;
 
   @ManyToOne(() => Task, (t) => t.completions, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'taskId' })
+  @JoinColumn({
+    name: 'taskId',
+    foreignKeyConstraintName: 'fk_completions_task',
+  })
   task!: Task;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 }

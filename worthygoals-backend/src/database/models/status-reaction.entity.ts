@@ -23,7 +23,11 @@ export class StatusReaction {
   statusId!: string;
 
   @ManyToOne(() => StatusPost, (s) => s.reactions, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'statusId', referencedColumnName: 'id' })
+  @JoinColumn({
+    name: 'statusId',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'fk_status_reactions_status',
+  })
   status!: StatusPost;
 
   /** personalityId slug (marcus / lyra / goggs) — the YAML runtime identity. */

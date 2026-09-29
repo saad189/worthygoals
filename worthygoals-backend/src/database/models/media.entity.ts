@@ -7,7 +7,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { User } from 'src/database/models';
+import { User } from './user.entity';
 
 @Entity('media')
 @Index('idx_media_user_id', ['userId'])
@@ -34,9 +34,9 @@ export class Media {
   isAttached!: boolean;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'userId', foreignKeyConstraintName: 'fk_media_user' })
   user!: User;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   uploadedAt!: Date;
 }

@@ -5,10 +5,12 @@ import {
   OneToOne,
   CreateDateColumn,
   UpdateDateColumn,
+  Unique,
 } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity('accounts')
+@Unique('uq_accounts_email', ['email'])
 export class Account {
   @PrimaryGeneratedColumn()
   id: number;
@@ -17,7 +19,7 @@ export class Account {
   @Column({ type: 'uuid', unique: true })
   sub: string;
 
-  @Column({ unique: true })
+  @Column({ length: 255 })
   email: string;
 
   // Include any other account-level fields if necessary
@@ -27,9 +29,9 @@ export class Account {
   @OneToOne(() => User, (user) => user.account, { cascade: true })
   user: User;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   dateAdded: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   dateUpdated: Date;
 }

@@ -20,13 +20,16 @@ export class ConversationMemoryItem {
   conversationId!: string;
 
   @ManyToOne(() => Conversation, (c) => c.memoryItems, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'conversationId' })
+  @JoinColumn({
+    name: 'conversationId',
+    foreignKeyConstraintName: 'fk_conv_mem_items_conv',
+  })
   conversation!: Conversation;
 
   @Column({ type: 'varchar', length: 64 })
   key!: string;
 
-  @Column({ type: 'json' })
+  @Column({ type: 'jsonb' })
   value!: Record<string, any>;
 
   @Column({ type: 'float', nullable: true })

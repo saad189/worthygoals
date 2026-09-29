@@ -17,6 +17,7 @@ import { Task } from './task.entity';
 @Entity('goals')
 @Index('idx_goals_user_id', ['userId'])
 @Index('idx_goals_user_status', ['userId', 'status'])
+@Index('idx_goals_user_created_at', ['userId', 'createdAt'])
 export class Goal {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -33,10 +34,10 @@ export class Goal {
   @Column({ type: 'text', nullable: true })
   description?: string;
 
-  @Column({ type: 'enum', enum: GoalCategory, default: GoalCategory.POWER })
+  @Column({ type: 'varchar', length: 32, default: GoalCategory.POWER })
   category!: GoalCategory;
 
-  @Column({ type: 'enum', enum: GoalStatus, default: GoalStatus.ACTIVE })
+  @Column({ type: 'varchar', length: 16, default: GoalStatus.ACTIVE })
   status!: GoalStatus;
 
   @Column({ type: 'text', nullable: true })
@@ -51,10 +52,21 @@ export class Goal {
   @Column({ type: 'timestamptz', nullable: true })
   deadline?: Date;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   repeatRule?: Record<string, unknown>;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  // pg returns NUMERIC as a string (to keep precision); convert on read so
+  // the declared `number` is true at runtime instead of at one call site.
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    transformer: {
+      to: (v?: number | null) => v,
+      from: (v: string | null) => (v == null ? v : Number(v)),
+    },
+  })
   stakeAmount?: number;
 
   @Column({ length: 512, nullable: true })
@@ -64,16 +76,16 @@ export class Goal {
   tasks!: Task[];
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'userId', foreignKeyConstraintName: 'fk_goals_user' })
   user!: User;
 
   @ManyToOne(() => Mentor, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'mentorId' })
+  @JoinColumn({ name: 'mentorId', foreignKeyConstraintName: 'fk_goals_mentor' })
   mentor?: Mentor;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt!: Date;
 }

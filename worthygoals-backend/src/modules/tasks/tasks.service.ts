@@ -132,7 +132,14 @@ export class TasksService {
     const task = await this.taskRepo.findOne({ where: { id: taskId } });
     if (!task) throw new NotFoundException(`Task ${taskId} not found`);
     await this.assertGoalOwnership(sub, task.goalId);
-    this.taskRepo.merge(task, dto as unknown as Partial<Task>);
+    // dueDate arrives as an ISO string (@IsDateString) for a Date column. The
+    // old `as unknown as Partial<Task>` cast hid that and left a string on
+    // task.dueDate until the round-trip.
+    const { dueDate, ...rest } = dto;
+    this.taskRepo.merge(task, {
+      ...rest,
+      ...(dueDate !== undefined ? { dueDate: new Date(dueDate) } : {}),
+    });
     return this.taskRepo.save(task);
   }
 
