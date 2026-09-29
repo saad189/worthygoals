@@ -94,41 +94,61 @@ export class MessagesService {
     }
   }
 
+  /**
+   * Resolves sub -> user.id and confirms the conversation belongs to them.
+   *
+   * The single chokepoint for conversation ownership. It was inline in
+   * sendUserTextMessage only, so the gateway's joinConversation joined any
+   * supplied conversation id unchecked — and the room it joins receives
+   * messageChunk, i.e. a live read of another user's private mentor chat.
+   */
+  async assertConversationOwnership(params: {
+    sub: string;
+    conversationId: string;
+  }): Promise<{ userId: number; conversationId: string }> {
+    const [user, conversation] = await Promise.all([
+      this.usersService.findByAccountSub(params.sub),
+      this.conversationRepository.findOne({
+        where: { id: params.conversationId },
+        select: { id: true, userId: true },
+      }),
+    ]);
+
+    if (!user) {
+      throw new BadRequestException(
+        'User profile not found for this token. Create your user profile first.',
+      );
+    }
+
+    if (!conversation) {
+      throw new NotFoundException(
+        `Conversation with id: ${params.conversationId} not found.`,
+      );
+    }
+
+    if (conversation.userId !== user.id) {
+      throw new ForbiddenException('Cannot access this conversation');
+    }
+
+    return { userId: user.id, conversationId: conversation.id };
+  }
+
   async sendUserTextMessage(params: {
     sub: string;
     dto: SendTextMessageDto;
   }): Promise<Message> {
     try {
-      const [user, conversation] = await Promise.all([
-        this.usersService.findByAccountSub(params.sub),
-        this.conversationRepository.findOne({
-          where: { id: params.dto.conversationId },
-          select: { id: true, userId: true },
-        }),
-      ]);
-
-      if (!user) {
-        throw new BadRequestException(
-          'User profile not found for this token. Create your user profile first.',
-        );
-      }
-
-      if (!conversation) {
-        throw new NotFoundException(
-          `Conversation with id: ${params.dto.conversationId} not found.`,
-        );
-      }
-
-      if (conversation.userId !== user.id) {
-        throw new ForbiddenException(
-          'Cannot send messages to this conversation',
-        );
-      }
+      const { userId, conversationId } = await this.assertConversationOwnership(
+        {
+          sub: params.sub,
+          conversationId: params.dto.conversationId,
+        },
+      );
 
       const message = this.messageRepository.create({
-        conversationId: conversation.id,
+        conversationId,
         role: MessageRole.USER,
-        userId: user.id,
+        userId,
         mentorId: null,
         contentType: MessageContentType.TEXT,
         text: params.dto.text,
@@ -143,13 +163,13 @@ export class MessagesService {
 
       const saved = await this.messageRepository.save(message);
 
-      await this.conversationRepository.update(conversation.id, {
+      await this.conversationRepository.update(conversationId, {
         lastMessageAt: saved.createdAt,
         lastMessageId: saved.id,
       });
 
       if (params.dto.text) {
-        this.memoryService?.indexMessage(user.id, saved.id, params.dto.text);
+        this.memoryService?.indexMessage(userId, saved.id, params.dto.text);
       }
 
       return saved;

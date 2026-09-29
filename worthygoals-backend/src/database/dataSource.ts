@@ -9,14 +9,19 @@ dotenv.config({
 const connectionOptions: DataSourceOptions = {
   type: 'postgres',
   host: process.env.DB_HOST,
-  port: +process.env.DB_PORT,
+  port: Number(process.env.DB_PORT ?? 5432),
   username: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   synchronize: false,
-  // Run pending migrations at boot so a fresh env (Railway) never serves an
-  // unmigrated schema — the S42 silent-500 landmine (F6).
-  migrationsRun: true,
+  // Migrations still run at boot — a fresh env must never serve an unmigrated
+  // schema (the S42 silent-500 landmine, F6) — but not via migrationsRun.
+  // TypeORM takes no lock, so on multi-replica every instance would race the
+  // same migrations at once. TypeOrmDatabaseModule runs them under a Postgres
+  // advisory lock instead. The CLI (`-d dist/database/dataSource.js`) also
+  // reads this file, and there migrationsRun must be off so `migration:revert`
+  // does not re-apply what it just reverted.
+  migrationsRun: false,
   // Full SQL logging leaks PII (emails, goal text, tokens) — opt in via DB_LOGGING (F7).
   logging: process.env.DB_LOGGING === 'true' ? true : ['error', 'warn'],
   // Managed Postgres (Railway) requires SSL; local dev doesn't — opt in via DB_SSL (F11).

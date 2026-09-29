@@ -146,7 +146,10 @@ export class NotificationVoicingService {
 
       const contextLine = Object.keys(context).length
         ? ` Context: ${Object.entries(context)
-            .map(([k, v]) => `${k}=${v}`)
+            .map(
+              ([k, v]) =>
+                `${k}=${typeof v === 'object' ? JSON.stringify(v) : String(v)}`,
+            )
             .join(', ')}.`
         : '';
 

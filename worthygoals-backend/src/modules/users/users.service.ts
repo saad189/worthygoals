@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   ConflictException,
-  HttpException,
   Injectable,
   Logger,
   NotFoundException,
@@ -14,6 +13,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ResponseUserDto } from './dto/response-user.dto';
 import { USER_ROLES } from 'src/common/constants';
 import { calculateAge } from 'src/shared/utils';
+import { rethrowSafe } from 'src/common/errors/rethrow-safe';
 /**
  * User Flows
  *
@@ -43,12 +43,9 @@ export class UsersService {
       if (!userIds.length)
         throw new BadRequestException('User Ids must be provided.');
 
-      return this.userRepository.findBy({ id: In(userIds) });
+      return await this.userRepository.findBy({ id: In(userIds) });
     } catch (error) {
-      this.logger.log(
-        `${UsersService.name}:${this.findByUserIds.name}: ${JSON.stringify(error.message)}`,
-      );
-      throw new HttpException(error.message, error.status);
+      rethrowSafe(error, this.logger, `${UsersService.name}:findByUserIds`);
     }
   }
 
@@ -62,10 +59,7 @@ export class UsersService {
 
       return user;
     } catch (error) {
-      this.logger.log(
-        `${UsersService.name}:${this.findOne.name}: ${JSON.stringify(error.message)}`,
-      );
-      throw new HttpException(error.message, error.status);
+      rethrowSafe(error, this.logger, `${UsersService.name}:findOne`);
     }
   }
 
@@ -88,22 +82,20 @@ export class UsersService {
 
       return user;
     } catch (error) {
-      this.logger.log(
-        `${UsersService.name}:${this.findUserByIdentity.name}: ${JSON.stringify(error.message)}`,
+      rethrowSafe(
+        error,
+        this.logger,
+        `${UsersService.name}:findUserByIdentity`,
       );
-      throw new HttpException(error.message, error.status);
     }
   }
 
   async getUserProfile(identity: string): Promise<ResponseUserDto> {
     try {
       const user = await this.findUserByIdentity(identity);
-      return this.getResponseDto(user);
+      return await this.getResponseDto(user);
     } catch (error) {
-      this.logger.log(
-        `${UsersService.name}:${this.getUserProfile.name}: ${JSON.stringify(error.message)}`,
-      );
-      throw new HttpException(error.message, error.status);
+      rethrowSafe(error, this.logger, `${UsersService.name}:getUserProfile`);
     }
   }
 
@@ -190,12 +182,9 @@ export class UsersService {
       // Save the new user.
       const newUser = await this.userRepository.save(user);
 
-      return this.getResponseDto(newUser);
+      return await this.getResponseDto(newUser);
     } catch (error) {
-      this.logger.log(
-        `${UsersService.name}:${this.createForAccount.name}: ${JSON.stringify(error.message)}`,
-      );
-      throw new HttpException(error.message, error.status);
+      rethrowSafe(error, this.logger, `${UsersService.name}:createForAccount`);
     }
   }
 
@@ -209,12 +198,9 @@ export class UsersService {
       this.userRepository.merge(user, updateUserDto);
       const updatedUser = await this.userRepository.save(user);
 
-      return this.getResponseDto(updatedUser);
+      return await this.getResponseDto(updatedUser);
     } catch (error) {
-      this.logger.log(
-        `${UsersService.name}:${this.updateProfile.name}: ${JSON.stringify(error.message)}`,
-      );
-      throw new HttpException(error.message, error.status);
+      rethrowSafe(error, this.logger, `${UsersService.name}:updateProfile`);
     }
   }
 
@@ -232,14 +218,19 @@ export class UsersService {
 
       const roleName = user.isAdmin ? ADMIN : USER;
 
-      return this.roleRepository.findOne({
+      const role = await this.roleRepository.findOne({
         where: { name: roleName },
       });
+      // The roles table is seeded with both rows; a miss means the database
+      // was never seeded, which must not produce a user with no role.
+      if (!role) {
+        throw new NotFoundException(
+          `Role "${roleName}" not found. Seed the roles table.`,
+        );
+      }
+      return role;
     } catch (error) {
-      this.logger.log(
-        `${UsersService.name}:${this.getRole.name}: ${JSON.stringify(error.message)}`,
-      );
-      throw new HttpException(error.message, error.status);
+      rethrowSafe(error, this.logger, `${UsersService.name}:getRole`);
     }
   }
 
@@ -262,6 +253,13 @@ export class UsersService {
     const role = await this.roleRepository.findOne({
       where: { id: user.role.id },
     });
+    // Looked up by the user's own role id, so a miss means the row was deleted
+    // out from under an existing user.
+    if (!role) {
+      throw new NotFoundException(
+        `Role ${user.role.id} not found for user ${id}.`,
+      );
+    }
 
     const age = calculateAge(dateOfBirth);
 

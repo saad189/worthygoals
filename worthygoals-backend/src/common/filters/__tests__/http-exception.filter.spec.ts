@@ -1,5 +1,9 @@
 import { ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
+import * as Sentry from '@sentry/node';
 import { AllExceptionsFilter } from '../http-exception.filter';
+
+jest.mock('@sentry/node', () => ({ captureException: jest.fn() }));
+const captureException = Sentry.captureException as jest.Mock;
 
 const mockJson = jest.fn();
 const mockStatus = jest.fn().mockReturnValue({ json: mockJson });
@@ -72,5 +76,50 @@ describe('AllExceptionsFilter', () => {
   it('does nothing for non-http contexts (e.g. ws)', () => {
     filter.catch(new Error('ws error'), buildHost('ws'));
     expect(mockStatus).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * Guards E4. Sentry.init in main.ts was the only Sentry call in the backend.
+ * This filter catches everything, so nothing ever reached Express's error
+ * middleware and zero server errors were reported.
+ */
+describe('AllExceptionsFilter — error reporting', () => {
+  let filter: AllExceptionsFilter;
+
+  beforeEach(() => {
+    filter = new AllExceptionsFilter();
+    jest.clearAllMocks();
+    mockStatus.mockReturnValue({ json: mockJson });
+  });
+
+  it('reports an unhandled error', () => {
+    filter.catch(new Error('boom'), buildHost());
+    expect(captureException).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports a 5xx HttpException', () => {
+    filter.catch(
+      new HttpException('upstream died', HttpStatus.BAD_GATEWAY),
+      buildHost(),
+    );
+    expect(captureException).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not report 4xx — they are the client's problem", () => {
+    filter.catch(
+      new HttpException('Not found', HttpStatus.NOT_FOUND),
+      buildHost(),
+    );
+    expect(captureException).not.toHaveBeenCalled();
+  });
+
+  it('still returns a response when reporting itself throws', () => {
+    captureException.mockImplementation(() => {
+      throw new Error('sentry is down');
+    });
+
+    expect(() => filter.catch(new Error('boom'), buildHost())).not.toThrow();
+    expect(mockStatus).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
   });
 });

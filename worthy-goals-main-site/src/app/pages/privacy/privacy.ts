@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { PageShell } from '../../components/page-shell/page-shell';
-import { PRIVACY } from '../../data/content';
+import { SeoService } from '../../shared/seo.service';
+import { BRAND, PRIVACY } from '../../data/content';
 
 /** Privacy policy page — placeholder shell; real copy to be drafted. */
 @Component({
@@ -13,6 +14,16 @@ import { PRIVACY } from '../../data/content';
     </wg-page-shell>
   `,
 })
-export class Privacy {
+export class Privacy implements OnInit {
+  private readonly seo = inject(SeoService);
+
   readonly page = PRIVACY;
+
+  ngOnInit(): void {
+    this.seo.apply({
+      title: `Privacy — ${BRAND.name}`,
+      description: 'How Worthy Goals handles your data.',
+      path: 'privacy',
+    });
+  }
 }

@@ -7,7 +7,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { Mentor as MentorEntity } from 'src/database/models';
 import { Conversation } from 'src/database/models/conversation.entity';
 import { Message } from 'src/database/models/message.entity';
@@ -187,7 +187,7 @@ ${traitLine}
         order: { createdAt: 'DESC' },
       }),
       this.messageRepository.find({
-        where: { conversationId: conversation.id, archivedAt: null },
+        where: { conversationId: conversation.id, archivedAt: IsNull() },
         order: { createdAt: 'DESC' },
         take: params.recentLimit ?? 30,
       }),

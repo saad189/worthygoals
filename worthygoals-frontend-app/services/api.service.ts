@@ -1,5 +1,6 @@
 import axios, {
   InternalAxiosRequestConfig as OriginalInternalAxiosRequestConfig,
+  AxiosRequestConfig,
   AxiosResponse,
   AxiosError,
   HttpStatusCode,
@@ -13,14 +14,42 @@ import { authEmitter } from "@/core";
 
 const BASE_URL = config.apiUrl;
 
+// With no baseURL axios issues relative requests, which fail as generic network
+// errors — the app then reports "check Internet Connection" on working Wi-Fi.
+// EAS does not read .env*.local, so an EAS build with no `env` block in
+// eas.json lands here, and the misconfiguration is indistinguishable from a
+// real outage. Say which one it is.
+if (!BASE_URL) {
+  console.error(
+    '[api] EXPO_PUBLIC_API_URL is not set — every request will fail and be' +
+    ' reported as a connection problem. Local builds read .env.local (see' +
+    ' .env.local.example); EAS builds read the `env` block in eas.json.',
+  );
+}
+
 interface InternalAxiosRequestConfig
   extends OriginalInternalAxiosRequestConfig {
   _retry?: boolean;
 }
 
+/**
+ * Default request timeout. Fine for ordinary CRUD.
+ *
+ * It is NOT fine for the AI-backed routes: the backend's own worst case for an
+ * AI response is ~10s, so this aborted the client at exactly the budget the
+ * server was allowed to use. Those routes pass AI_REQUEST_TIMEOUT_MS instead.
+ */
+const DEFAULT_TIMEOUT_MS = 10_000;
+
+/**
+ * Timeout for routes that wait on a model (goal proposal, weekly review).
+ * Generous on purpose — a slow answer is worth more than a guaranteed failure.
+ */
+export const AI_REQUEST_TIMEOUT_MS = 60_000;
+
 const apiClient = axios.create({
   baseURL: BASE_URL,
-  timeout: 10000,
+  timeout: DEFAULT_TIMEOUT_MS,
 });
 
 // Single-flight guard: while a refresh is in progress, concurrent callers
@@ -143,19 +172,19 @@ apiClient.interceptors.response.use(
 );
 
 interface ApiService {
-  get: <T>(url: string, params?: any) => Promise<AxiosResponse<T>>;
-  post: <T>(url: string, data?: any) => Promise<AxiosResponse<T>>;
-  patch: <T>(url: string, data?: any) => Promise<AxiosResponse<T>>;
-  put: <T>(url: string, data?: any) => Promise<AxiosResponse<T>>;
-  delete: <T>(url: string) => Promise<AxiosResponse<T>>;
+  get: <T>(url: string, params?: any, config?: AxiosRequestConfig) => Promise<AxiosResponse<T>>;
+  post: <T>(url: string, data?: any, config?: AxiosRequestConfig) => Promise<AxiosResponse<T>>;
+  patch: <T>(url: string, data?: any, config?: AxiosRequestConfig) => Promise<AxiosResponse<T>>;
+  put: <T>(url: string, data?: any, config?: AxiosRequestConfig) => Promise<AxiosResponse<T>>;
+  delete: <T>(url: string, config?: AxiosRequestConfig) => Promise<AxiosResponse<T>>;
 }
 
 const ApiService: ApiService = {
-  get: (url, params) => apiClient.get(url, { params }),
-  post: (url, data) => apiClient.post(url, data),
-  patch: (url, data) => apiClient.patch(url, data),
-  put: (url, data) => apiClient.put(url, data),
-  delete: (url) => apiClient.delete(url),
+  get: (url, params, config) => apiClient.get(url, { params, ...config }),
+  post: (url, data, config) => apiClient.post(url, data, config),
+  patch: (url, data, config) => apiClient.patch(url, data, config),
+  put: (url, data, config) => apiClient.put(url, data, config),
+  delete: (url, config) => apiClient.delete(url, config),
 };
 
 export default ApiService;

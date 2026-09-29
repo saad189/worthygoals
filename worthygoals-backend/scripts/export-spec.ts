@@ -5,7 +5,10 @@ import { writeFileSync } from 'fs';
 import { resolve } from 'path';
 
 async function exportSpec() {
-  const app = await NestFactory.create(AppModule, { logger: false });
+  const app = await NestFactory.create(AppModule, {
+    logger: false,
+    preview: true,
+  });
 
   const config = new DocumentBuilder()
     .setTitle('Worthy Goals API')

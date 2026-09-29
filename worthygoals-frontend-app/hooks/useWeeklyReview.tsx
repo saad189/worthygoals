@@ -12,6 +12,11 @@ export function useWeeklyReview() {
     queryKey: ['weekly-review'],
     queryFn: () => weeklyReviewApiService.get(),
     staleTime: 1000 * 60 * 10,
+    // The global default is retry: 2. This endpoint fans out one LLM call per
+    // active goal, so five goals under the old client-side timeout meant 15
+    // billed completions and an error screen anyway. A failure here is shown,
+    // not retried.
+    retry: false,
   });
 
   return {

@@ -132,7 +132,7 @@ export class GoalsService {
     // ponytail: only honours frequency; weekly `days:[...]` targeting is a
     // refinement for the advanced version, first task just lands today.
     return (Object.values(TaskRepeatFrequency) as string[]).includes(match) &&
-      match !== TaskRepeatFrequency.NONE
+      match !== String(TaskRepeatFrequency.NONE)
       ? (match as TaskRepeatFrequency)
       : null;
   }

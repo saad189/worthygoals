@@ -62,8 +62,8 @@ describe('MemoryService', () => {
   describe('buildContext', () => {
     it('returns empty string when repos have no data', async () => {
       const svc = makeService();
-      mockEmbeddingRepo.find.mockResolvedValue([]);
-      mockDigestRepo.findOne.mockResolvedValue(null);
+      mockEmbeddingRepo.find.mockResolvedValue(<any>[]);
+      mockDigestRepo.findOne.mockResolvedValue(<any>null);
       mockEmbeddingService.search = jest.fn(async () => []);
 
       const ctx = await svc.buildContext(1, 'marcus', 'tough run today');
@@ -72,10 +72,10 @@ describe('MemoryService', () => {
 
     it('includes recent interactions when they exist', async () => {
       const svc = makeService();
-      mockEmbeddingRepo.find.mockResolvedValue([
+      mockEmbeddingRepo.find.mockResolvedValue(<any>[
         { embeddingText: 'Completed morning run', createdAt: new Date() },
       ]);
-      mockDigestRepo.findOne.mockResolvedValue(null);
+      mockDigestRepo.findOne.mockResolvedValue(<any>null);
       mockEmbeddingService.search = jest.fn(async () => []);
 
       const ctx = await svc.buildContext(1, 'marcus', 'how am I doing?');
@@ -85,8 +85,8 @@ describe('MemoryService', () => {
 
     it('includes digest when available', async () => {
       const svc = makeService();
-      mockEmbeddingRepo.find.mockResolvedValue([]);
-      mockDigestRepo.findOne.mockResolvedValue({
+      mockEmbeddingRepo.find.mockResolvedValue(<any>[]);
+      mockDigestRepo.findOne.mockResolvedValue(<any>{
         digestText: 'User is focused on marathon training',
         createdAt: new Date(),
       });
@@ -98,8 +98,8 @@ describe('MemoryService', () => {
 
     it('includes RAG snippets above similarity threshold', async () => {
       const svc = makeService();
-      mockEmbeddingRepo.find.mockResolvedValue([]);
-      mockDigestRepo.findOne.mockResolvedValue(null);
+      mockEmbeddingRepo.find.mockResolvedValue(<any>[]);
+      mockDigestRepo.findOne.mockResolvedValue(<any>null);
       mockEmbeddingService.search = jest.fn(async () => [
         { text: 'Injury from two weeks ago', score: 0.88 },
         { text: 'Irrelevant low-score entry', score: 0.5 },

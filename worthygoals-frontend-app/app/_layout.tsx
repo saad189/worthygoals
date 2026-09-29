@@ -15,7 +15,7 @@ import CustomSplashScreen from "./custom-splash-screen";
 import { AuthProvider, LoaderProvider, ToastProvider, useAuth } from "@/hooks";
 import { initSentry, SentryWrap, POSTHOG_KEY } from "@/services/observability";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { queryClient, asyncStoragePersister } from "@/core/queryClient";
+import { queryClient, persistOptions } from "@/core/queryClient";
 import { useOutboxDrain } from "@/hooks/useOutboxDrain";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
@@ -218,10 +218,7 @@ function RootLayoutNav() {
   const navTheme = buildNavTheme(scheme);
 
   return (
-    <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={{ persister: asyncStoragePersister }}
-    >
+    <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
       <OutboxDrainer />
       <AnalyticsProvider>
         <ThemeProvider value={navTheme}>

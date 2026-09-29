@@ -193,7 +193,7 @@ const MENTOR_DATA: Array<Partial<Mentor>> = [
 ];
 
 /** Slugs that make up the live Worthy Goals roster. */
-const ACTIVE_SLUGS = MENTOR_DATA.map((m) => m.slug as string);
+const ACTIVE_SLUGS = MENTOR_DATA.map((m) => m.slug);
 
 export default class MentorSeeder implements Seeder {
   public async run(dataSource: DataSource): Promise<void> {

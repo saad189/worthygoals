@@ -1,13 +1,7 @@
-// Sentry is optional: only initialized when SENTRY_DSN is set (any platform's
-// env/secrets mechanism). The app must boot and run cleanly without it.
-import * as Sentry from '@sentry/node';
-if (process.env.SENTRY_DSN) {
-  Sentry.init({
-    dsn: process.env.SENTRY_DSN,
-    environment: process.env.NODE_ENV ?? 'local',
-    tracesSampleRate: process.env.NODE_ENV === 'prod' ? 0.2 : 1.0,
-  });
-}
+// MUST be first: Sentry v8 patches the libraries it instruments at init()
+// time, and TS hoists every import above file-level statements — so the init
+// has to live in a module of its own that is imported before anything else.
+import './instrument';
 
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -55,7 +49,18 @@ async function bootstrap() {
     SwaggerModule.setup('api-docs', app, document);
   }
 
+  // Without this, a SIGTERM kills the process outright: in-flight HTTP,
+  // Socket.IO connections, the TypeORM pool and BullMQ jobs all die where they
+  // stand. BullMQ re-delivers a job once its lock expires, so a rolling deploy
+  // could duplicate push notifications.
+  app.enableShutdownHooks();
+
   await app.listen(PORT, '0.0.0.0');
   console.log(`Server running on port ${PORT}`);
 }
-bootstrap();
+bootstrap().catch((error) => {
+  // Without this a failed boot surfaced as an unhandled rejection warning and
+  // a process that never exits non-zero — so no orchestrator would restart it.
+  console.error('Failed to start the application', error);
+  process.exit(1);
+});

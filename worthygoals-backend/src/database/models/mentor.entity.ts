@@ -20,6 +20,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { Conversation } from './conversation.entity';
 import { Message } from './message.entity';
 
@@ -82,22 +83,30 @@ export class Mentor {
   sortOrder: number;
 
   // ---- Your existing ones, upgraded as structured JSON ----
+  @Exclude()
   @Column({ type: 'json', nullable: true })
   personalityTraits?: PersonalityTraits;
 
-  // Instead of a single giant prompt, store blocks
+  // Instead of a single giant prompt, store blocks.
+  // @Exclude: this is the mentor's system prompt. It must never leave the
+  // server — not via GET /mentors and not via GET /conversations?include=mentor.
+  @Exclude()
   @Column({ type: 'json' })
   promptBlocks: PromptBlocks;
 
+  @Exclude()
   @Column({ type: 'json', nullable: true })
   topicPolicy?: TopicPolicy;
 
+  @Exclude()
   @Column({ type: 'json', nullable: true })
   safetyPolicy?: SafetyPolicy;
 
+  @Exclude()
   @Column({ type: 'json', nullable: true })
   memoryPolicy?: MemoryPolicy;
 
+  @Exclude()
   @Column({ type: 'json', nullable: true })
   modelConfig?: ModelConfig;
 

@@ -62,7 +62,13 @@ export default function Field({
           editable={!disabled}
           placeholderTextColor={colors.textFaint}
           secureTextEntry={secure && hidden}
-          accessibilityLabel={label}
+          // The error must reach the input itself, not just sit near it: a
+          // screen reader moving to this field otherwise announces the label
+          // and nothing about why it was rejected (WCAG 3.3.1).
+          accessibilityLabel={errorText ? `${label}. Error: ${errorText}` : label}
+          accessibilityHint={description}
+          aria-invalid={!!errorText}
+          accessibilityState={{ disabled }}
           style={{
             flex: 1,
             color: colors.text,
@@ -85,13 +91,24 @@ export default function Field({
           </Pressable>
         ) : null}
       </View>
-      {errorText ? (
-        <Text variant="muted" color="dangerColor" style={{ marginTop: space['2'] }}>
-          {errorText}
-        </Text>
-      ) : description ? (
+      {/* Helper text stays visible alongside an error. The previous ternary
+          swapped description out for errorText, removing the guidance at
+          exactly the moment the user needed it. */}
+      {description ? (
         <Text variant="muted" style={{ marginTop: space['2'] }}>
           {description}
+        </Text>
+      ) : null}
+      {errorText ? (
+        <Text
+          variant="muted"
+          color="dangerColor"
+          style={{ marginTop: space['2'] }}
+          // Announced when it appears, without stealing focus (WCAG 4.1.3).
+          accessibilityLiveRegion="polite"
+          role="alert"
+        >
+          {errorText}
         </Text>
       ) : null}
     </View>

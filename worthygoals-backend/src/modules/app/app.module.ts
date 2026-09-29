@@ -1,9 +1,11 @@
 import { Module, ValidationPipe } from '@nestjs/common';
+import { GLOBAL_VALIDATION_PIPE_OPTIONS } from 'src/common/validation-pipe.options';
 import { APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { EntitySchema } from 'typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
+import { HealthController } from './health.controller';
 import { AppService } from './app.service';
 import { CoreModule } from 'src/core';
 import { CustomConfigModule, TypeOrmDatabaseModule } from 'src/config';
@@ -51,16 +53,12 @@ const entities = [
     TypeOrmModule.forFeature(entities),
     CoreModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [
     AppService,
     {
       provide: APP_PIPE,
-      useValue: new ValidationPipe({
-        whitelist: true,
-        transform: true,
-        forbidNonWhitelisted: true,
-      }),
+      useValue: new ValidationPipe(GLOBAL_VALIDATION_PIPE_OPTIONS),
     },
     {
       provide: APP_GUARD,

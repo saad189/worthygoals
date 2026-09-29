@@ -13,21 +13,13 @@
     "generate-icons": "node ./scripts/generate-icons.js",
     "hex-lint": "bash ./scripts/hex-lint.sh",
     "generate:api": "openapi-typescript ../worthygoals-backend/openapi.json -o types/api.gen.ts",
+    "//ci:check-api": "NOT wired into CI and cannot pass yet. openapi.json is now generated from the backend (see the `contract` job in ci.yml), and the real spec has no schemas for DashboardData/TaskItem/BoardItem and friends — those names were invented in the previously hand-authored spec. The response DTOs carry no @ApiProperty decorators, so Swagger emits nothing for them. Decorating those DTOs, reconciling the names, and deleting models/*.interface.ts is the remaining step of tracker G4.",
     "ci:check-api": "npm run generate:api && git diff --exit-code types/api.gen.ts"
-  },
-  "jest": {
-    "preset": "jest-expo",
-    "setupFiles": [
-      "./jest.setup.js"
-    ],
-    "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/$1"
-    }
   },
   "dependencies": {
     "@aws-amplify/auth": "^6.7.0",
     "@expo/vector-icons": "^15.0.3",
-    "@gorhom/bottom-sheet": "^4",
+    "@gorhom/bottom-sheet": "^5.2.14",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
     "@react-native-community/slider": "5.0.1",

@@ -31,9 +31,33 @@ export interface TaskReactionResult<T> {
   safetyFlag?: boolean;
 }
 
+/** Postgres unique_violation. */
+const UNIQUE_VIOLATION = '23505';
+
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
+
+  /**
+   * Runs an insert and turns Postgres' unique_violation into the 409 the
+   * caller means.
+   *
+   * 23505 is the only outcome the per-day indexes can produce here, and it is
+   * the authoritative answer: unlike a preceding SELECT, it cannot be raced.
+   */
+  private async insertOrConflict<T>(
+    insert: () => Promise<T>,
+    conflictMessage: string,
+  ): Promise<T> {
+    try {
+      return await insert();
+    } catch (error: any) {
+      if (error?.code === UNIQUE_VIOLATION) {
+        throw new ConflictException(conflictMessage);
+      }
+      throw error;
+    }
+  }
 
   constructor(
     @InjectRepository(Task)
@@ -123,32 +147,24 @@ export class TasksService {
     if (!goal) throw new NotFoundException(`Goal ${task.goalId} not found`);
     if (goal.userId !== user.id) throw new ForbiddenException();
 
-    // Idempotency: one completion per task per calendar day
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const existing = await this.completionRepo
-      .createQueryBuilder('c')
-      .where('c.taskId = :taskId', { taskId })
-      .andWhere('c.createdAt >= :today', { today })
-      .andWhere('c.createdAt < :tomorrow', { tomorrow })
-      .getOne();
-
-    if (existing) {
-      throw new ConflictException('Task already completed today');
-    }
+    // Idempotency is enforced by uq_task_completions_task_day. The previous
+    // read-then-write ran outside a transaction, so a double tap that
+    // interleaved between the SELECT and the INSERT passed both times —
+    // double-counting the streak, double-firing indexCompletion and
+    // double-charging an AI call. Insert first, let the constraint decide.
+    const completion = await this.insertOrConflict(
+      () =>
+        this.completionRepo.save(
+          this.completionRepo.create({ taskId, ...dto }),
+        ),
+      'Task already completed today',
+    );
 
     // Mark task as completed if it is not repeating
     if (task.repeatFrequency === TaskRepeatFrequency.NONE) {
       task.status = TaskStatus.COMPLETED;
       await this.taskRepo.save(task);
     }
-
-    const completion = await this.completionRepo.save(
-      this.completionRepo.create({ taskId, ...dto }),
-    );
 
     const result: TaskReactionResult<TaskCompletion> = { data: completion };
     await this.attachReaction(result, user.id, dto.personalityId, {
@@ -187,30 +203,19 @@ export class TasksService {
     if (!goal) throw new NotFoundException(`Goal ${task.goalId} not found`);
     if (goal.userId !== user.id) throw new ForbiddenException();
 
-    // Idempotency: one explanation per task per day
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const existing = await this.explanationRepo
-      .createQueryBuilder('e')
-      .where('e.taskId = :taskId', { taskId })
-      .andWhere('e.createdAt >= :today', { today })
-      .andWhere('e.createdAt < :tomorrow', { tomorrow })
-      .getOne();
-
-    if (existing) {
-      throw new ConflictException('Task already explained today');
-    }
+    // Same as complete(): uq_task_explanations_task_day is the idempotency
+    // guarantee, not a preceding SELECT.
+    const explanation = await this.insertOrConflict(
+      () =>
+        this.explanationRepo.save(
+          this.explanationRepo.create({ taskId, ...dto }),
+        ),
+      'Task already explained today',
+    );
 
     // Mark task skipped
     task.status = TaskStatus.SKIPPED;
     await this.taskRepo.save(task);
-
-    const explanation = await this.explanationRepo.save(
-      this.explanationRepo.create({ taskId, ...dto }),
-    );
 
     const result: TaskReactionResult<TaskExplanation> = { data: explanation };
     await this.attachReaction(result, user.id, dto.personalityId, {
@@ -252,6 +257,9 @@ export class TasksService {
 
     let created = 0;
     for (const parent of candidates) {
+      // The filter above already requires a dueDate; this keeps that fact
+      // visible to the compiler rather than asserting it away.
+      if (!parent.dueDate) continue;
       const nextDue = this.nextDueDate(parent.dueDate, parent.repeatFrequency);
 
       // Skip if a future occurrence already exists

@@ -1,107 +1,154 @@
 # Environment Variables & Secrets
 
-This document is the single source of truth for every env var and secret used in Worthy Goals. Copy the relevant `.env.local.example` files to get started.
+Every env var and secret used in Worthy Goals. The authority is
+`worthygoals-backend/src/config/env.validation.ts`; this document tracks it,
+and `.env.local.example` in each package is a working copy to start from.
+
+> Rewritten Sep 2026. The previous version documented MySQL on port 3306
+> (the backend moved to Postgres + pgvector in S18), documented Fly.io secrets
+> for a `deploy.yml` that was deleted in Jul 2026, and omitted eight variables
+> the backend reads.
 
 ---
 
 ## Backend (`worthygoals-backend`)
 
-Copy `worthygoals-backend/.env.local.example` → `.env.local`
+Copy `worthygoals-backend/.env.local.example` → `.env.local`.
 
-The backend validates **all required keys at startup** via Joi (`src/config/env.validation.ts`). If a required key is missing, the process exits immediately with a clear list of what's wrong — no silent failures at runtime.
+Required keys are validated at startup via Joi. Missing ones abort the boot
+with every problem listed at once (`abortEarly: false`).
+
+### Server
+
+| Variable | Required | Default | Notes |
+|---|---|---|---|
+| `NODE_ENV` | — | `local` | One of `local`, `lazy`, `dev`, `prod`. Set by the npm scripts. Production is **`prod`**, not `production` — nothing else disables Swagger. |
+| `PORT` | — | `3000` | |
+| `SERVER_URL` | — | `http://localhost` | Used to build the Swagger server URL. |
+| `ALLOWED_ORIGINS` | — (prod: yes) | — | Comma-separated CORS origins. With none set, prod allows **no** origins and dev allows all. |
+
+### Database (PostgreSQL + pgvector)
+
+| Variable | Required | Default | Notes |
+|---|---|---|---|
+| `DB_HOST` | ✅ | — | e.g. `localhost` |
+| `DB_PORT` | ✅ | — | Postgres, so usually `5432` |
+| `DB_USERNAME` | ✅ | — | |
+| `DB_PASSWORD` | ✅ | — | |
+| `DB_NAME` | ✅ | — | e.g. `worthygoals` |
+| `DB_LOGGING` | — | `false` | `true` enables full SQL logging, which prints PII (emails, goal text). Errors and warnings are always logged. |
+| `DB_SSL` | — | `false` | `true` for managed Postgres. |
+
+Migrations run at boot under a Postgres advisory lock, so concurrent replicas
+do not race. To inspect or revert from inside a running container:
+
+```bash
+npm run migration:show:dist
+npm run migration:revert:dist
+```
+
+These run against `dist/`, so they work in the runtime image — the `ts-node`
+variants need devDependencies and only work on a developer machine.
+
+### AWS / Cognito
 
 | Variable | Required | Default | Where to get it |
 |---|---|---|---|
-| `NODE_ENV` | — | `local` | Set automatically by npm scripts |
-| `PORT` | — | `3000` | — |
-| `SERVER_URL` | — | `http://localhost` | Your deployment URL in staging/prod |
-| `DB_HOST` | ✅ | — | Your MySQL host (e.g. `127.0.0.1`) |
-| `DB_PORT` | ✅ | — | Usually `3306` |
-| `DB_USERNAME` | ✅ | — | Your MySQL user |
-| `DB_PASSWORD` | ✅ | — | Your MySQL password |
-| `DB_NAME` | ✅ | — | e.g. `worthygoals` |
-| `AWS_REGION` | ✅ | — | Your Cognito region (e.g. `eu-north-1`) |
+| `AWS_REGION` | ✅ | — | e.g. `eu-north-1` |
 | `AWS_ACCESS_KEY_ID` | ✅ | — | IAM key with Cognito + SES permissions |
 | `AWS_SECRET_ACCESS_KEY` | ✅ | — | IAM secret |
 | `AWS_COGNITO_USER_POOL_ID` | ✅ | — | Cognito → User Pools → Pool ID |
 | `AWS_COGNITO_APP_CLIENT_ID` | ✅ | — | Cognito → App clients → Client ID |
-| `AWS_COGNITO_APP_CLIENT_SECRET` | — | — | Cognito → App clients → Client secret (if enabled) |
+| `AWS_COGNITO_APP_CLIENT_SECRET` | — | — | Only if the app client has a secret. Left blank, `SECRET_HASH` is omitted from every Cognito call rather than sent empty. |
+
+SES falls back to `AWS_SES_REGION` / `AWS_SES_ACCESS_KEY_ID` /
+`AWS_SES_SECRET_ACCESS_KEY` when set, otherwise the `AWS_*` values above,
+otherwise the SDK's own credential chain.
+
+### AI
+
+| Variable | Required | Default | Notes |
+|---|---|---|---|
 | `OPENAI_API_KEY` | ✅ | — | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
-| `OPENAI_MODEL` | — | `gpt-4o-mini` | Override for a different default model |
-| `SENTRY_DSN` | — | — | Sentry → Project → Settings → Client Keys. If absent, Sentry is silently disabled. |
-| `SUPPORT_EMAIL_SENDER` | — | `support@glotte.org` | Verified SES sender address |
+| `OPENAI_MODEL` | — | `gpt-4o-mini` | |
+| `EMBEDDING_MODEL` | — | `text-embedding-3-small` | Used by the pgvector memory layer. |
+| `AI_ACTIVE_PROVIDER` | — | `openai` | `openai` or `anthropic`. |
+| `ANTHROPIC_API_KEY` | — | — | Second provider; graceful no-op when absent. |
+| `AI_MODEL_COSTS_JSON` | — | — | JSON map of model → `{ in, out }` cost per million tokens. Falls back to hard-coded defaults, so prices can change without a redeploy. |
+
+A single model call is capped at 45s so an abandoned request stops billing.
+
+### Push notifications
+
+| Variable | Required | Default | Notes |
+|---|---|---|---|
+| `REDIS_URL` | — | `redis://localhost:6379` | BullMQ connection. |
+| `EXPO_ACCESS_TOKEN` | — | — | Expo push. Graceful no-op when absent. |
+
+### Media storage (S3 / R2)
+
+All optional — with none set, media features no-op rather than fail.
+
+| Variable | Default | Notes |
+|---|---|---|
+| `S3_ENDPOINT` | — | R2: `https://<account_id>.r2.cloudflarestorage.com` |
+| `S3_BUCKET_NAME` | — | |
+| `S3_ACCESS_KEY_ID` | — | |
+| `S3_SECRET_ACCESS_KEY` | — | |
+| `S3_REGION` | `auto` | |
+
+### Observability
+
+| Variable | Required | Default | Notes |
+|---|---|---|---|
+| `SENTRY_DSN` | — | — | Absent, no SDK is initialised and the app runs normally. |
+| `SUPPORT_EMAIL_SENDER` | — | — | Verified SES sender address. |
 
 ### Startup behaviour
 
 ```
-# Missing required keys → process exits with a clear list:
 Error: Config validation error:
   "DB_HOST" is required
   "AWS_COGNITO_USER_POOL_ID" is required
   "OPENAI_API_KEY" is required
 ```
 
+Note the scope of that guarantee: it covers *presence of required keys at
+startup*, nothing more. A key that is present but wrong still fails at use, and
+optional keys are the caller's responsibility to handle — several places got
+that wrong historically.
+
 ---
 
 ## Frontend (`worthygoals-frontend-app`)
 
-Copy `worthygoals-frontend-app/.env.local.example` → `.env.local`
+Copy `worthygoals-frontend-app/.env.local.example` → `.env.local`.
 
-All frontend env vars must be prefixed `EXPO_PUBLIC_` to be bundled by Expo. Missing optional keys log a **dev-mode warning** but never crash the app.
+All frontend vars must be prefixed `EXPO_PUBLIC_` to be bundled by Expo.
 
-| Variable | Required | Default | Where to get it |
+| Variable | Required | Default | Notes |
 |---|---|---|---|
-| `EXPO_PUBLIC_API_URL` | ✅ | — | `http://localhost:3000` for local, staging/prod URL otherwise |
-| `EXPO_PUBLIC_SENTRY_DSN` | — | — | Sentry → Project → Settings → Client Keys. If absent, Sentry disabled. |
-| `EXPO_PUBLIC_POSTHOG_KEY` | — | — | PostHog → Project Settings → Project API key. If absent, PostHog disabled. |
+| `EXPO_PUBLIC_API_URL` | ✅ | — | `http://localhost:3000` on a simulator. On a physical device `localhost` is the phone — use the dev machine's LAN IP. |
+| `EXPO_PUBLIC_SENTRY_DSN` | — | — | Absent, Sentry is disabled. |
+| `EXPO_PUBLIC_POSTHOG_KEY` | — | — | Absent, PostHog is disabled. |
 
-### Dev-mode warning (missing optional keys)
-
-```
-[observability] Keys not set — SDK(s) disabled:
-  EXPO_PUBLIC_SENTRY_DSN
-  EXPO_PUBLIC_POSTHOG_KEY
-See worthygoals-frontend-app/.env.local.example
-```
+**EAS builds do not read `.env*.local`** — those files are gitignored and never
+uploaded. Anything a build needs must be in the `env` block of `eas.json` or an
+EAS environment variable set in project settings. A build with neither ships
+with `baseURL: undefined`, and every request then fails looking like a network
+problem; the app now logs explicitly when that happens.
 
 ---
 
-## GitHub Actions Secrets
+## CI secrets
 
-Set these in **GitHub → repo → Settings → Secrets and variables → Actions**:
+Set in **GitHub → repo → Settings → Secrets and variables → Actions**:
 
-| Secret | Used by | How to get it |
+| Secret | Used by | Notes |
 |---|---|---|
-| `FLY_API_TOKEN` | `deploy.yml` — Fly.io auto-deploy | `fly auth token` after `fly auth login` |
+| `OPENAI_API_KEY` | `ci.yml` — eval harness | Optional. Without it the eval job runs `eval:dry` instead of a live run. |
 
----
-
-## Fly.io Secrets (backend production env)
-
-Set via `fly secrets set KEY=value` inside `worthygoals-backend/`:
-
-```bash
-fly secrets set \
-  DB_HOST=... \
-  DB_PORT=3306 \
-  DB_USERNAME=... \
-  DB_PASSWORD=... \
-  DB_NAME=worthygoals \
-  AWS_REGION=... \
-  AWS_ACCESS_KEY_ID=... \
-  AWS_SECRET_ACCESS_KEY=... \
-  AWS_COGNITO_USER_POOL_ID=... \
-  AWS_COGNITO_APP_CLIENT_ID=... \
-  OPENAI_API_KEY=... \
-  SENTRY_DSN=...
-```
-
----
-
-## Error handling policy
-
-| Tier | Key type | Behaviour if missing |
-|---|---|---|
-| **Hard fail** | DB, AWS Cognito, OpenAI | Backend exits at startup with a named error. No silent failures. |
-| **Graceful no-op** | Sentry DSN, PostHog key | SDKs initialise as disabled. App runs normally. Dev logs a warning. |
-| **Default provided** | PORT, NODE_ENV, OPENAI_MODEL, SERVER_URL | Falls back to the documented default. |
+There is no backend deploy workflow. The `FLY_API_TOKEN` this document used to
+list was for `deploy.yml`, deleted in Jul 2026, and the Fly.io secrets section
+has been removed with it. Choosing a platform and committing a deploy manifest
+is tracker item E1.

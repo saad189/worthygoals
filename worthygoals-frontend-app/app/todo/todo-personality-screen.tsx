@@ -56,11 +56,43 @@ export default function TodoPersonalityScreen() {
   // The contract is confirmed in the chosen mentor's own colour (§F).
   const { accent } = useAppTheme(selected);
 
+  /**
+   * Resolve the chosen slug to a backend mentor id, retrying the roster fetch
+   * once if the initial load failed.
+   *
+   * Sending mentorId: undefined is accepted by the DTO and then silently
+   * resolves to Marcus in the weekly review — for the life of the goal. A goal
+   * signed to the wrong mentor is worse than a goal not saved, so an
+   * unresolved mentor stops the flow rather than guessing.
+   */
+  const resolveMentorId = async (): Promise<number | null> => {
+    if (mentorIds[selected] != null) return mentorIds[selected];
+
+    try {
+      const mentors = await mentorService.getMentorList();
+      const map: Record<string, number> = {};
+      for (const m of mentors) if (m.slug) map[m.slug] = m.id;
+      setMentorIds(map);
+      return map[selected] ?? null;
+    } catch {
+      return null;
+    }
+  };
+
   const handleSign = async () => {
+    const mentorId = await resolveMentorId();
+    if (mentorId == null) {
+      Alert.alert(
+        'Could not reach your mentor',
+        `We couldn't confirm ${selectedPersona.name} with the server, and we won't sign this goal to the wrong mentor. Check your connection and try again.`,
+      );
+      return;
+    }
+
     try {
       await createGoal({
         ...parsedGoal,
-        mentorId: mentorIds[selected],
+        mentorId,
       });
       router.replace(
         `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.TODO_LIST_SCREEN}` as never,

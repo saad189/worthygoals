@@ -159,6 +159,9 @@ export default function RegisterProfileScreen() {
 
       const { firstName, lastName, gender, dateOfBirth } = formState;
 
+      // Best-effort only: latitude/longitude are optional on the profile, and
+      // this step has no back affordance, so a refused permission must not
+      // stop the user from saving.
       const coords = await getUserLocationAsync();
 
       const createdProfile = await userService.createProfile({
@@ -167,7 +170,7 @@ export default function RegisterProfileScreen() {
         lastName: lastName.value.trim(),
         gender: gender.value,
         dateOfBirth: dateOfBirth.value as Date,
-        ...coords,
+        ...(coords ?? {}),
       });
 
       if (!createdProfile) throw new Error("Profile creation failed");

@@ -13,13 +13,19 @@ const SECRET_ACCESS_KEY =
 
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL_SENDER || 'support@glotte.org';
 
-// Lazily create client (can be swapped for singleton injection later)
+// Lazily create client (can be swapped for singleton injection later).
+// Credentials fall back to the SDK's own provider chain (instance role, shared
+// config) when the explicit vars are absent, rather than passing undefined.
 const sesClient = new SESClient({
   region: REGION,
-  credentials: {
-    accessKeyId: ACCESS_KEY_ID,
-    secretAccessKey: SECRET_ACCESS_KEY,
-  },
+  ...(ACCESS_KEY_ID && SECRET_ACCESS_KEY
+    ? {
+        credentials: {
+          accessKeyId: ACCESS_KEY_ID,
+          secretAccessKey: SECRET_ACCESS_KEY,
+        },
+      }
+    : {}),
 });
 
 export interface SendEmailOptions {

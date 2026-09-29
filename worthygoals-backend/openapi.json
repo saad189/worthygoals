@@ -1,455 +1,1940 @@
 {
-  "openapi": "3.0.3",
-  "info": {
-    "title": "Worthy Goals API",
-    "description": "Backend Server API",
-    "version": "1.0.0"
-  },
-  "components": {
-    "securitySchemes": {
-      "bearer": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
-      }
-    },
-    "schemas": {
-      "TaskStatus": {
-        "type": "string",
-        "enum": ["pending", "completed", "skipped"]
-      },
-      "TaskRepeatFrequency": {
-        "type": "string",
-        "enum": ["none", "daily", "weekly", "monthly"]
-      },
-      "ExplanationReason": {
-        "type": "string",
-        "enum": ["couldnt", "forgot", "chose_not_to"]
-      },
-      "BoardItemType": {
-        "type": "string",
-        "enum": ["win", "milestone"]
-      },
-      "MilestoneKind": {
-        "type": "string",
-        "enum": ["streak_7", "streak_30", "goal_completed"]
-      },
-      "TaskSummary": {
-        "type": "object",
-        "required": ["id", "title", "goalId", "status"],
-        "properties": {
-          "id": { "type": "string" },
-          "title": { "type": "string" },
-          "goalId": { "type": "string" },
-          "status": { "type": "string" },
-          "dueDate": { "type": "string", "nullable": true }
-        }
-      },
-      "GoalSummary": {
-        "type": "object",
-        "required": ["id", "title", "category", "currentStreak", "longestStreak", "todayTaskCount", "completedTodayCount"],
-        "properties": {
-          "id": { "type": "string" },
-          "title": { "type": "string" },
-          "category": { "type": "string" },
-          "currentStreak": { "type": "integer" },
-          "longestStreak": { "type": "integer" },
-          "todayTaskCount": { "type": "integer" },
-          "completedTodayCount": { "type": "integer" }
-        }
-      },
-      "TodayProgress": {
-        "type": "object",
-        "required": ["completed", "total"],
-        "properties": {
-          "completed": { "type": "integer" },
-          "total": { "type": "integer" }
-        }
-      },
-      "DashboardData": {
-        "type": "object",
-        "required": ["todaysTasks", "weekCompletions", "goals", "todayProgress"],
-        "properties": {
-          "todaysTasks": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/TaskSummary" }
-          },
-          "weekCompletions": {
-            "type": "array",
-            "items": { "type": "integer" },
-            "description": "Completion counts indexed Mon=0 … Sun=6"
-          },
-          "goals": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/GoalSummary" }
-          },
-          "todayProgress": { "$ref": "#/components/schemas/TodayProgress" }
-        }
-      },
-      "BoardItem": {
-        "type": "object",
-        "required": ["id", "type", "createdAt"],
-        "properties": {
-          "id": { "type": "string" },
-          "type": { "$ref": "#/components/schemas/BoardItemType" },
-          "taskTitle": { "type": "string", "nullable": true },
-          "goalTitle": { "type": "string", "nullable": true },
-          "goalCategory": { "type": "string", "nullable": true },
-          "moodScore": { "type": "integer", "nullable": true },
-          "reflection": { "type": "string", "nullable": true },
-          "mentorReaction": { "type": "string", "nullable": true },
-          "mediaUrl": { "type": "string", "nullable": true },
-          "milestoneKind": { "$ref": "#/components/schemas/MilestoneKind", "nullable": true },
-          "streakDays": { "type": "integer", "nullable": true },
-          "createdAt": { "type": "string", "format": "date-time" }
-        }
-      },
-      "TaskItem": {
-        "type": "object",
-        "required": ["id", "goalId", "title", "status", "repeatFrequency", "occurrenceIndex", "createdAt", "updatedAt"],
-        "properties": {
-          "id": { "type": "string" },
-          "goalId": { "type": "string" },
-          "title": { "type": "string" },
-          "description": { "type": "string", "nullable": true },
-          "status": { "$ref": "#/components/schemas/TaskStatus" },
-          "dueDate": { "type": "string", "nullable": true },
-          "repeatFrequency": { "$ref": "#/components/schemas/TaskRepeatFrequency" },
-          "occurrenceIndex": { "type": "integer" },
-          "parentTaskId": { "type": "string", "nullable": true },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "updatedAt": { "type": "string", "format": "date-time" }
-        }
-      },
-      "CreateTaskPayload": {
-        "type": "object",
-        "required": ["title", "goalId"],
-        "properties": {
-          "title": { "type": "string" },
-          "goalId": { "type": "string" },
-          "description": { "type": "string" },
-          "dueDate": { "type": "string" },
-          "repeatFrequency": { "$ref": "#/components/schemas/TaskRepeatFrequency" }
-        }
-      },
-      "CompleteTaskPayload": {
-        "type": "object",
-        "required": ["moodScore"],
-        "properties": {
-          "moodScore": { "type": "integer", "minimum": 1, "maximum": 4 },
-          "reflection": { "type": "string" },
-          "memoryPictureId": { "type": "string" },
-          "personalityId": { "type": "string" }
-        }
-      },
-      "ExplainTaskPayload": {
-        "type": "object",
-        "required": ["reason"],
-        "properties": {
-          "reason": { "$ref": "#/components/schemas/ExplanationReason" },
-          "freeText": { "type": "string" },
-          "personalityId": { "type": "string" }
-        }
-      },
-      "TaskCompletion": {
-        "type": "object",
-        "required": ["id", "taskId", "moodScore", "createdAt"],
-        "properties": {
-          "id": { "type": "string" },
-          "taskId": { "type": "string" },
-          "moodScore": { "type": "integer" },
-          "reflection": { "type": "string", "nullable": true },
-          "memoryPictureId": { "type": "string", "nullable": true },
-          "createdAt": { "type": "string", "format": "date-time" }
-        }
-      },
-      "TaskExplanation": {
-        "type": "object",
-        "required": ["id", "taskId", "reason", "createdAt"],
-        "properties": {
-          "id": { "type": "string" },
-          "taskId": { "type": "string" },
-          "reason": { "$ref": "#/components/schemas/ExplanationReason" },
-          "freeText": { "type": "string", "nullable": true },
-          "createdAt": { "type": "string", "format": "date-time" }
-        }
-      },
-      "TaskCompletionResponse": {
-        "type": "object",
-        "required": ["data"],
-        "properties": {
-          "data": { "$ref": "#/components/schemas/TaskCompletion" },
-          "mentorReaction": { "type": "string", "nullable": true },
-          "safetyFlag": { "type": "boolean", "nullable": true }
-        }
-      },
-      "TaskExplanationResponse": {
-        "type": "object",
-        "required": ["data"],
-        "properties": {
-          "data": { "$ref": "#/components/schemas/TaskExplanation" },
-          "mentorReaction": { "type": "string", "nullable": true },
-          "safetyFlag": { "type": "boolean", "nullable": true }
-        }
-      },
-      "GoalProposal": {
-        "type": "object",
-        "required": ["title"],
-        "properties": {
-          "title": { "type": "string" },
-          "description": { "type": "string", "nullable": true },
-          "costText": { "type": "string", "nullable": true },
-          "benefitText": { "type": "string", "nullable": true },
-          "failureText": { "type": "string", "nullable": true },
-          "deadline": { "type": "string", "nullable": true },
-          "repeatRule": { "type": "object", "nullable": true },
-          "category": { "type": "string", "nullable": true }
-        }
-      },
-      "CreateGoalPayload": {
-        "type": "object",
-        "required": ["title"],
-        "properties": {
-          "title": { "type": "string" },
-          "description": { "type": "string" },
-          "costText": { "type": "string" },
-          "benefitText": { "type": "string" },
-          "failureText": { "type": "string" },
-          "deadline": { "type": "string" },
-          "repeatRule": { "type": "object" },
-          "category": { "type": "string" },
-          "mentorId": { "type": "integer" },
-          "stakeAmount": { "type": "number" }
-        }
-      },
-      "CreateGoalResponse": {
-        "type": "object",
-        "required": ["id"],
-        "properties": {
-          "id": { "type": "string" }
-        }
-      }
-    }
-  },
+  "openapi": "3.0.0",
   "paths": {
-    "/dashboard": {
+    "/": {
       "get": {
-        "operationId": "getDashboard",
-        "summary": "Get dashboard aggregate data",
-        "tags": ["Dashboard"],
-        "security": [{ "bearer": [] }],
+        "operationId": "AppController_getHello",
+        "parameters": [],
         "responses": {
           "200": {
-            "description": "Dashboard data",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/DashboardData" }
-              }
-            }
+            "description": ""
           }
-        }
+        },
+        "tags": [
+          "App"
+        ]
       }
     },
-    "/board": {
+    "/users/profile": {
       "get": {
-        "operationId": "getBoard",
-        "summary": "Get motivational board items",
-        "tags": ["Board"],
-        "security": [{ "bearer": [] }],
+        "operationId": "UsersController_getProfile",
+        "parameters": [],
         "responses": {
           "200": {
-            "description": "Board items",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": { "$ref": "#/components/schemas/BoardItem" }
-                }
-              }
-            }
+            "description": ""
           }
-        }
-      }
-    },
-    "/tasks": {
-      "get": {
-        "operationId": "listTasks",
-        "summary": "List tasks for a goal",
-        "tags": ["Tasks"],
-        "security": [{ "bearer": [] }],
-        "parameters": [
+        },
+        "security": [
           {
-            "name": "goalId",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string" }
+            "bearer": []
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Task list",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": { "$ref": "#/components/schemas/TaskItem" }
-                }
-              }
-            }
-          }
-        }
+        "tags": [
+          "User"
+        ]
       },
-      "post": {
-        "operationId": "createTask",
-        "summary": "Create a task",
-        "tags": ["Tasks"],
-        "security": [{ "bearer": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateTaskPayload" }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Created task",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/TaskItem" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/tasks/{id}/complete": {
-      "post": {
-        "operationId": "completeTask",
-        "summary": "Mark a task complete",
-        "tags": ["Tasks"],
-        "security": [{ "bearer": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CompleteTaskPayload" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Completion result with optional mentor reaction",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/TaskCompletionResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/tasks/{id}/explain": {
-      "post": {
-        "operationId": "explainTask",
-        "summary": "Submit a task explanation (skipped/failed)",
-        "tags": ["Tasks"],
-        "security": [{ "bearer": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/ExplainTaskPayload" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Explanation result with optional mentor reaction",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/TaskExplanationResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/goals/propose": {
-      "post": {
-        "operationId": "proposeGoal",
-        "summary": "AI-assisted goal proposal",
-        "tags": ["Goals"],
-        "security": [{ "bearer": [] }],
+      "put": {
+        "operationId": "UsersController_updateProfile",
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": ["raw"],
-                "properties": {
-                  "raw": { "type": "string" }
-                }
+                "$ref": "#/components/schemas/UpdateUserDto"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "AI-structured goal proposal",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/GoalProposal" }
-              }
-            }
+            "description": ""
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update the authenticated user profile",
+        "tags": [
+          "User"
+        ]
       }
     },
-    "/goals": {
+    "/users/me/data-export": {
       "post": {
-        "operationId": "createGoal",
-        "summary": "Create a goal",
-        "tags": ["Goals"],
-        "security": [{ "bearer": [] }],
+        "operationId": "UsersController_exportMyData",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "GDPR: export all data for the authenticated user",
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/users/me": {
+      "delete": {
+        "operationId": "UsersController_deleteMyAccount",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "GDPR: permanently delete the authenticated user account and all associated data",
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/users": {
+      "post": {
+        "operationId": "UsersController_create",
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateGoalPayload" }
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Created goal",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CreateGoalResponse" }
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create the profile for the authenticated account",
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginAuthDto"
               }
             }
           }
-        }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/refresh-token": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/signup": {
+      "post": {
+        "operationId": "AuthController_signup",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignUpAuthDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/confirm-signup": {
+      "post": {
+        "operationId": "AuthController_confirmSignup",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmSignUpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/confirmation-code": {
+      "post": {
+        "operationId": "AuthController_resendConfirmationCode",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmationCodeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/forgot-password-code": {
+      "post": {
+        "operationId": "AuthController_triggerForgotPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmationCodeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/change-password": {
+      "post": {
+        "operationId": "AuthController_confirmChangePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/mentors": {
+      "get": {
+        "operationId": "MentorsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Mentors"
+        ]
+      }
+    },
+    "/mentors/{id}": {
+      "get": {
+        "operationId": "MentorsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Mentors"
+        ]
+      }
+    },
+    "/conversations": {
+      "get": {
+        "operationId": "ConversationsController_findAll",
+        "parameters": [
+          {
+            "name": "mentorId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Conversations"
+        ]
+      },
+      "post": {
+        "operationId": "ConversationsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateConversationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Conversations"
+        ]
+      }
+    },
+    "/conversations/{id}": {
+      "get": {
+        "operationId": "ConversationsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Conversations"
+        ]
+      },
+      "patch": {
+        "operationId": "ConversationsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateConversationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Conversations"
+        ]
+      },
+      "delete": {
+        "operationId": "ConversationsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Conversations"
+        ]
+      }
+    },
+    "/messages": {
+      "get": {
+        "operationId": "MessagesController_list",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Messages"
+        ]
+      },
+      "post": {
+        "operationId": "MessagesController_send",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendTextMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/goals/propose": {
+      "post": {
+        "operationId": "GoalsController_propose",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposeGoalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Goals"
+        ]
+      }
+    },
+    "/goals": {
+      "post": {
+        "operationId": "GoalsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGoalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Goals"
+        ]
+      },
+      "get": {
+        "operationId": "GoalsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Goals"
+        ]
+      }
+    },
+    "/goals/{id}": {
+      "get": {
+        "operationId": "GoalsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Goals"
+        ]
+      },
+      "patch": {
+        "operationId": "GoalsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGoalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Goals"
+        ]
+      },
+      "delete": {
+        "operationId": "GoalsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Goals"
+        ]
+      }
+    },
+    "/media/upload-url": {
+      "post": {
+        "operationId": "MediaController_createUploadUrl",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUploadUrlDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get a presigned PUT URL to upload a media file to S3/R2",
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/tasks": {
+      "post": {
+        "operationId": "TasksController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTaskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Tasks"
+        ]
+      },
+      "get": {
+        "operationId": "TasksController_findAll",
+        "parameters": [
+          {
+            "name": "goalId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Tasks"
+        ]
+      }
+    },
+    "/tasks/{id}": {
+      "get": {
+        "operationId": "TasksController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Tasks"
+        ]
+      },
+      "patch": {
+        "operationId": "TasksController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Tasks"
+        ]
+      },
+      "delete": {
+        "operationId": "TasksController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Tasks"
+        ]
+      }
+    },
+    "/tasks/{id}/complete": {
+      "post": {
+        "operationId": "TasksController_complete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteTaskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Tasks"
+        ]
+      }
+    },
+    "/tasks/{id}/explain": {
+      "post": {
+        "operationId": "TasksController_explain",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExplainTaskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Tasks"
+        ]
+      }
+    },
+    "/dashboard": {
+      "get": {
+        "operationId": "DashboardController_getDashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
+    "/notifications/token": {
+      "post": {
+        "operationId": "NotificationsController_registerToken",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/notifications/token/{token}": {
+      "delete": {
+        "operationId": "NotificationsController_unregisterToken",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/notifications/tokens": {
+      "get": {
+        "operationId": "NotificationsController_getTokens",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/board": {
+      "get": {
+        "operationId": "BoardController_getBoard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BoardItemDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "board"
+        ]
+      }
+    },
+    "/status": {
+      "get": {
+        "operationId": "StatusController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StatusPostDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "status"
+        ]
+      },
+      "post": {
+        "operationId": "StatusController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusPostDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "status"
+        ]
+      }
+    },
+    "/weekly-review": {
+      "get": {
+        "operationId": "WeeklyReviewController_getReview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeeklyReviewDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "weekly-review"
+        ]
       }
     }
   },
-  "security": [{ "bearer": [] }]
+  "info": {
+    "title": "Worthy Goals API",
+    "description": "Backend Server API",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "UpdateUserDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com",
+            "description": "The email address of the user"
+          },
+          "firstName": {
+            "type": "string",
+            "example": "John",
+            "description": "The first name of the user"
+          },
+          "lastName": {
+            "type": "string",
+            "example": "Doe",
+            "description": "The last name of the user"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "example": "1990-01-01",
+            "description": "The date of birth of the user"
+          },
+          "gender": {
+            "type": "string",
+            "example": "m",
+            "description": "The gender of the user"
+          },
+          "latitude": {
+            "type": "number",
+            "example": 37.7749,
+            "description": "The latitude of the user's location"
+          },
+          "longitude": {
+            "type": "number",
+            "example": -122.4194,
+            "description": "The longitude of the user's location"
+          },
+          "tone": {
+            "type": "string",
+            "example": "firm",
+            "description": "The user's onboarding tone preference (forced-choice deck result)"
+          },
+          "personalityId": {
+            "type": "string",
+            "example": "marcus",
+            "description": "The user's onboarding-matched mentor (personality slug)"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "LoginAuthDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com",
+            "description": "The email of the user"
+          },
+          "password": {
+            "type": "string",
+            "example": "Str0ngP@ssw0rd!",
+            "description": "The password of the user"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "example": "708c49fc-c031-7162-c945-84722ffc91a4",
+            "description": "The username of the requesting user"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "refresh token"
+          }
+        },
+        "required": [
+          "username",
+          "refreshToken"
+        ]
+      },
+      "SignUpAuthDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com",
+            "description": "The email of the user"
+          },
+          "password": {
+            "type": "string",
+            "example": "Str0ngP@ssw0rd!",
+            "description": "The password of the user"
+          },
+          "repeatedPassword": {
+            "type": "string",
+            "example": "Str0ngP@ssw0rd!",
+            "description": "The repeated password of the user"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "repeatedPassword"
+        ]
+      },
+      "ConfirmSignUpDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com",
+            "description": "The email of the user"
+          },
+          "code": {
+            "type": "string",
+            "description": "The confirmation code received by the user",
+            "example": "123456"
+          }
+        },
+        "required": [
+          "email",
+          "code"
+        ]
+      },
+      "ConfirmationCodeDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com",
+            "description": "The email of the user"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "ConfirmPasswordDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com",
+            "description": "The email of the user"
+          },
+          "code": {
+            "type": "string",
+            "description": "The confirmation code received by the user",
+            "example": "123456"
+          },
+          "password": {
+            "type": "string",
+            "example": "NewStr0ngP@ssw0rd!",
+            "description": "The new password of the user"
+          },
+          "repeatedPassword": {
+            "type": "string",
+            "example": "Str0ngP@ssw0rd!",
+            "description": "The repeated password of the user"
+          }
+        },
+        "required": [
+          "email",
+          "code",
+          "password",
+          "repeatedPassword"
+        ]
+      },
+      "CreateConversationDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateConversationDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SendTextMessageDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ProposeGoalDto": {
+        "type": "object",
+        "properties": {
+          "raw": {
+            "type": "string",
+            "example": "I want to run a half-marathon by October"
+          }
+        },
+        "required": [
+          "raw"
+        ]
+      },
+      "CreateGoalDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "20-minute morning run"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "power",
+              "knowledge",
+              "spiritual"
+            ],
+            "default": "power"
+          },
+          "mentorId": {
+            "type": "number",
+            "example": 1
+          },
+          "costText": {
+            "type": "string"
+          },
+          "benefitText": {
+            "type": "string"
+          },
+          "failureText": {
+            "type": "string"
+          },
+          "deadline": {
+            "type": "string",
+            "example": "2026-12-31T00:00:00.000Z"
+          },
+          "repeatRule": {
+            "type": "object",
+            "example": {
+              "frequency": "daily"
+            }
+          },
+          "stakeAmount": {
+            "type": "number",
+            "example": 50
+          },
+          "imageUri": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "UpdateGoalDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "20-minute morning run"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "power",
+              "knowledge",
+              "spiritual"
+            ],
+            "default": "power"
+          },
+          "mentorId": {
+            "type": "number",
+            "example": 1
+          },
+          "costText": {
+            "type": "string"
+          },
+          "benefitText": {
+            "type": "string"
+          },
+          "failureText": {
+            "type": "string"
+          },
+          "deadline": {
+            "type": "string",
+            "example": "2026-12-31T00:00:00.000Z"
+          },
+          "repeatRule": {
+            "type": "object",
+            "example": {
+              "frequency": "daily"
+            }
+          },
+          "stakeAmount": {
+            "type": "number",
+            "example": 50
+          },
+          "imageUri": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateUploadUrlDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateTaskDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Morning 5km run"
+          },
+          "goalId": {
+            "type": "string",
+            "example": "goal-uuid-here"
+          },
+          "description": {
+            "type": "string"
+          },
+          "dueDate": {
+            "type": "string",
+            "example": "2026-06-01T07:00:00.000Z"
+          },
+          "repeatFrequency": {
+            "type": "string",
+            "enum": [
+              "none",
+              "daily",
+              "weekly",
+              "monthly"
+            ],
+            "default": "none"
+          }
+        },
+        "required": [
+          "title",
+          "goalId"
+        ]
+      },
+      "UpdateTaskDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Morning 5km run"
+          },
+          "description": {
+            "type": "string"
+          },
+          "dueDate": {
+            "type": "string",
+            "example": "2026-06-01T07:00:00.000Z"
+          },
+          "repeatFrequency": {
+            "type": "string",
+            "enum": [
+              "none",
+              "daily",
+              "weekly",
+              "monthly"
+            ],
+            "default": "none"
+          }
+        }
+      },
+      "CompleteTaskDto": {
+        "type": "object",
+        "properties": {
+          "moodScore": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 4,
+            "example": 3
+          },
+          "reflection": {
+            "type": "string"
+          },
+          "memoryPictureId": {
+            "type": "string",
+            "description": "UUID of an uploaded media item (M06)"
+          },
+          "personalityId": {
+            "type": "string",
+            "description": "Personality ID for mentor reaction generation"
+          }
+        },
+        "required": [
+          "moodScore"
+        ]
+      },
+      "ExplainTaskDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "couldnt",
+              "forgot",
+              "chose_not_to"
+            ]
+          },
+          "freeText": {
+            "type": "string"
+          },
+          "personalityId": {
+            "type": "string",
+            "description": "Personality ID for mentor reaction generation"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "RegisterTokenDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "example": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "expo",
+              "fcm",
+              "apns"
+            ],
+            "default": "expo"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "America/New_York"
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "BoardItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "win",
+              "milestone"
+            ]
+          },
+          "taskTitle": {
+            "type": "string"
+          },
+          "goalTitle": {
+            "type": "string"
+          },
+          "goalCategory": {
+            "type": "string"
+          },
+          "moodScore": {
+            "type": "number"
+          },
+          "reflection": {
+            "type": "string"
+          },
+          "mentorReaction": {
+            "type": "string"
+          },
+          "mediaUrl": {
+            "type": "string"
+          },
+          "milestoneKind": {
+            "type": "string",
+            "enum": [
+              "streak_7",
+              "streak_30",
+              "goal_completed"
+            ]
+          },
+          "streakDays": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "createdAt"
+        ]
+      },
+      "StatusReactionDto": {
+        "type": "object",
+        "properties": {
+          "personalityId": {
+            "type": "string",
+            "description": "personalityId slug (marcus / lyra / goggs)."
+          },
+          "mentorName": {
+            "type": "string",
+            "description": "Mentor display name."
+          },
+          "text": {
+            "type": "string",
+            "description": "The in-voice reaction text."
+          }
+        },
+        "required": [
+          "personalityId",
+          "mentorName",
+          "text"
+        ]
+      },
+      "StatusPostDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "object",
+            "description": "Presigned GET url for the attached photo, if any.",
+            "nullable": true
+          },
+          "reactions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatusReactionDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "createdAt",
+          "reactions"
+        ]
+      },
+      "CreateStatusDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The free-text status broadcast to the team.",
+            "maxLength": 500,
+            "example": "wrote 500 words today. skipped the run."
+          },
+          "mediaId": {
+            "type": "string",
+            "description": "Optional photo — media id from the presign upload path (screen 12's 📷 chip)."
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "GoalWeekRowDto": {
+        "type": "object",
+        "properties": {
+          "goalId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "mentorPersonalityId": {
+            "type": "string"
+          },
+          "mentorName": {
+            "type": "string"
+          },
+          "thisWeekCount": {
+            "type": "number",
+            "description": "Completions logged this week (Mon–Sun)."
+          },
+          "lastWeekCount": {
+            "type": "number",
+            "description": "Completions logged the prior week."
+          },
+          "delta": {
+            "type": "number",
+            "description": "thisWeekCount − lastWeekCount."
+          },
+          "trend": {
+            "type": "string",
+            "enum": [
+              "up",
+              "flat",
+              "down"
+            ]
+          },
+          "danger": {
+            "type": "boolean",
+            "description": "No completions this week — the row to talk about."
+          },
+          "commentary": {
+            "type": "string",
+            "description": "The goal's mentor reacting to the week, in voice."
+          }
+        },
+        "required": [
+          "goalId",
+          "title",
+          "mentorPersonalityId",
+          "mentorName",
+          "thisWeekCount",
+          "lastWeekCount",
+          "delta",
+          "trend",
+          "danger",
+          "commentary"
+        ]
+      },
+      "WeeklyReviewDto": {
+        "type": "object",
+        "properties": {
+          "weekStart": {
+            "type": "string",
+            "description": "Monday 00:00 of the week under review (ISO)."
+          },
+          "weekEnd": {
+            "type": "string",
+            "description": "Sunday 23:59:59 of the week under review (ISO)."
+          },
+          "weekNumber": {
+            "type": "number",
+            "description": "ISO week number."
+          },
+          "onTrackCount": {
+            "type": "number",
+            "description": "Goals with at least one completion this week."
+          },
+          "totalGoals": {
+            "type": "number"
+          },
+          "goals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoalWeekRowDto"
+            }
+          }
+        },
+        "required": [
+          "weekStart",
+          "weekEnd",
+          "weekNumber",
+          "onTrackCount",
+          "totalGoals",
+          "goals"
+        ]
+      }
+    }
+  }
 }

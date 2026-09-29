@@ -18,6 +18,8 @@ export class CacheService {
   }
 
   async clearCache(key: string): Promise<void> {
-    await this.cacheManager.del(key);
+    // `del` is optional on the CacheStore interface — not every store
+    // implements it.
+    await this.cacheManager.del?.(key);
   }
 }

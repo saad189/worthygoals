@@ -18,16 +18,23 @@ export const Palette = {
   paper:        '#F4EFE3', // warm cream — primary light surface
   canvas:       '#EFE9D8', // slightly darker warm — secondary light surface
   ink:          '#1A1714', // dark charcoal — primary text & UI on light
-  inkMuted:     '#8B8174', // warm grey — secondary text
-  inkFaint:     '#C9C3B8', // very warm grey — dividers, placeholders
+  // Contrast-corrected Sep 2026 (WCAG 1.4.3 AA). The previous values were
+  // #8B8174 (3.33:1 on paper) and #C9C3B8 (1.53:1) — the entire secondary and
+  // placeholder layer failed. Measured against `canvas`, the darker of the two
+  // light surfaces, so both hold on either. Dividers and borders are separate
+  // rgba tokens and are unaffected.
+  inkMuted:     '#5E584F', // warm grey — secondary text (5.80:1 on canvas)
+  inkFaint:     '#716756', // warm grey — placeholders (4.59:1 on canvas)
   accent:       '#C04124', // burnt orange/rust — CTAs, highlights
 
   // Dark mode counterparts (warm inversion)
   paperDark:    '#1A1714', // same as ink — becomes the dark surface
   canvasDark:   '#141210', // slightly deeper warm dark
   inkDark:      '#EDE8DF', // off-white warm — primary text on dark
-  inkMutedDark: '#6B6560', // muted on dark
-  inkFaintDark: '#2D2926', // very faint on dark — dividers
+  // Dark mode failed identically: #6B6560 was 3.11:1 and #2D2926 was 1.24:1.
+  // Measured against `paperDark`, the lighter of the two dark surfaces.
+  inkMutedDark: '#98928C', // muted on dark (5.80:1 on paperDark)
+  inkFaintDark: '#8B7F75', // placeholders on dark (4.58:1 on paperDark)
 
   // ── Per-mentor identity colours (Hi-Fi §1) ─────────────────
   // Each personality has its own colour: Marcus = ink, Lyra = slate-blue,
@@ -37,6 +44,12 @@ export const Palette = {
   // Accent shades
   accentLight:  '#E0633E', // lighter rust for hover/pressed states
   accentDark:   '#9E3319', // deeper rust
+  // Text-only accents. `accent` stays the brand rust for fills and buttons
+  // (white on it is 5.22:1), but as *text* it was 4.30:1 on canvas in light
+  // mode and 3.42:1 in dark, because the dark palette inverted the neutrals
+  // and kept the light-mode rust.
+  accentText:     '#B93F23', // rust as text on light (4.56:1 on canvas)
+  accentTextDark: '#DA5638', // rust as text on dark (4.56:1 on paperDark)
   accentSubtle: 'rgba(192, 65,  36, 0.12)', // tinted background (light)
   accentSubtleDark: 'rgba(192, 65, 36, 0.18)', // tinted background (dark)
 

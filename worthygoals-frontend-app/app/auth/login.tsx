@@ -21,8 +21,8 @@ import { APP_NAME } from "@/constants/Brand";
 import { ROUTE_NAMES } from "@/constants/Routes";
 import {
   emailValidator,
-  getRememberedUserCredentials,
-  rememberUserCredentials,
+  getRememberedSignIn,
+  rememberSignIn,
 } from "@/helpers";
 import { LoginInfo } from "@/models";
 import authService from "@/services/AuthService";
@@ -50,15 +50,12 @@ export default function LoginScreen() {
   const { isLoading, setLoading } = useLoader();
 
   useEffect(() => {
-    const updateLoginInfo = async ({ email, password }: LoginInfo) => {
-      setEmail({ value: email, error: "" });
-      setPassword({ value: password, error: "" });
-    };
-
     const checkSavedCredentials = async () => {
       try {
-        const { loginInfo, rememberMe } = await getRememberedUserCredentials();
-        updateLoginInfo(loginInfo);
+        // Email only — the password is never persisted.
+        const { email: rememberedEmail, rememberMe } =
+          await getRememberedSignIn();
+        setEmail({ value: rememberedEmail, error: "" });
         setRememberMe(rememberMe);
       } catch (error) {
         showErrorMessage((error as Error).message);
@@ -95,8 +92,8 @@ export default function LoginScreen() {
       const isValidUser = await authService.loginUser(loginInfo);
 
       if (isValidUser) {
-        rememberUserCredentials({
-          loginInfo: rememberMe ? loginInfo : emptyLoginInfo,
+        rememberSignIn({
+          email: rememberMe ? loginInfo.email : "",
           rememberMe,
         });
         await login(email.value);

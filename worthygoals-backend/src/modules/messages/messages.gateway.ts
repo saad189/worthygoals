@@ -6,7 +6,7 @@ import {
   WebSocketServer,
   WsException,
 } from '@nestjs/websockets';
-import { UseGuards } from '@nestjs/common';
+import { Logger, UseGuards } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { WsJwtAuthGuard } from 'src/common/guards/ws-jwtauth.guard';
 import { MessagesService } from './messages.service';
@@ -16,6 +16,8 @@ import { MessageResponseDto } from './dto/message-response.dto';
 
 @WebSocketGateway({ namespace: '/messages', cors: true })
 export class MessagesGateway {
+  private readonly logger = new Logger(MessagesGateway.name);
+
   @WebSocketServer()
   server!: Server;
 
@@ -37,6 +39,16 @@ export class MessagesGateway {
   ) {
     const conversationId = body?.conversationId;
     if (!conversationId) throw new WsException('conversationId is required');
+
+    const sub = (client.handshake as any)?.user?.sub;
+    if (!sub) throw new WsException('Unauthorized');
+
+    // The room receives messageChunk and messageCreated. Joining it unchecked
+    // was a live read of another user's private mentor chat.
+    await this.messagesService.assertConversationOwnership({
+      sub,
+      conversationId,
+    });
 
     await client.join(this.roomForConversation(conversationId));
 
@@ -131,11 +143,29 @@ export class MessagesGateway {
       throw new WsException('User message missing userId');
     }
 
-    const reply = await this.agentService.generateMentorReply({
-      conversationId,
-      userId: userMessage.userId,
-      onChunk: (chunk) => this.emitMessageChunk(conversationId, chunk),
-    });
+    // Everything from here runs after the typing indicator is already on the
+    // client. An error thrown raw becomes Nest's generic "Internal server
+    // error", which the user cannot tell apart from the app being broken —
+    // and hitting the 20/day free-tier quota is routine, not a fault.
+    let reply: Awaited<
+      ReturnType<typeof this.agentService.generateMentorReply>
+    >;
+    try {
+      reply = await this.agentService.generateMentorReply({
+        conversationId,
+        userId: userMessage.userId,
+        onChunk: (chunk) => this.emitMessageChunk(conversationId, chunk),
+      });
+    } catch (error: any) {
+      this.logger.error(
+        `Mentor reply failed for conversation ${conversationId}: ${error?.message}`,
+      );
+      throw new WsException(
+        error?.code === 'quota_exceeded'
+          ? "You've reached today's message limit with your mentor. It resets tomorrow."
+          : 'Your mentor could not reply just now. Please try again.',
+      );
+    }
 
     // 5) Save complete mentor message and emit final event
     const mentorMessage = await this.messagesService.createMentorTextMessage({

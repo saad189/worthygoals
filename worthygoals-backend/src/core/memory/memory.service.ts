@@ -230,14 +230,14 @@ export class MemoryService {
     const since = new Date();
     since.setDate(since.getDate() - 30);
 
-    const rows = (await this.embeddingRepo
+    const rows = await this.embeddingRepo
       .createQueryBuilder('e')
       .select('e.userId', 'userId')
       .addSelect('e.personalityId', 'personalityId')
       .where('e.personalityId IS NOT NULL')
       .andWhere('e.createdAt >= :since', { since })
       .groupBy('e.userId, e.personalityId')
-      .getRawMany()) as Array<{ userId: number; personalityId: string }>;
+      .getRawMany();
     return rows;
   }
 }

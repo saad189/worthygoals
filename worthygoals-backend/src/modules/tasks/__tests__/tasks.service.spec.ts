@@ -234,17 +234,26 @@ describe('TasksService', () => {
       expect(aiGateway.chat).not.toHaveBeenCalled();
     });
 
-    it('throws ConflictException when already completed today', async () => {
-      const qbWithResult = {
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValue(makeCompletion()),
-      };
-      completionRepo.createQueryBuilder.mockReturnValue(qbWithResult);
+    // Idempotency now comes from uq_task_completions_task_day, not a preceding
+    // SELECT — the old read-then-write could be raced by a double tap.
+    it('maps a unique violation to ConflictException', async () => {
+      completionRepo.save.mockRejectedValue(
+        Object.assign(new Error('duplicate key value'), { code: '23505' }),
+      );
 
       await expect(
         service.complete(SUB, TASK_ID, { moodScore: 4 }),
       ).rejects.toThrow(ConflictException);
+    });
+
+    it('does not swallow other database errors', async () => {
+      completionRepo.save.mockRejectedValue(
+        Object.assign(new Error('connection lost'), { code: '08006' }),
+      );
+
+      await expect(
+        service.complete(SUB, TASK_ID, { moodScore: 4 }),
+      ).rejects.toThrow('connection lost');
     });
   });
 
@@ -298,13 +307,10 @@ describe('TasksService', () => {
       expect(aiGateway.chat).not.toHaveBeenCalled();
     });
 
-    it('throws ConflictException when already explained today', async () => {
-      const qbWithResult = {
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValue(makeExplanation()),
-      };
-      explanationRepo.createQueryBuilder.mockReturnValue(qbWithResult);
+    it('maps a unique violation to ConflictException', async () => {
+      explanationRepo.save.mockRejectedValue(
+        Object.assign(new Error('duplicate key value'), { code: '23505' }),
+      );
 
       await expect(
         service.explain(SUB, TASK_ID, { reason: ExplanationReason.COULDNT }),

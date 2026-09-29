@@ -140,7 +140,7 @@ export class StatusService {
     // Same pattern as the board: resolve the media draft to a presigned GET
     // url on read; null when there's no photo or S3 isn't configured.
     const imageUrl = post.mediaId
-      ? await this.mediaService.getPresignedGetUrl(post.mediaId)
+      ? await this.mediaService.getPresignedGetUrl(post.mediaId, post.userId)
       : null;
 
     return {

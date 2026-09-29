@@ -86,15 +86,32 @@ export class MediaService {
     return { uploadUrl, mediaId: saved.id, s3Key };
   }
 
-  async getPresignedGetUrl(mediaId: string): Promise<string | null> {
+  /**
+   * Signs a GET for a media object the given user owns.
+   *
+   * userId is required, not optional. This previously took the mediaId alone
+   * and signed whatever row it found — an hour-long URL to any user's upload
+   * for anyone who could produce an id. Both call sites already query only the
+   * caller's own rows, so the parameter costs them nothing; requiring it is
+   * what stops the next caller reintroducing the hole. Same shape as
+   * markAttached below.
+   */
+  async getPresignedGetUrl(
+    mediaId: string,
+    userId: number,
+  ): Promise<string | null> {
     if (!this.s3) return null;
-    const media = await this.mediaRepo.findOne({ where: { id: mediaId } });
+    const media = await this.mediaRepo.findOne({
+      where: { id: mediaId, userId },
+    });
     if (!media) return null;
     const command = new GetObjectCommand({
       Bucket: this.bucket,
       Key: media.s3Key,
     });
-    return getSignedUrl(this.s3, command, { expiresIn: 3600 });
+    return getSignedUrl(this.s3, command, {
+      expiresIn: PRESIGNED_URL_TTL_SECONDS,
+    });
   }
 
   async markAttached(mediaId: string, sub: string): Promise<void> {

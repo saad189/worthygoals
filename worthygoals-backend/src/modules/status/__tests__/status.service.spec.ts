@@ -160,7 +160,11 @@ describe('StatusService', () => {
       expect.objectContaining({ mediaId: 'media-1' }),
     );
     expect(mediaService.markAttached).toHaveBeenCalledWith('media-1', USER_SUB);
-    expect(mediaService.getPresignedGetUrl).toHaveBeenCalledWith('media-1');
+    // Signed for the post's owner, never by media id alone (tracker B4).
+    expect(mediaService.getPresignedGetUrl).toHaveBeenCalledWith(
+      'media-1',
+      USER_ID,
+    );
     expect(result.imageUrl).toBe('https://signed/img.jpg');
   });
 

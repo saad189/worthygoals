@@ -21,7 +21,7 @@ import {
   UserPersonality,
 } from 'src/database/models';
 import { Media } from '../media/media.entity';
-import { AWSCognitoService } from '../auth/aws-cognito.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -43,8 +43,9 @@ import { AWSCognitoService } from '../auth/aws-cognito.service';
       AiCall,
       Media,
     ]),
+    AuthModule,
   ],
-  providers: [UsersService, GdprService, AWSCognitoService],
+  providers: [UsersService, GdprService],
   controllers: [UsersController],
   exports: [UsersService],
 })

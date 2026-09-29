@@ -12,6 +12,7 @@
  */
 import Storage from '@/helpers/StorageUtilAsync';
 import userService from '@/services/UserService';
+import { enqueueOnboarding } from '@/helpers/taskOutbox';
 import {
   ONBOARDING_COMPLETE,
   ONBOARDING_MENTOR,
@@ -40,17 +41,18 @@ export const onboardingService = {
     } as SavedMentor);
     await Storage.setItem(ONBOARDING_COMPLETE, true);
 
-    // Best-effort backend sync — tone shapes voiced surfaces server-side and
-    // the matched mentor (personalityId) is the reinstall-proof source of
-    // truth for "your mentor" (F2). A failure (offline, cold start) never
-    // blocks onboarding; the local copy is the offline bootstrap.
+    // Backend sync — tone shapes voiced surfaces server-side and the matched
+    // mentor (personalityId) is the reinstall-proof source of truth for "your
+    // mentor" (F2). A failure (offline, cold start) must not block onboarding;
+    // the local copy is the offline bootstrap.
+    const sync = { tone: choice.tone, personalityId: choice.mentorSlug };
     try {
-      await userService.updateOnboarding({
-        tone: choice.tone,
-        personalityId: choice.mentorSlug,
-      });
+      await userService.updateOnboarding(sync);
     } catch {
-      // Swallowed by design — re-synced next time the profile is updated.
+      // Queued, not swallowed. This used to claim it would be "re-synced next
+      // time the profile is updated" — updateOnboarding's only caller was this
+      // line, so nothing ever re-synced it.
+      await enqueueOnboarding(sync);
     }
   },
 

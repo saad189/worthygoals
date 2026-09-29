@@ -79,9 +79,22 @@ function variantStyle(variant: TextVariant, t: AppTheme): { style: TextStyle; co
   }
 }
 
+/**
+ * `primary` and `tint` are the brand rust, which is a fill colour — white on it
+ * is 5.22:1. As *text* it only reaches 4.30:1 on canvas and 3.42:1 in dark
+ * mode. Callers write `color="primary"` meaning "the accent one", so the
+ * substitution happens here rather than at ~17 call sites, and the fills that
+ * genuinely use colors.primary are untouched.
+ */
+const TEXT_SAFE: Partial<Record<ColorKey, ColorKey>> = {
+  primary: 'textAccent',
+  tint: 'textAccent',
+};
+
 export default function Text({ variant = 'body', color, style, ...rest }: AppTextProps) {
   const theme = useAppTheme();
   const v = variantStyle(variant, theme);
-  const resolved = theme.colors[color ?? v.color] as string;
+  const requested = color ?? v.color;
+  const resolved = theme.colors[TEXT_SAFE[requested] ?? requested] as string;
   return <RNText style={[v.style, { color: resolved }, style]} {...rest} />;
 }

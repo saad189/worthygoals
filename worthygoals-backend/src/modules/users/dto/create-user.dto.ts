@@ -88,7 +88,4 @@ export class CreateUserDto {
   @IsOptional()
   @IsIn(['marcus', 'lyra', 'goggs'])
   readonly personalityId?: string;
-
-  @IsOptional()
-  parentId?: number;
 }
