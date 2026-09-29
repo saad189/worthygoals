@@ -28,7 +28,7 @@ import {
   GlobalSignOutCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 import * as crypto from 'crypto';
-import { requireEnv } from 'src/common/env';
+import { ConfigService } from '@nestjs/config';
 import { SignUpAuthDto } from './dto/sign-up.dto';
 import { AuthTokens, LoginAuthDto } from './dto/sign-in.dto';
 
@@ -41,16 +41,18 @@ export class AWSCognitoService {
   private clientSecret: string | undefined;
   private userPoolId: string;
 
-  constructor() {
-    // Read these from your environment variables
-    this.clientId = requireEnv('AWS_COGNITO_APP_CLIENT_ID');
-    this.clientSecret = process.env.AWS_COGNITO_APP_CLIENT_SECRET;
-    this.userPoolId = requireEnv('AWS_COGNITO_USER_POOL_ID');
+  // Through ConfigService, the one place env is validated, instead of raw
+  // process.env with a dead region fallback for a variable Joi requires.
+  constructor(config: ConfigService) {
+    const need = (key: string) => config.getOrThrow<string>(key);
+    this.clientId = need('AWS_COGNITO_APP_CLIENT_ID');
+    this.clientSecret = config.get<string>('AWS_COGNITO_APP_CLIENT_SECRET');
+    this.userPoolId = need('AWS_COGNITO_USER_POOL_ID');
     this.cognitoClient = new CognitoIdentityProviderClient({
-      region: process.env.AWS_REGION || 'eu-north-1',
+      region: need('AWS_REGION'),
       credentials: {
-        accessKeyId: requireEnv('AWS_ACCESS_KEY_ID'),
-        secretAccessKey: requireEnv('AWS_SECRET_ACCESS_KEY'),
+        accessKeyId: need('AWS_ACCESS_KEY_ID'),
+        secretAccessKey: need('AWS_SECRET_ACCESS_KEY'),
       },
     });
   }

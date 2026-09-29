@@ -44,9 +44,6 @@ export interface Mentor {
 
   sortOrder?: number;
   modelConfig?: ModelConfig;
-
-  // future-proofing
-  [key: string]: any;
 }
 
 // ----------------------
@@ -63,8 +60,6 @@ export type PersonalityTraits = {
   empathy?: number;
   spirituality?: number;
   curiosity?: number;
-
-  [key: string]: any;
 };
 
 export type PromptExample = { user: string; assistant: string };
@@ -92,16 +87,12 @@ export type PromptBlocks = {
   model?: string;
   temperature?: number;
   maxOutputTokens?: number;
-
-  [key: string]: any;
 };
 
 export type ModelConfig = {
   model?: string;
   temperature?: number;
   maxOutputTokens?: number;
-
-  [key: string]: any;
 };
 
 /**
@@ -119,8 +110,6 @@ export type TopicPolicy = {
   // map form
   allowedTopicsMap?: Record<string, boolean>;
   disallowedTopicsMap?: Record<string, boolean>;
-
-  [key: string]: any;
 };
 
 export type SafetyPolicy = {
@@ -143,12 +132,9 @@ export type SafetyPolicy = {
     sexualContent?: boolean;
     violence?: boolean;
     religiousVerdicts?: boolean;
-    [key: string]: any;
   };
 
   refusalStyle?: 'soft' | 'firm' | 'educational';
-
-  [key: string]: any;
 };
 
 export type MemoryPolicy = {
@@ -158,6 +144,4 @@ export type MemoryPolicy = {
   // optional knobs
   retentionDays?: number;
   maxMemories?: number;
-
-  [key: string]: any;
 };

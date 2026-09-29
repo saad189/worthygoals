@@ -338,10 +338,17 @@ export class TasksService {
       result.mentorReaction = aiResp.text;
       // Persist reaction on completions so the board can display it later
       if (result.data instanceof TaskCompletion && aiResp.text) {
-        await this.completionRepo.update(
-          { id: (result.data as TaskCompletion).id },
+        const { affected } = await this.completionRepo.update(
+          { id: result.data.id },
           { mentorReaction: aiResp.text },
         );
+        // The user already has the reaction in this response; a miss here only
+        // means the board will never show it — log rather than fail the call.
+        if (!affected) {
+          this.logger.warn(
+            `Mentor reaction not persisted: completion ${result.data.id} is gone`,
+          );
+        }
       }
     } catch (err: any) {
       this.logger.warn(`Mentor reaction failed: ${err?.message}`);

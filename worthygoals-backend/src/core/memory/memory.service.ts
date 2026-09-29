@@ -82,38 +82,48 @@ export class MemoryService {
     queryText: string,
   ): Promise<string> {
     if (!this.embeddingRepo || !this.digestRepo) return '';
-    try {
-      const [shortTerm, digest, ragSnippets] = await Promise.all([
-        this.getShortTerm(userId, personalityId),
-        this.getLatestDigest(userId, personalityId),
-        this.getRagSnippets(userId, personalityId, queryText),
-      ]);
-
-      if (!shortTerm.length && !digest && !ragSnippets.length) return '';
-
-      const parts: string[] = ['[Memory Context]'];
-
-      if (shortTerm.length) {
-        parts.push('--- Recent interactions ---');
-        parts.push(shortTerm.join('\n'));
+    // allSettled, not all: one failing layer (typically the vector search)
+    // used to throw away the other two, so a RAG hiccup left the mentor with
+    // no memory at all for that turn.
+    const settled = await Promise.allSettled([
+      this.getShortTerm(userId, personalityId),
+      this.getLatestDigest(userId, personalityId),
+      this.getRagSnippets(userId, personalityId, queryText),
+    ]);
+    const layers = ['short-term', 'digest', 'rag'];
+    settled.forEach((r, i) => {
+      if (r.status === 'rejected') {
+        this.logger.warn(
+          `buildContext: ${layers[i]} layer failed: ${(r.reason as Error)?.message}`,
+        );
       }
+    });
+    const value = <T>(r: PromiseSettledResult<T>, empty: T): T =>
+      r.status === 'fulfilled' ? r.value : empty;
+    const shortTerm = value(settled[0], [] as string[]);
+    const digest = value(settled[1], null as string | null);
+    const ragSnippets = value(settled[2], [] as string[]);
+    if (!shortTerm.length && !digest && !ragSnippets.length) return '';
 
-      if (digest) {
-        parts.push('--- 30-day summary ---');
-        parts.push(digest);
-      }
+    const parts: string[] = ['[Memory Context]'];
 
-      if (ragSnippets.length) {
-        parts.push('--- Related memories ---');
-        ragSnippets.forEach((s) => parts.push(`• ${s}`));
-      }
-
-      parts.push('[End Memory Context]');
-      return parts.join('\n');
-    } catch (err: any) {
-      this.logger.warn(`buildContext failed: ${err?.message}`);
-      return '';
+    if (shortTerm.length) {
+      parts.push('--- Recent interactions ---');
+      parts.push(shortTerm.join('\n'));
     }
+
+    if (digest) {
+      parts.push('--- 30-day summary ---');
+      parts.push(digest);
+    }
+
+    if (ragSnippets.length) {
+      parts.push('--- Related memories ---');
+      ragSnippets.forEach((s) => parts.push(`• ${s}`));
+    }
+
+    parts.push('[End Memory Context]');
+    return parts.join('\n');
   }
 
   private async indexText(

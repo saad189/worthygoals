@@ -34,7 +34,7 @@ export class AuthService {
       : new InternalServerErrorException();
   }
 
-  async signUpUser(auth: SignUpAuthDto): Promise<any> {
+  async signUpUser(auth: SignUpAuthDto): Promise<true> {
     try {
       await this.awsService.signUpUser(auth);
       return true;
@@ -59,7 +59,7 @@ export class AuthService {
     }
   }
 
-  async refreshTokens(refreshDto: RefreshTokenDto): Promise<any> {
+  async refreshTokens(refreshDto: RefreshTokenDto): Promise<AuthTokens> {
     try {
       const { username, refreshToken } = refreshDto;
       if (!username || !refreshToken) throw new BadRequestException();
@@ -84,7 +84,7 @@ export class AuthService {
     }
   }
 
-  async confirmSignUp(identity: string, code: string): Promise<any> {
+  async confirmSignUp(identity: string, code: string): Promise<true> {
     try {
       await this.awsService.confirmSignUp(identity, code);
       return true;
@@ -133,7 +133,7 @@ export class AuthService {
     email,
     code,
     password,
-  }: ConfirmPasswordDto): Promise<any> {
+  }: ConfirmPasswordDto): Promise<true> {
     try {
       await this.awsService.confirmForgotPassword(email, code, password);
       return true;
