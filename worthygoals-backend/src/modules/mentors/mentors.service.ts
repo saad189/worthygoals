@@ -1,10 +1,5 @@
 import { rethrowSafe } from 'src/common/errors/rethrow-safe';
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Mentor } from 'src/database/models';
@@ -19,96 +14,25 @@ export class MentorsService {
     private readonly mentorRepository: Repository<Mentor>,
   ) {}
 
-  private static readonly allowedIncludePaths = new Set([
-    'conversations',
-    'conversations.messages',
-    'conversations.summaries',
-    'conversations.memoryItems',
-    'messages',
-    'messages.attachments',
-    'messages.feedback',
-  ]);
+  // No ?include=. It used to accept conversations(.messages|.summaries|
+  // .memoryItems) and messages(.attachments|.feedback) — but a mentor's
+  // conversations and messages belong to every user who talks to it, so
+  // GET /mentors?include=conversations.messages returned all users' private
+  // chats to any signed-in caller. The app never sent an include.
 
-  private normalizeInclude(include?: string | string[]): string[] {
-    if (!include) return [];
-
-    const raw = Array.isArray(include) ? include : [include];
-    const parts = raw
-      .flatMap((v) => v.split(','))
-      .map((v) => v.trim())
-      .filter(Boolean);
-
-    const unique = Array.from(new Set(parts));
-    const invalid = unique.filter(
-      (p) => !MentorsService.allowedIncludePaths.has(p),
-    );
-    if (invalid.length) {
-      throw new BadRequestException(
-        `Invalid include relation(s): ${invalid.join(', ')}. Allowed: ${Array.from(
-          MentorsService.allowedIncludePaths,
-        ).join(', ')}`,
-      );
-    }
-    return unique;
-  }
-
-  private buildRelations(include?: string | string[]) {
-    const includes = new Set(this.normalizeInclude(include));
-
-    const relations: any = {};
-
-    if (
-      includes.has('conversations') ||
-      includes.has('conversations.messages') ||
-      includes.has('conversations.summaries') ||
-      includes.has('conversations.memoryItems')
-    ) {
-      relations.conversations = relations.conversations ?? {};
-      if (includes.has('conversations')) {
-        relations.conversations = relations.conversations || true;
-      }
-      if (includes.has('conversations.messages'))
-        relations.conversations.messages = true;
-      if (includes.has('conversations.summaries'))
-        relations.conversations.summaries = true;
-      if (includes.has('conversations.memoryItems'))
-        relations.conversations.memoryItems = true;
-    }
-
-    if (
-      includes.has('messages') ||
-      includes.has('messages.attachments') ||
-      includes.has('messages.feedback')
-    ) {
-      relations.messages = relations.messages ?? {};
-      if (includes.has('messages')) {
-        relations.messages = relations.messages || true;
-      }
-      if (includes.has('messages.attachments'))
-        relations.messages.attachments = true;
-      if (includes.has('messages.feedback')) relations.messages.feedback = true;
-    }
-
-    return relations;
-  }
-
-  async findAll(include?: string | string[]): Promise<Mentor[]> {
+  async findAll(): Promise<Mentor[]> {
     // Roster only surfaces the live, public personalities. Retired mentors
     // (e.g. legacy discipline specialists) stay resolvable by id but are
     // hidden from the list. Order matches the seeder's sortOrder.
     return this.mentorRepository.find({
       where: { isActive: true, visibility: MentorVisibility.PUBLIC },
       order: { sortOrder: 'ASC' },
-      relations: this.buildRelations(include),
     });
   }
 
-  async findOne(id: number, include?: string | string[]): Promise<Mentor> {
+  async findOne(id: number): Promise<Mentor> {
     try {
-      const mentor = await this.mentorRepository.findOne({
-        where: { id },
-        relations: this.buildRelations(include),
-      });
+      const mentor = await this.mentorRepository.findOne({ where: { id } });
       if (!mentor)
         throw new NotFoundException(`Mentor with id: ${id} not found.`);
       return mentor;
