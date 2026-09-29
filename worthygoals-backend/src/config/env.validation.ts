@@ -2,9 +2,20 @@ import * as Joi from 'joi';
 
 export const envValidationSchema = Joi.object({
   // ── Server ───────────────────────────────────────────────────────────────
-  NODE_ENV: Joi.string().valid('local', 'lazy', 'dev', 'prod').default('local'),
+  // Required, no default. Defaulting to 'local' was the fail-open direction:
+  // a host that forgot to set it served Swagger and reflected any CORS origin.
+  NODE_ENV: Joi.string().valid('local', 'lazy', 'dev', 'prod').required(),
   PORT: Joi.number().default(3000),
   SERVER_URL: Joi.string().default('http://localhost'),
+  // Comma-separated browser origins. Unset in prod means none are allowed —
+  // the native app sends no Origin and is unaffected.
+  ALLOWED_ORIGINS: Joi.string()
+    .pattern(/^https?:\/\/[^,\s]+(\s*,\s*https?:\/\/[^,\s]+)*$/)
+    .optional()
+    .messages({
+      'string.pattern.base':
+        'ALLOWED_ORIGINS must be comma-separated http(s) origins',
+    }),
 
   // ── Database (PostgreSQL + pgvector) ─────────────────────────────────────
   DB_HOST: Joi.string().required(),
@@ -12,6 +23,12 @@ export const envValidationSchema = Joi.object({
   DB_USERNAME: Joi.string().required(),
   DB_PASSWORD: Joi.string().required(),
   DB_NAME: Joi.string().required(),
+  // These were read straight off process.env, so DB_SSL=1 silently meant "no
+  // TLS". Only the literal strings the code compares against are accepted.
+  DB_SSL: Joi.string().valid('true', 'false').optional(),
+  DB_SSL_REJECT_UNAUTHORIZED: Joi.string().valid('true', 'false').optional(),
+  DB_LOGGING: Joi.string().valid('true', 'false').optional(),
+  DB_POOL_MAX: Joi.number().integer().min(1).optional(),
 
   // ── AWS / Cognito ─────────────────────────────────────────────────────────
   AWS_REGION: Joi.string().required(),
@@ -41,7 +58,13 @@ export const envValidationSchema = Joi.object({
   S3_REGION: Joi.string().default('auto'),
 
   // ── Push Notifications ───────────────────────────────────────────────────
-  REDIS_URL: Joi.string().default('redis://localhost:6379'), // Tier 3: defaults to local Redis
+  // Required in prod: the localhost default let an instance with no Redis
+  // pass validation, boot clean, and queue every push into a dead connection.
+  REDIS_URL: Joi.string().when('NODE_ENV', {
+    is: 'prod',
+    then: Joi.required(),
+    otherwise: Joi.optional().default('redis://localhost:6379'),
+  }),
   EXPO_ACCESS_TOKEN: Joi.string().optional(), // Tier 2: graceful no-op if absent
 
   // ── Observability (optional — graceful no-op if absent) ──────────────────

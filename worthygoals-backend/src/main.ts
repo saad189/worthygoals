@@ -7,6 +7,7 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { corsOrigin } from './common/cors';
+import { logDisabledTiers } from './config/optional-tiers';
 import helmet from 'helmet';
 import { AppModule } from './modules/app/app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
@@ -55,6 +56,8 @@ async function bootstrap() {
   // stand. BullMQ re-delivers a job once its lock expires, so a rolling deploy
   // could duplicate push notifications.
   app.enableShutdownHooks();
+
+  logDisabledTiers();
 
   await app.listen(PORT, '0.0.0.0');
   console.log(`Server running on port ${PORT}`);
