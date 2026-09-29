@@ -35,11 +35,13 @@ export class TasksController {
 
   @Get()
   @ApiQuery({ name: 'goalId', required: true })
+  @ApiQuery({ name: 'limit', required: false })
   findAll(
     @Request() req: AuthenticatedRequest,
     @Query('goalId') goalId: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.tasksService.findAllForGoal(req.user.sub, goalId);
+    return this.tasksService.findAllForGoal(req.user.sub, goalId, limit);
   }
 
   @Get(':id')

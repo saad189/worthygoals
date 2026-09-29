@@ -30,4 +30,17 @@ export class StatusPostDto {
 
   @ApiProperty({ type: [StatusReactionDto] })
   reactions!: StatusReactionDto[];
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Set when the status tripped the crisis gate: no mentor reactions were generated.',
+  })
+  safetyFlag?: boolean;
+
+  @ApiProperty({
+    required: false,
+    description: 'The safe response with crisis resources, when safetyFlag.',
+  })
+  crisisResponse?: string;
 }

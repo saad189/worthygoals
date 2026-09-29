@@ -6,6 +6,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -35,18 +36,20 @@ export class ConversationsController {
     @Request() req: AuthenticatedRequest,
     @Query('mentorId') mentorId?: string,
     @Query('include') include?: string | string[],
+    @Query('limit') limit?: string,
   ): Promise<Conversation[]> {
     return this.conversationsService.findAll({
       sub: req.user.sub,
       mentorId: mentorId ? Number(mentorId) : undefined,
       include,
+      limit,
     });
   }
 
   @Get(':id')
   async findOne(
     @Request() req: AuthenticatedRequest,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Query('include') include?: string | string[],
   ): Promise<Conversation> {
     return this.conversationsService.findOne({
@@ -70,7 +73,7 @@ export class ConversationsController {
   @Patch(':id')
   async update(
     @Request() req: AuthenticatedRequest,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateConversationDto: UpdateConversationDto,
   ): Promise<Conversation> {
     return this.conversationsService.update({
@@ -83,7 +86,7 @@ export class ConversationsController {
   @Delete(':id')
   async remove(
     @Request() req: AuthenticatedRequest,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
     return this.conversationsService.remove({
       id,

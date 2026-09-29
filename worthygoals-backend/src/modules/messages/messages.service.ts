@@ -8,7 +8,8 @@ import {
   Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LessThan, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
+import { parseLimit } from 'src/common/pagination';
 import { Conversation } from 'src/database/models/conversation.entity';
 import { Message } from 'src/database/models/message.entity';
 import { MessageContentType, MessageRole } from 'src/common/constants';
@@ -38,8 +39,9 @@ export class MessagesService {
   async list(params: {
     conversationId: string;
     sub: string;
-    limit?: number;
+    limit?: string;
     before?: Date;
+    beforeId?: string;
   }): Promise<Message[]> {
     try {
       const [user, conversation] = await Promise.all([
@@ -66,24 +68,30 @@ export class MessagesService {
         throw new ForbiddenException('Cannot access other users messages');
       }
 
-      const take = params.limit ?? 50;
-      if (!Number.isFinite(take) || take <= 0 || take > 200) {
-        throw new BadRequestException('limit must be between 1 and 200');
+      const take = parseLimit(params.limit, { fallback: 50, max: 200 });
+
+      const qb = this.messageRepository
+        .createQueryBuilder('m')
+        .where('m.conversationId = :conversationId', {
+          conversationId: params.conversationId,
+        })
+        .orderBy('m.createdAt', 'DESC')
+        .addOrderBy('m.id', 'DESC')
+        .take(take);
+
+      // Paging on createdAt alone skipped or repeated a message whenever two
+      // shared a timestamp across a page boundary. (createdAt, id) is a total
+      // order; beforeId is the id of the oldest message the client holds.
+      if (params.before && params.beforeId) {
+        qb.andWhere('(m.createdAt, m.id) < (:before, :beforeId)', {
+          before: params.before,
+          beforeId: params.beforeId,
+        });
+      } else if (params.before) {
+        qb.andWhere('m.createdAt < :before', { before: params.before });
       }
 
-      const where: any = {
-        conversationId: params.conversationId,
-      };
-
-      if (params.before) {
-        where.createdAt = LessThan(params.before);
-      }
-
-      const results = await this.messageRepository.find({
-        where,
-        order: { createdAt: 'DESC' },
-        take,
-      });
+      const results = await qb.getMany();
 
       return results.reverse();
     } catch (error) {

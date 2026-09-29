@@ -1,3 +1,4 @@
+import { parseLimit } from 'src/common/pagination';
 import {
   ForbiddenException,
   Injectable,
@@ -137,12 +138,16 @@ export class GoalsService {
       : null;
   }
 
-  async findAllForUser(sub: string): Promise<ResponseGoalDto[]> {
+  async findAllForUser(
+    sub: string,
+    limit?: string,
+  ): Promise<ResponseGoalDto[]> {
     const user = await this.usersService.findByAccountSub(sub);
     if (!user) throw new NotFoundException('User not found');
     const goals = await this.goalRepository.find({
       where: { userId: user.id },
       order: { createdAt: 'DESC' },
+      take: parseLimit(limit, { fallback: 100, max: 200 }),
     });
     return goals.map((g) => this.toDto(g));
   }

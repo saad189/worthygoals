@@ -1,6 +1,7 @@
 import {
   Injectable,
   Logger,
+  NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -11,7 +12,7 @@ import {
   GetObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { CreateUploadUrlDto } from './dto/create-upload-url.dto';
 import { Media } from './media.entity';
@@ -114,12 +115,25 @@ export class MediaService {
     });
   }
 
-  async markAttached(mediaId: string, sub: string): Promise<void> {
+  /**
+   * Mark a draft attached. Throws when the id is not the caller's own media:
+   * the update used to match zero rows and return silently, after the post
+   * carrying someone else's media id had already been saved. Pass the
+   * EntityManager of an open transaction to roll that post back with it.
+   */
+  async markAttached(
+    mediaId: string,
+    sub: string,
+    em?: EntityManager,
+  ): Promise<void> {
     const user = await this.usersService.findByAccountSub(sub);
-    if (!user) return;
-    await this.mediaRepo.update(
-      { id: mediaId, userId: user.id },
-      { isAttached: true },
-    );
+    const repo = em ? em.getRepository(Media) : this.mediaRepo;
+    const res = user
+      ? await repo.update(
+          { id: mediaId, userId: user.id },
+          { isAttached: true },
+        )
+      : undefined;
+    if (!res?.affected) throw new NotFoundException('Media not found');
   }
 }

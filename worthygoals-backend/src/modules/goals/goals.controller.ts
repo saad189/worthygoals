@@ -7,12 +7,14 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/common/guards';
 import { CreateGoalDto } from './dto/create-goal.dto';
 import { UpdateGoalDto } from './dto/update-goal.dto';
@@ -37,19 +39,26 @@ export class GoalsController {
   }
 
   @Get()
-  findAll(@Request() req: AuthenticatedRequest) {
-    return this.goalsService.findAllForUser(req.user.sub);
+  @ApiQuery({ name: 'limit', required: false })
+  findAll(
+    @Request() req: AuthenticatedRequest,
+    @Query('limit') limit?: string,
+  ) {
+    return this.goalsService.findAllForUser(req.user.sub, limit);
   }
 
   @Get(':id')
-  findOne(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+  findOne(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.goalsService.findOne(id, req.user.sub);
   }
 
   @Patch(':id')
   update(
     @Request() req: AuthenticatedRequest,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateGoalDto,
   ) {
     return this.goalsService.update(id, req.user.sub, dto);
@@ -57,7 +66,10 @@ export class GoalsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+  async remove(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     await this.goalsService.remove(id, req.user.sub);
   }
 }

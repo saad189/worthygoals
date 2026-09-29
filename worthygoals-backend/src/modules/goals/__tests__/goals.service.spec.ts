@@ -212,8 +212,15 @@ describe('GoalsService', () => {
       expect(repo.find).toHaveBeenCalledWith({
         where: { userId: USER_ID },
         order: { createdAt: 'DESC' },
+        take: 100,
       });
       expect(result).toHaveLength(2);
+    });
+
+    it('rejects a limit outside 1..200', async () => {
+      await expect(service.findAllForUser(USER_SUB, '500')).rejects.toThrow(
+        'limit must be an integer from 1 to 200',
+      );
     });
   });
 

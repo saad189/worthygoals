@@ -1,3 +1,4 @@
+import { parseLimit } from 'src/common/pagination';
 import {
   ConflictException,
   ForbiddenException,
@@ -96,7 +97,11 @@ export class TasksService {
     return this.taskRepo.save(task);
   }
 
-  async findAllForGoal(sub: string, goalId: string): Promise<Task[]> {
+  async findAllForGoal(
+    sub: string,
+    goalId: string,
+    limit?: string,
+  ): Promise<Task[]> {
     const user = await this.resolveUser(sub);
     // Postgres throws on a non-UUID literal compared to a uuid column, which
     // would surface as a 500. Treat a malformed id as "not found" instead.
@@ -106,10 +111,14 @@ export class TasksService {
     if (!goal) throw new NotFoundException(`Goal ${goalId} not found`);
     if (goal.userId !== user.id) throw new ForbiddenException();
 
-    return this.taskRepo.find({
+    // Recurring goals grow a task a day, so this is bounded. Take the latest
+    // N by due date and hand them back oldest-first, the order the app shows.
+    const latest = await this.taskRepo.find({
       where: { goalId },
-      order: { dueDate: 'ASC', createdAt: 'ASC' },
+      order: { dueDate: 'DESC', createdAt: 'DESC' },
+      take: parseLimit(limit, { fallback: 100, max: 500 }),
     });
+    return latest.reverse();
   }
 
   async findOne(sub: string, taskId: string): Promise<Task> {

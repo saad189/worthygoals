@@ -101,10 +101,20 @@ describe('MediaService', () => {
       );
     });
 
-    it('does nothing when user is not found', async () => {
+    it('throws when the user is not found', async () => {
       usersService.findByAccountSub.mockResolvedValue(null);
-      await service.markAttached('media-uuid', 'unknown-sub');
+      await expect(
+        service.markAttached('media-uuid', 'unknown-sub'),
+      ).rejects.toThrow('Media not found');
       expect(repo.update).not.toHaveBeenCalled();
+    });
+
+    it("throws when the media id is someone else's", async () => {
+      usersService.findByAccountSub.mockResolvedValue({ id: 1 });
+      repo.update.mockResolvedValue({ affected: 0 });
+      await expect(
+        service.markAttached('media-uuid', 'cognito-sub'),
+      ).rejects.toThrow('Media not found');
     });
   });
 });

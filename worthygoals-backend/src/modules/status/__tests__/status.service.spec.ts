@@ -6,13 +6,19 @@ import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
 import { StatusService } from '../status.service';
 import { MediaService } from '../../media/media.service';
 import { UsersService } from '../../users/users.service';
+import { SafetyService } from 'src/core/safety/safety.service';
 
 const USER_ID = 1;
 const USER_SUB = 'cognito-sub-abc';
 
 describe('StatusService', () => {
   let service: StatusService;
-  let statusRepo: { create: jest.Mock; save: jest.Mock; find: jest.Mock };
+  let statusRepo: {
+    create: jest.Mock;
+    save: jest.Mock;
+    find: jest.Mock;
+    manager: { transaction: jest.Mock };
+  };
   let reactionRepo: { create: jest.Mock; save: jest.Mock };
   let usersService: { findByAccountSub: jest.Mock };
   let gateway: { chat: jest.Mock };
@@ -27,11 +33,20 @@ describe('StatusService', () => {
         ...v,
       })),
       find: jest.fn(),
+      manager: { transaction: jest.fn() },
     };
     reactionRepo = {
       create: jest.fn((v) => v),
       save: jest.fn(async (v) => v),
     };
+    // The post and its reactions commit in one transaction; route the
+    // EntityManager's saves back to the two repo mocks the assertions read.
+    const em = {
+      create: (_entity: unknown, v: unknown) => v,
+      save: (v: unknown) =>
+        Array.isArray(v) ? reactionRepo.save(v) : statusRepo.save(v),
+    };
+    statusRepo.manager.transaction.mockImplementation((fn) => fn(em));
     usersService = {
       findByAccountSub: jest.fn().mockResolvedValue({ id: USER_ID }),
     };
@@ -58,6 +73,7 @@ describe('StatusService', () => {
         { provide: UsersService, useValue: usersService },
         { provide: AiGatewayService, useValue: gateway },
         { provide: MediaService, useValue: mediaService },
+        SafetyService,
       ],
     }).compile();
 
@@ -159,7 +175,11 @@ describe('StatusService', () => {
     expect(statusRepo.save).toHaveBeenCalledWith(
       expect.objectContaining({ mediaId: 'media-1' }),
     );
-    expect(mediaService.markAttached).toHaveBeenCalledWith('media-1', USER_SUB);
+    expect(mediaService.markAttached).toHaveBeenCalledWith(
+      'media-1',
+      USER_SUB,
+      expect.anything(),
+    );
     // Signed for the post's owner, never by media id alone (tracker B4).
     expect(mediaService.getPresignedGetUrl).toHaveBeenCalledWith(
       'media-1',
@@ -173,5 +193,23 @@ describe('StatusService', () => {
     expect(result.imageUrl).toBeNull();
     expect(mediaService.markAttached).not.toHaveBeenCalled();
     expect(mediaService.getPresignedGetUrl).not.toHaveBeenCalled();
+  });
+
+  it('routes a crisis status to the safe response, not three personas', async () => {
+    const result = await service.create(USER_SUB, {
+      text: 'i want to kill myself',
+    });
+
+    expect(gateway.chat).not.toHaveBeenCalled();
+    expect(result.reactions).toEqual([]);
+    expect(result.safetyFlag).toBe(true);
+    expect(result.crisisResponse).toContain('988');
+  });
+
+  it("rolls the post back when the media id is not the caller's", async () => {
+    mediaService.markAttached.mockRejectedValue(new NotFoundException());
+    await expect(
+      service.create(USER_SUB, { text: 'proof', mediaId: 'someone-elses' }),
+    ).rejects.toThrow(NotFoundException);
   });
 });
