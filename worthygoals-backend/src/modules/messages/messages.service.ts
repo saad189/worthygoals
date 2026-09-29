@@ -1,7 +1,7 @@
+import { rethrowSafe } from 'src/common/errors/rethrow-safe';
 import {
   BadRequestException,
   ForbiddenException,
-  HttpException,
   Injectable,
   Logger,
   NotFoundException,
@@ -87,10 +87,11 @@ export class MessagesService {
 
       return results.reverse();
     } catch (error) {
-      this.logger.log(
-        `${MessagesService.name}:${this.list.name}: ${JSON.stringify(error.message)}`,
+      rethrowSafe(
+        error,
+        this.logger,
+        `${MessagesService.name}:${this.list.name}`,
       );
-      throw new HttpException(error.message, error.status);
     }
   }
 
@@ -174,10 +175,11 @@ export class MessagesService {
 
       return saved;
     } catch (error) {
-      this.logger.log(
-        `${MessagesService.name}:${this.sendUserTextMessage.name}: ${JSON.stringify(error.message)}`,
+      rethrowSafe(
+        error,
+        this.logger,
+        `${MessagesService.name}:${this.sendUserTextMessage.name}`,
       );
-      throw new HttpException(error.message, error.status);
     }
   }
 
@@ -224,10 +226,11 @@ export class MessagesService {
 
       return saved;
     } catch (error) {
-      this.logger.log(
-        `${MessagesService.name}:${this.createMentorTextMessage.name}: ${JSON.stringify(error.message)}`,
+      rethrowSafe(
+        error,
+        this.logger,
+        `${MessagesService.name}:${this.createMentorTextMessage.name}`,
       );
-      throw new HttpException(error.message, error.status);
     }
   }
 }

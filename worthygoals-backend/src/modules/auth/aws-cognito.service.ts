@@ -207,7 +207,7 @@ export class AWSCognitoService {
       // Response typically contains details like userConfirmed and codeDeliveryDetails.
       return response;
     } catch (error) {
-      this.logger.log(
+      this.logger.error(
         `${AWSCognitoService.name}:${this.signUpUser.name}: ${JSON.stringify(error.message)}`,
       );
       throw this.toHttpException(error);

@@ -2,11 +2,9 @@ import {
   BadRequestException,
   Body,
   Controller,
-  Delete,
   Get,
   HttpCode,
   HttpStatus,
-  Param,
   Post,
   Request,
   UseGuards,
@@ -14,7 +12,7 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/common/guards';
 import { UsersService } from 'src/modules/users/users.service';
-import { RegisterTokenDto } from './dto/register-token.dto';
+import { RegisterTokenDto, UnregisterTokenDto } from './dto/register-token.dto';
 import { NotificationsService } from './notifications.service';
 
 @ApiTags('Notifications')
@@ -57,15 +55,18 @@ export class NotificationsController {
     await this.notifService.registerToken(await this.resolveUserId(req), dto);
   }
 
-  @Delete('token/:token')
+  // The token travels in the body. It used to be a path segment
+  // (DELETE /notifications/token/:token), which writes a live push token into
+  // every access log and proxy between the app and here.
+  @Post('token/unregister')
   @HttpCode(HttpStatus.NO_CONTENT)
   async unregisterToken(
     @Request() req,
-    @Param('token') token: string,
+    @Body() dto: UnregisterTokenDto,
   ): Promise<void> {
     await this.notifService.unregisterToken(
       await this.resolveUserId(req),
-      token,
+      dto.token,
     );
   }
 

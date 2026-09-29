@@ -55,7 +55,7 @@ describe('NotificationsController', () => {
   });
 
   it('unregisters against the numeric user id', async () => {
-    await controller.unregisterToken(req, 'ExponentPushToken[x]');
+    await controller.unregisterToken(req, { token: 'ExponentPushToken[x]' });
 
     expect(notifService.unregisterToken).toHaveBeenCalledWith(
       USER_ID,

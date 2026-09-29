@@ -8,7 +8,7 @@ export class Security {
     try {
       return await argon2.hash(actualPassword);
     } catch (error) {
-      this.logger.log(
+      this.logger.error(
         `Security:securePassword: ${JSON.stringify(error.message)}`,
       );
       throw new Error(error.message);
@@ -22,7 +22,7 @@ export class Security {
     try {
       return await argon2.verify(hashValue, password);
     } catch (error) {
-      this.logger.log(
+      this.logger.error(
         `Security:verifyPassword: ${JSON.stringify(error.message)}`,
       );
       throw new Error(error.message);

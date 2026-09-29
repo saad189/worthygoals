@@ -1,6 +1,6 @@
+import { rethrowSafe } from 'src/common/errors/rethrow-safe';
 import {
   BadRequestException,
-  HttpException,
   Injectable,
   Logger,
   NotFoundException,
@@ -108,10 +108,11 @@ export class ConversationsService {
         },
       });
     } catch (error) {
-      this.logger.log(
-        `${ConversationsService.name}:${this.findAll.name}: ${JSON.stringify(error.message)}`,
+      rethrowSafe(
+        error,
+        this.logger,
+        `${ConversationsService.name}:${this.findAll.name}`,
       );
-      throw new HttpException(error.message, error.status);
     }
   }
 
@@ -139,10 +140,11 @@ export class ConversationsService {
 
       return conversation;
     } catch (error) {
-      this.logger.log(
-        `${ConversationsService.name}:${this.findOne.name}: ${JSON.stringify(error.message)}`,
+      rethrowSafe(
+        error,
+        this.logger,
+        `${ConversationsService.name}:${this.findOne.name}`,
       );
-      throw new HttpException(error.message, error.status);
     }
   }
 
@@ -178,10 +180,11 @@ export class ConversationsService {
 
       return await this.conversationRepository.save(conversation);
     } catch (error) {
-      this.logger.log(
-        `${ConversationsService.name}:${this.create.name}: ${JSON.stringify(error.message)}`,
+      rethrowSafe(
+        error,
+        this.logger,
+        `${ConversationsService.name}:${this.create.name}`,
       );
-      throw new HttpException(error.message, error.status);
     }
   }
 
@@ -222,10 +225,11 @@ export class ConversationsService {
 
       return await this.conversationRepository.save(conversation);
     } catch (error) {
-      this.logger.log(
-        `${ConversationsService.name}:${this.update.name}: ${JSON.stringify(error.message)}`,
+      rethrowSafe(
+        error,
+        this.logger,
+        `${ConversationsService.name}:${this.update.name}`,
       );
-      throw new HttpException(error.message, error.status);
     }
   }
 
@@ -248,10 +252,11 @@ export class ConversationsService {
 
       await this.conversationRepository.remove(conversation);
     } catch (error) {
-      this.logger.log(
-        `${ConversationsService.name}:${this.remove.name}: ${JSON.stringify(error.message)}`,
+      rethrowSafe(
+        error,
+        this.logger,
+        `${ConversationsService.name}:${this.remove.name}`,
       );
-      throw new HttpException(error.message, error.status);
     }
   }
 }

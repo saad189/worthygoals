@@ -74,8 +74,8 @@ export class NotificationVoicingService {
         body,
         abVariant: 'A',
       });
-    } catch {
-      // Duplicate key on concurrent saves is acceptable — ignore.
+    } catch (err) {
+      this.ignoreDuplicate(err, `${personalityId}/${event}/${day}`);
     }
 
     return { body, abVariant: 'A' };
@@ -120,11 +120,24 @@ export class NotificationVoicingService {
           this.logger.log(
             `Pre-generated ${personality.id}/${kind} for ${tomorrow}`,
           );
-        } catch {
-          // Race condition on concurrent pre-gen runs — ignore duplicate.
+        } catch (err) {
+          this.ignoreDuplicate(err, `${personality.id}/${kind}/${tomorrow}`);
         }
       }
     }
+  }
+
+  /**
+   * A concurrent writer winning the unique key is expected; anything else
+   * (schema drift, lost connection) is not. The bare `catch {}` treated both as
+   * a duplicate, so a persistent write failure silently turned the cache off
+   * and paid for fresh copy on every push.
+   */
+  private ignoreDuplicate(err: unknown, key: string): void {
+    if ((err as { code?: string })?.code === '23505') return;
+    this.logger.error(
+      `Copy cache write failed for ${key}: ${(err as Error)?.message}`,
+    );
   }
 
   private async generateCopy(

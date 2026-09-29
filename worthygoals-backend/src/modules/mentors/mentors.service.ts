@@ -1,6 +1,6 @@
+import { rethrowSafe } from 'src/common/errors/rethrow-safe';
 import {
   BadRequestException,
-  HttpException,
   Injectable,
   Logger,
   NotFoundException,
@@ -113,10 +113,11 @@ export class MentorsService {
         throw new NotFoundException(`Mentor with id: ${id} not found.`);
       return mentor;
     } catch (error) {
-      this.logger.log(
-        `${MentorsService.name}:${this.findOne.name}: ${JSON.stringify(error.message)}`,
+      rethrowSafe(
+        error,
+        this.logger,
+        `${MentorsService.name}:${this.findOne.name}`,
       );
-      throw new HttpException(error.message, error.status);
     }
   }
 }

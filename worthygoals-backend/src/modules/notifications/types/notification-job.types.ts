@@ -13,3 +13,12 @@ export interface NotificationJobData {
   scheduledFor: string; // ISO 8601 UTC instant of the scheduled delivery
   payload?: Record<string, unknown>;
 }
+
+/** Job name for the delayed Expo receipt check that follows every send. */
+export const PUSH_RECEIPTS_JOB = 'push_receipts';
+
+export interface PushReceiptJobData {
+  tickets: Array<{ id: string; token: string }>;
+}
+
+export type NotificationQueueData = NotificationJobData | PushReceiptJobData;

@@ -34,7 +34,17 @@ import { NOTIFICATION_QUEUE } from './types/notification-job.types';
         },
       }),
     }),
-    BullModule.registerQueue({ name: NOTIFICATION_QUEUE }),
+    BullModule.registerQueue({
+      name: NOTIFICATION_QUEUE,
+      // BullMQ's default is attempts: 1, so a failed send was final — and the
+      // processor also swallowed the error, so the job completed green.
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 60_000 },
+        removeOnComplete: true,
+        removeOnFail: 100,
+      },
+    }),
     ScheduleModule.forRoot(),
     PersonalityModule,
     UsersModule,
