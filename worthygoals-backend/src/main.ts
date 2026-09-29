@@ -4,13 +4,19 @@
 import './instrument';
 
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { corsOrigin } from './common/cors';
 import helmet from 'helmet';
 import { AppModule } from './modules/app/app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // The deploy target (Railway) terminates TLS at one proxy. Without this,
+  // req.ip is the proxy's address, so every per-IP throttle bucket collapses
+  // into one shared by all users.
+  app.set('trust proxy', 1);
   const PORT = process.env.PORT || 3000;
   // env.validation only permits local|lazy|dev|prod — 'production' never matches,
   // which is why Swagger was exposed in prod. The production tier is 'prod'.
@@ -19,13 +25,8 @@ async function bootstrap() {
   // Security headers
   app.use(helmet());
 
-  // CORS: use ALLOWED_ORIGINS env var in production; allow all in development
-  const rawOrigins = process.env.ALLOWED_ORIGINS;
-  const allowedOrigins = rawOrigins
-    ? rawOrigins.split(',').map((o) => o.trim())
-    : null;
   app.enableCors({
-    origin: allowedOrigins ?? (isProduction ? false : true),
+    origin: corsOrigin,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });

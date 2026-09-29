@@ -1,3 +1,4 @@
+import { AuthenticatedRequest } from 'src/common/interfaces';
 import {
   Body,
   BadRequestException,
@@ -26,7 +27,7 @@ export class MessagesController {
 
   @Get()
   async list(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Query('conversationId') conversationId: string,
     @Query('limit') limit?: string,
     @Query('before') before?: string,
@@ -47,7 +48,7 @@ export class MessagesController {
 
   @Post()
   async send(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Body() dto: SendTextMessageDto,
   ): Promise<MessageResponseDto> {
     const message = await this.messagesService.sendUserTextMessage({

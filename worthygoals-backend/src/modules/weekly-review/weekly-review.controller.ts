@@ -1,3 +1,4 @@
+import { AuthenticatedRequest } from 'src/common/interfaces';
 import { Controller, Get, Request, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/common/guards';
@@ -13,7 +14,7 @@ export class WeeklyReviewController {
 
   @Get()
   @ApiOkResponse({ type: WeeklyReviewDto })
-  getReview(@Request() req: any): Promise<WeeklyReviewDto> {
+  getReview(@Request() req: AuthenticatedRequest): Promise<WeeklyReviewDto> {
     return this.weeklyReviewService.getReview(req.user.sub);
   }
 }

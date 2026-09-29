@@ -1,3 +1,4 @@
+import { AuthenticatedRequest } from 'src/common/interfaces';
 /**
  * Guards C1.
  *
@@ -15,7 +16,7 @@ import { NotificationsService } from '../notifications.service';
 
 const SUB = '9f8c1b2e-0000-4a1b-9c3d-abcdefabcdef';
 const USER_ID = 42;
-const req = { user: { sub: SUB } };
+const req = { user: { sub: SUB } } as unknown as AuthenticatedRequest;
 
 describe('NotificationsController', () => {
   let controller: NotificationsController;

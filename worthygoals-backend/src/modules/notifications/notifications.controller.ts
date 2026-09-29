@@ -1,3 +1,4 @@
+import { AuthenticatedRequest } from 'src/common/interfaces';
 import {
   BadRequestException,
   Body,
@@ -49,7 +50,7 @@ export class NotificationsController {
   @Post('token')
   @HttpCode(HttpStatus.NO_CONTENT)
   async registerToken(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Body() dto: RegisterTokenDto,
   ): Promise<void> {
     await this.notifService.registerToken(await this.resolveUserId(req), dto);
@@ -61,7 +62,7 @@ export class NotificationsController {
   @Post('token/unregister')
   @HttpCode(HttpStatus.NO_CONTENT)
   async unregisterToken(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Body() dto: UnregisterTokenDto,
   ): Promise<void> {
     await this.notifService.unregisterToken(
@@ -71,7 +72,7 @@ export class NotificationsController {
   }
 
   @Get('tokens')
-  async getTokens(@Request() req) {
+  async getTokens(@Request() req: AuthenticatedRequest) {
     return this.notifService.getTokens(await this.resolveUserId(req));
   }
 }

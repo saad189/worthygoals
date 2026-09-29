@@ -1,3 +1,4 @@
+import { AuthenticatedRequest } from 'src/common/interfaces';
 import {
   Body,
   Controller,
@@ -51,7 +52,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
-  async logout(@Request() req) {
+  async logout(@Request() req: AuthenticatedRequest) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       throw new BadRequestException('Authorization header not found');

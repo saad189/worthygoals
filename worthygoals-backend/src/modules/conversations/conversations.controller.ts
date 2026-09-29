@@ -1,3 +1,4 @@
+import { AuthenticatedRequest } from 'src/common/interfaces';
 import {
   Body,
   ClassSerializerInterceptor,
@@ -31,7 +32,7 @@ export class ConversationsController {
 
   @Get()
   async findAll(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Query('mentorId') mentorId?: string,
     @Query('include') include?: string | string[],
   ): Promise<Conversation[]> {
@@ -44,7 +45,7 @@ export class ConversationsController {
 
   @Get(':id')
   async findOne(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Query('include') include?: string | string[],
   ): Promise<Conversation> {
@@ -57,7 +58,7 @@ export class ConversationsController {
 
   @Post()
   async create(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Body() createConversationDto: CreateConversationDto,
   ): Promise<Conversation> {
     return this.conversationsService.create({
@@ -68,7 +69,7 @@ export class ConversationsController {
 
   @Patch(':id')
   async update(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() updateConversationDto: UpdateConversationDto,
   ): Promise<Conversation> {
@@ -80,7 +81,10 @@ export class ConversationsController {
   }
 
   @Delete(':id')
-  async remove(@Request() req, @Param('id') id: string): Promise<void> {
+  async remove(
+    @Request() req: AuthenticatedRequest,
+    @Param('id') id: string,
+  ): Promise<void> {
     return this.conversationsService.remove({
       id,
       sub: req.user.sub,

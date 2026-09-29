@@ -22,7 +22,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { BoardModule } from '../board/board.module';
 import { StatusModule } from '../status/status.module';
 import { WeeklyReviewModule } from '../weekly-review/weekly-review.module';
-import { WsSkipThrottlerGuard } from 'src/common/guards/throttler-ws.guard';
+import { AppThrottlerGuard } from 'src/common/guards/throttler-ws.guard';
 
 const modules = [
   UsersModule,
@@ -62,7 +62,7 @@ const entities = [
     },
     {
       provide: APP_GUARD,
-      useClass: WsSkipThrottlerGuard,
+      useClass: AppThrottlerGuard,
     },
   ],
 })

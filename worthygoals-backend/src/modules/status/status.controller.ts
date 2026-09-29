@@ -1,3 +1,4 @@
+import { AuthenticatedRequest } from 'src/common/interfaces';
 import {
   Body,
   Controller,
@@ -21,14 +22,14 @@ export class StatusController {
 
   @Get()
   @ApiOkResponse({ type: [StatusPostDto] })
-  list(@Request() req: any): Promise<StatusPostDto[]> {
+  list(@Request() req: AuthenticatedRequest): Promise<StatusPostDto[]> {
     return this.statusService.findAllForUser(req.user.sub);
   }
 
   @Post()
   @ApiOkResponse({ type: StatusPostDto })
   create(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body() dto: CreateStatusDto,
   ): Promise<StatusPostDto> {
     return this.statusService.create(req.user.sub, dto);
