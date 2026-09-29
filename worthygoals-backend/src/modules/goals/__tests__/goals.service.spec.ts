@@ -8,7 +8,7 @@ import {
 } from 'src/common/constants';
 import { Goal, Task } from 'src/database/models';
 import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
-import { GoalsService } from '../goals.service';
+import { GoalsService, toProposal } from '../goals.service';
 import { UsersService } from '../../users/users.service';
 
 const USER_ID = 1;
@@ -286,5 +286,29 @@ describe('GoalsService', () => {
         ForbiddenException,
       );
     });
+  });
+});
+
+describe('toProposal', () => {
+  it('replaces a wrong-shaped model reply with the fallback title', () => {
+    expect(toProposal({ title: 42 }, 'run a 5k')).toMatchObject({
+      title: 'run a 5k',
+    });
+    expect(toProposal([], 'run a 5k').title).toBe('run a 5k');
+    expect(toProposal(null, 'run a 5k').title).toBe('run a 5k');
+  });
+
+  it('drops non-string fields and non-object repeat rules', () => {
+    const p = toProposal(
+      { title: 'Run', costText: 5, repeatRule: ['daily'] },
+      'x',
+    );
+    expect(p.costText).toBeUndefined();
+    expect(p.repeatRule).toBeUndefined();
+  });
+
+  it('caps text at the CreateGoalDto limits', () => {
+    const p = toProposal({ title: 'Run', failureText: 'a'.repeat(5000) }, 'x');
+    expect(p.failureText).toHaveLength(1000);
   });
 });

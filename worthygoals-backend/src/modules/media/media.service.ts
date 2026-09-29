@@ -70,9 +70,13 @@ export class MediaService {
       Bucket: this.bucket,
       Key: s3Key,
       ContentType: dto.contentType,
+      ContentLength: dto.byteSize,
     });
     const uploadUrl = await getSignedUrl(this.s3, command, {
       expiresIn: PRESIGNED_URL_TTL_SECONDS,
+      // Presigning leaves content-length unsigned unless asked; signing it is
+      // what makes the size binding.
+      signableHeaders: new Set(['content-type', 'content-length']),
     });
 
     return { uploadUrl, mediaId: saved.id, s3Key };

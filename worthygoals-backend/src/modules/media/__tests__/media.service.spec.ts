@@ -73,6 +73,7 @@ describe('MediaService', () => {
         unconfiguredService.createUploadUrl('sub', {
           fileName: 'photo.jpg',
           contentType: 'image/jpeg',
+          byteSize: 1000,
         }),
       ).rejects.toThrow(ServiceUnavailableException);
     });
@@ -83,8 +84,26 @@ describe('MediaService', () => {
         service.createUploadUrl('sub', {
           fileName: 'photo.jpg',
           contentType: 'image/jpeg',
+          byteSize: 1000,
         }),
       ).rejects.toThrow(ServiceUnavailableException);
+    });
+
+    it('signs the declared size into the upload URL', async () => {
+      usersService.findByAccountSub.mockResolvedValue({ id: 1 });
+      repo.create.mockImplementation((v) => v);
+      repo.save.mockResolvedValue({ id: 'media-uuid' });
+
+      const { uploadUrl } = await service.createUploadUrl('sub', {
+        fileName: 'photo.jpg',
+        contentType: 'image/jpeg',
+        byteSize: 12345,
+      });
+
+      const signed = new URL(uploadUrl).searchParams.get('X-Amz-SignedHeaders');
+      expect(signed?.split(';')).toEqual(
+        expect.arrayContaining(['content-length', 'content-type']),
+      );
     });
   });
 
