@@ -5,6 +5,7 @@ import { Goal, Task, TaskCompletion } from 'src/database/models';
 import { GoalStatus } from 'src/common/constants';
 import { UsersService } from '../users/users.service';
 import { MediaService } from '../media/media.service';
+import { completionDaysByGoal } from 'src/common/streaks/completion-days';
 import { BoardItemDto } from './dto/board-item.dto';
 
 const WIN_MOOD_THRESHOLD = 3;
@@ -92,18 +93,30 @@ export class BoardService {
   }
 
   private async fetchMilestoneCards(userId: number): Promise<BoardItemDto[]> {
-    const goals = await this.goalRepo.find({
-      where: { userId },
-      relations: ['tasks', 'tasks.completions'],
-    });
+    // All statuses on purpose: a completed goal is itself a milestone. The
+    // days come from SQL instead of hydrating every task and completion.
+    const [goals, daysByGoal] = await Promise.all([
+      this.goalRepo.find({
+        where: { userId },
+        select: {
+          id: true,
+          title: true,
+          category: true,
+          status: true,
+          updatedAt: true,
+        },
+      }),
+      completionDaysByGoal(this.goalRepo.manager, userId, {
+        activeGoalsOnly: false,
+      }),
+    ]);
 
     const milestones: BoardItemDto[] = [];
 
     for (const goal of goals) {
-      const allDates = goal.tasks.flatMap((t) =>
-        t.completions.map((c) => c.createdAt),
+      const { longest, longestEndDate } = this.computeStreakDetails(
+        daysByGoal.get(goal.id) ?? [],
       );
-      const { longest, longestEndDate } = this.computeStreakDetails(allDates);
 
       if (longest >= 30) {
         milestones.push({

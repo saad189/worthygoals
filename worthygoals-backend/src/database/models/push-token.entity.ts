@@ -1,12 +1,15 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
+  Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
   Unique,
+  UpdateDateColumn,
 } from 'typeorm';
+import { User } from './user.entity';
 
 export type PushPlatform = 'expo' | 'fcm' | 'apns';
 
@@ -37,4 +40,11 @@ export class PushToken {
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({
+    name: 'userId',
+    foreignKeyConstraintName: 'fk_push_tokens_user',
+  })
+  user?: User;
 }

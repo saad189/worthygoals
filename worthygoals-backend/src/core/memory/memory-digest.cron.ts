@@ -54,10 +54,7 @@ export class MemoryDigestCron {
         );
         if (texts.length < 3) continue;
 
-        const combined = texts
-          .slice(-80)
-          .map((t, i) => `[${i + 1}] ${t}`)
-          .join('\n');
+        const combined = texts.map((t, i) => `[${i + 1}] ${t}`).join('\n');
 
         const res = await this.gateway.chat({
           userId: SYSTEM_USER_ID,

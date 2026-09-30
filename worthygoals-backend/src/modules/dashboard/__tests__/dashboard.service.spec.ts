@@ -10,7 +10,7 @@ const USER_SUB = 'cognito-sub-abc';
 
 describe('DashboardService', () => {
   let service: DashboardService;
-  let goalRepo: { find: jest.Mock };
+  let goalRepo: { find: jest.Mock; manager: { query: jest.Mock } };
   let taskRepo: { createQueryBuilder: jest.Mock };
   let completionRepo: { createQueryBuilder: jest.Mock };
   let usersService: { findByAccountSub: jest.Mock };
@@ -20,12 +20,17 @@ describe('DashboardService', () => {
     where: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
     select: jest.fn().mockReturnThis(),
+    addSelect: jest.fn().mockReturnThis(),
+    groupBy: jest.fn().mockReturnThis(),
     getMany: jest.fn().mockResolvedValue(results),
     getRawMany: jest.fn().mockResolvedValue(results),
   });
 
   beforeEach(async () => {
-    goalRepo = { find: jest.fn() };
+    goalRepo = {
+      find: jest.fn(),
+      manager: { query: jest.fn().mockResolvedValue([]) },
+    };
     taskRepo = { createQueryBuilder: jest.fn().mockReturnValue(makeQb([])) };
     completionRepo = {
       createQueryBuilder: jest.fn().mockReturnValue(makeQb([])),
@@ -64,6 +69,38 @@ describe('DashboardService', () => {
     expect(result.goals).toHaveLength(0);
     expect(result.todayProgress).toEqual({ completed: 0, total: 0 });
     expect(result.weekCompletions).toHaveLength(7);
+  });
+
+  it('builds goal summaries from SQL day rows and today counts, not hydrated entities', async () => {
+    goalRepo.find.mockResolvedValue([
+      { id: 'g1', title: 'Run', category: 'power' },
+    ]);
+    const d = new Date();
+    const day = (offset: number) => {
+      const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() - offset);
+      return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+    };
+    goalRepo.manager.query.mockResolvedValue([
+      { goalId: 'g1', day: day(0) },
+      { goalId: 'g1', day: day(1) },
+      { goalId: 'g1', day: day(2) },
+    ]);
+    taskRepo.createQueryBuilder
+      .mockReturnValueOnce(makeQb([])) // today's pending tasks
+      .mockReturnValueOnce(
+        makeQb([{ goalId: 'g1', total: '2', completed: '1' }]),
+      ); // today's per-goal counts
+
+    const result = await service.getDashboard(USER_SUB);
+
+    expect(goalRepo.find.mock.calls[0][0].relations).toBeUndefined();
+    expect(result.goals[0]).toMatchObject({
+      currentStreak: 3,
+      longestStreak: 3,
+      todayTaskCount: 2,
+      completedTodayCount: 1,
+    });
+    expect(result.todayProgress).toEqual({ completed: 1, total: 2 });
   });
 
   describe('computeStreak', () => {

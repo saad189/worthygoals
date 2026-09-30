@@ -78,6 +78,8 @@ describe('TasksService', () => {
       merge: jest.fn(),
       remove: jest.fn(),
       createQueryBuilder: jest.fn().mockReturnValue(qbMock),
+      query: jest.fn(),
+      insert: jest.fn(),
     };
     completionRepo = {
       create: jest.fn(),
@@ -335,6 +337,57 @@ describe('TasksService', () => {
       await expect(service.remove(SUB, TASK_ID)).rejects.toThrow(
         ForbiddenException,
       );
+    });
+  });
+
+  describe('materializeRecurringTasks', () => {
+    const parent = (id: string, freq: string, due: string) => ({
+      id,
+      goalId: 'g1',
+      title: 'Run',
+      description: null,
+      repeatFrequency: freq,
+      dueDate: new Date(due),
+      occurrenceIndex: 2,
+    });
+
+    it('inserts the next occurrence for each returned parent in one statement', async () => {
+      taskRepo.query.mockResolvedValueOnce([
+        parent('p1', 'daily', '2026-09-28T09:00:00'),
+        parent('p2', 'weekly', '2026-09-20T09:00:00'),
+      ]);
+
+      const created = await service.materializeRecurringTasks();
+
+      expect(created).toBe(2);
+      expect(taskRepo.insert).toHaveBeenCalledTimes(1);
+      const rows = taskRepo.insert.mock.calls[0][0];
+      expect(rows[0]).toMatchObject({
+        parentTaskId: 'p1',
+        occurrenceIndex: 3,
+        dueDate: new Date('2026-09-29T09:00:00'),
+      });
+      expect(rows[1].dueDate).toEqual(new Date('2026-09-27T09:00:00'));
+      // Only parents with no next occurrence come back from SQL.
+      expect(taskRepo.query.mock.calls[0][0]).toContain('NOT EXISTS');
+    });
+
+    it('pages by id until a short page', async () => {
+      const full = Array.from({ length: 500 }, (_, i) =>
+        parent(`p${String(i).padStart(3, '0')}`, 'daily', '2026-09-28'),
+      );
+      taskRepo.query.mockResolvedValueOnce(full).mockResolvedValueOnce([]);
+
+      await service.materializeRecurringTasks();
+
+      expect(taskRepo.query).toHaveBeenCalledTimes(2);
+      expect(taskRepo.query.mock.calls[1][1][0]).toBe('p499');
+    });
+
+    it('does nothing when there is nothing to roll over', async () => {
+      taskRepo.query.mockResolvedValueOnce([]);
+      expect(await service.materializeRecurringTasks()).toBe(0);
+      expect(taskRepo.insert).not.toHaveBeenCalled();
     });
   });
 });
