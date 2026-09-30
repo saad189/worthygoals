@@ -18,7 +18,6 @@ import {
   TaskCompletion,
   TaskExplanation,
   User,
-  UserPersonality,
   StatusPost,
   DriftSample,
 } from 'src/database/models';
@@ -37,7 +36,6 @@ import { AuthModule } from '../auth/auth.module';
       TaskExplanation,
       Conversation,
       Message,
-      UserPersonality,
       MemoryDigest,
       StatusPost,
       DriftSample,

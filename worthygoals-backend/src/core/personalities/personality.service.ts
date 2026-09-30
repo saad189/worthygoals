@@ -1,17 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { PersonalityLoader } from './personality.loader';
 import { PersonalitySchema } from './personality.schema';
-import { UserPersonality } from 'src/database/models/user-personality.entity';
 
 @Injectable()
 export class PersonalityService {
-  constructor(
-    private readonly loader: PersonalityLoader,
-    @InjectRepository(UserPersonality)
-    private readonly userPersonalityRepo: Repository<UserPersonality>,
-  ) {}
+  constructor(private readonly loader: PersonalityLoader) {}
 
   renderSystemPrompt(
     personalityId: string,
@@ -51,39 +44,6 @@ export class PersonalityService {
 
   hasPersonality(id: string): boolean {
     return this.loader.has(id);
-  }
-
-  async getUserPersonality(userId: number): Promise<UserPersonality | null> {
-    return this.userPersonalityRepo.findOne({
-      where: { userId },
-      order: { activatedAt: 'DESC' },
-    });
-  }
-
-  async setUserPersonality(
-    userId: number,
-    personalityId: string,
-  ): Promise<UserPersonality> {
-    if (!this.loader.has(personalityId)) {
-      throw new NotFoundException(`Personality "${personalityId}" not found`);
-    }
-
-    let record = await this.userPersonalityRepo.findOne({
-      where: { userId, personalityId },
-    });
-
-    if (record) {
-      record.activatedAt = new Date();
-    } else {
-      record = this.userPersonalityRepo.create({
-        userId,
-        personalityId,
-        relationshipState: {},
-        escalationSlope: 0.0,
-      });
-    }
-
-    return this.userPersonalityRepo.save(record);
   }
 
   private interpolate(
