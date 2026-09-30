@@ -19,6 +19,10 @@ import { TaskExplanation } from './task-explanation.entity';
 @Index('idx_tasks_goal_status', ['goalId', 'status'])
 @Index('idx_tasks_due_date', ['dueDate'])
 @Index('idx_tasks_goal_due_created', ['goalId', 'dueDate', 'createdAt'])
+@Index('idx_tasks_parent_occurrence', ['parentTaskId', 'occurrenceIndex'])
+// Partial index for the recurring-task job; TypeORM compares partial-index
+// predicates textually against Postgres's normalised form, so unsynchronised.
+@Index('idx_tasks_recurring_due', { synchronize: false })
 export class Task {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

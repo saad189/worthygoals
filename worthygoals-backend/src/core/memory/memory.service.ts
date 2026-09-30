@@ -1,6 +1,6 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThanOrEqual } from 'typeorm';
 import { toSql } from 'pgvector';
 import {
   MemoryEmbedding,
@@ -12,6 +12,9 @@ import { EmbeddingService } from './embedding.service';
 const SHORT_TERM_LIMIT = 10;
 const RAG_SNIPPET_LIMIT = 3;
 const RAG_LOOKBACK_DAYS = 90;
+
+/** The digest summarises at most this many recent snippets. */
+export const DIGEST_MAX_SNIPPETS = 80;
 
 @Injectable()
 export class MemoryService {
@@ -207,12 +210,16 @@ export class MemoryService {
     since: Date,
   ): Promise<string[]> {
     if (!this.embeddingRepo) return [];
+    // `since` used to be applied in JS after loading the pair's entire
+    // history, of which the digest keeps only the last 80. Both bounds are now
+    // in SQL, served by the (userId, personalityId, createdAt) index.
     const rows = await this.embeddingRepo.find({
-      where: { userId, personalityId },
+      where: { userId, personalityId, createdAt: MoreThanOrEqual(since) },
       select: ['embeddingText', 'createdAt'],
-      order: { createdAt: 'ASC' },
+      order: { createdAt: 'DESC' },
+      take: DIGEST_MAX_SNIPPETS,
     });
-    return rows.filter((r) => r.createdAt >= since).map((r) => r.embeddingText);
+    return rows.reverse().map((r) => r.embeddingText);
   }
 
   async saveDigest(

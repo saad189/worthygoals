@@ -204,14 +204,9 @@ export class GdprService {
     ).map((m) => m.s3Key);
 
     await this.dataSource.transaction(async (manager) => {
-      // These tables carry a userId but no FK to users, so the
-      // users-row cascade never reaches them — purge explicitly.
-      await manager.delete(MemoryEmbedding, { userId: user.id });
-      await manager.delete(MemoryDigest, { userId: user.id });
-      await manager.delete(PushToken, { userId: user.id });
-      await manager.delete(NotificationLog, { userId: user.id });
-      await manager.delete(AiCall, { userId: user.id });
-
+      // Every user-owned table now cascades from users (ECC-1 H5). This used
+      // to purge five FK-less tables by hand here, which made erasure depend
+      // on every deletion path remembering the same list.
       // The FK cascade runs accounts → users → owned data, so the account
       // row must be the deletion root; removing only the user would leave
       // the accounts row (email + sub) behind.
