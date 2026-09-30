@@ -18,7 +18,6 @@ import {
   TaskCompletion,
   TaskExplanation,
   User,
-  UserPersonality,
   StatusPost,
   DriftSample,
 } from 'src/database/models';
@@ -48,8 +47,6 @@ export class GdprService {
     private readonly conversationRepo: Repository<Conversation>,
     @InjectRepository(Message)
     private readonly messageRepo: Repository<Message>,
-    @InjectRepository(UserPersonality)
-    private readonly userPersonalityRepo: Repository<UserPersonality>,
     @InjectRepository(MemoryDigest)
     private readonly memoryDigestRepo: Repository<MemoryDigest>,
     @InjectRepository(MemoryEmbedding)
@@ -117,7 +114,6 @@ export class GdprService {
     ]);
 
     const [
-      personalities,
       memoryDigests,
       memoryEmbeddings,
       pushTokens,
@@ -127,7 +123,6 @@ export class GdprService {
       statusPosts,
       driftSamples,
     ] = await Promise.all([
-      this.userPersonalityRepo.find({ where: { userId: user.id } }),
       this.memoryDigestRepo.find({ where: { userId: user.id } }),
       this.memoryEmbeddingRepo
         .createQueryBuilder('me')
@@ -164,6 +159,8 @@ export class GdprService {
         dateOfBirth: user.dateOfBirth,
         gender: user.gender,
         tier: user.tier,
+        tone: user.tone,
+        personalityId: user.personalityId,
         createdAt: user.dateAdded,
       },
       goals: goals.map((g) => ({
@@ -180,7 +177,6 @@ export class GdprService {
         ...c,
         messages: messages.filter((m) => m.conversationId === c.id),
       })),
-      personalities,
       memoryDigests,
       memorySnippets: memoryEmbeddings,
       pushTokens,

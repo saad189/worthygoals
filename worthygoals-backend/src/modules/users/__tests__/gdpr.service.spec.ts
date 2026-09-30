@@ -16,7 +16,6 @@ import {
   TaskCompletion,
   TaskExplanation,
   User,
-  UserPersonality,
   StatusPost,
   DriftSample,
 } from 'src/database/models';
@@ -72,7 +71,6 @@ describe('GdprService', () => {
       TaskExplanation,
       Conversation,
       Message,
-      UserPersonality,
       MemoryDigest,
       MemoryEmbedding,
       PushToken,
@@ -182,7 +180,6 @@ describe('GdprService', () => {
           profile: expect.objectContaining({ id: user.id }),
           goals: [],
           conversations: [],
-          personalities: [],
           memoryDigests: [],
           memorySnippets: [],
           pushTokens: [],
