@@ -59,7 +59,14 @@ export class CreateGoalDto {
   @IsDateString()
   deadline?: string;
 
-  @ApiPropertyOptional({ example: { frequency: 'daily' } })
+  // type/additionalProperties: without them the spec emitted `{}` and the
+  // generated client typed this Record<string, never>, which no honest caller
+  // could satisfy (ECC-2).
+  @ApiPropertyOptional({
+    type: 'object',
+    additionalProperties: true,
+    example: { frequency: 'daily' },
+  })
   @IsOptional()
   @IsObject()
   repeatRule?: Record<string, unknown>;

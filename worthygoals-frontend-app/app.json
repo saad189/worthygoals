@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/worthy-goals-icon.png",
-    "scheme": "myapp",
+    "scheme": "worthygoals",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/images/worthy-goals-splash.png",
@@ -45,6 +45,10 @@
       "eas": {
         "projectId": "ad5aec6f-3fbe-41d0-8bde-6f4cb1b432c1"
       }
-    }
+    },
+    "platforms": [
+      "ios",
+      "android"
+    ]
   }
 }
