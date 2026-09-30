@@ -23,7 +23,6 @@ describe('remembered sign-in', () => {
     expect(storage.setItem).toHaveBeenCalledWith(
       USER_CREDENTIALS,
       { email: 'user@example.com', rememberMe: true },
-      undefined,
     );
     expect(JSON.stringify(storage.setItem.mock.calls)).not.toContain('password');
   });
@@ -41,7 +40,6 @@ describe('remembered sign-in', () => {
     expect(storage.setItem).toHaveBeenCalledWith(
       USER_CREDENTIALS,
       { email: 'user@example.com', rememberMe: true },
-      undefined,
     );
     expect(JSON.stringify(storage.setItem.mock.calls)).not.toContain('hunter2');
   });
@@ -63,5 +61,17 @@ describe('remembered sign-in', () => {
       email: '',
       rememberMe: false,
     });
+  });
+});
+
+describe('SecureStorage parsing', () => {
+  it('treats an unparseable stored value as no session and clears it', async () => {
+    const { default: RealStorage } = jest.requireActual('@/helpers/SecureStorageUtil');
+    const SecureStore = require('expo-secure-store');
+    jest.spyOn(SecureStore, 'getItemAsync').mockResolvedValue('{not json');
+    const del = jest.spyOn(SecureStore, 'deleteItemAsync').mockResolvedValue(undefined);
+
+    await expect(RealStorage.getItem('k')).resolves.toBeNull();
+    expect(del).toHaveBeenCalledWith('k');
   });
 });

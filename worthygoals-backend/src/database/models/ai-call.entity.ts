@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 
 @Entity('ai_calls')
-@Index(['userId', 'createdAt'])
+@Index('idx_ai_calls_user_date', ['userId', 'createdAt'])
 export class AiCall {
   @PrimaryGeneratedColumn()
   id: number;
@@ -36,6 +36,6 @@ export class AiCall {
   @Column({ type: 'int', nullable: true })
   latencyMs: number | null;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 }

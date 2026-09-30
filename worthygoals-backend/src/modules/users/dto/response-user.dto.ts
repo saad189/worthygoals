@@ -7,7 +7,8 @@ export class ResponseUserDto {
   id: number;
   localtion: LocationData;
   role: UserRole;
-  age: number;
+  /** Null when no date of birth was given. */
+  age: number | null;
   /** Onboarding tone preference (soft | firm | intense); null until chosen. */
   tone?: string | null;
   /** Onboarding-matched mentor (personality slug); null until chosen. */

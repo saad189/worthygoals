@@ -19,3 +19,10 @@ export class RegisterTokenDto {
   @MaxLength(64)
   timezone?: string;
 }
+
+export class UnregisterTokenDto {
+  @ApiProperty({ example: 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]' })
+  @IsString()
+  @MaxLength(512)
+  token: string;
+}

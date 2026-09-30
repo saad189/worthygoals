@@ -23,3 +23,5 @@ export * from './notification-copy-cache.entity';
 export * from './drift-sample.entity';
 export * from './status-post.entity';
 export * from './status-reaction.entity';
+export * from './media.entity';
+export * from './ai-quota-usage.entity';

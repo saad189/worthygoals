@@ -3,11 +3,11 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  Index,
+  Unique,
 } from 'typeorm';
 
 @Entity('notification_copy_cache')
-@Index(['personalityId', 'event', 'day', 'contextHash'], { unique: true })
+@Unique('uq_notif_copy_cache', ['personalityId', 'event', 'day', 'contextHash'])
 export class NotificationCopyCache {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -31,6 +31,6 @@ export class NotificationCopyCache {
   @Column({ length: 8, default: 'A' })
   abVariant: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 }

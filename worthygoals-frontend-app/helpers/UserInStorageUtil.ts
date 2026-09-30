@@ -13,12 +13,9 @@ const EMPTY_REMEMBERED: RememberLoginInfo = { email: "", rememberMe: false };
  * plaintext password — writing to the same key is what overwrites that value
  * on devices that already have it.
  */
-export const rememberSignIn = async (
-  remembered: RememberLoginInfo,
-  expiry?: number
-) => {
+export const rememberSignIn = async (remembered: RememberLoginInfo) => {
   try {
-    await SecureStorage.setItem(USER_CREDENTIALS, remembered, expiry);
+    await SecureStorage.setItem(USER_CREDENTIALS, remembered);
   } catch (error: any) {
     throw new Error(error.message);
   }
@@ -61,7 +58,8 @@ export const forgetRememberedSignIn = async () => {
 export const setUserInStorage = async (user: UserModel) => {
   try {
     const accessToken = await SecureStorage.getItem(ACCESS_TOKEN);
-    await SecureStorage.setItem(USER_PROFILE, user, jwtDecode(accessToken).exp);
+    const exp = jwtDecode(accessToken).exp;
+    await SecureStorage.setItem(USER_PROFILE, user, exp ? exp * 1000 : undefined);
   } catch (error: any) {
     throw new Error(error.message);
   }

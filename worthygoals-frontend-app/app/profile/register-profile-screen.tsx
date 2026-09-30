@@ -303,10 +303,10 @@ export default function RegisterProfileScreen() {
                   maximumDate={new Date()}
                 />
                 <View style={staticStyles.datePickerActions}>
-                  <TouchableOpacity onPress={cancelDOBPicker}>
+                  <TouchableOpacity onPress={cancelDOBPicker} accessibilityRole="button">
                     <Text variant="label" color="textMuted">Cancel</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={confirmDOBPicker}>
+                  <TouchableOpacity onPress={confirmDOBPicker} accessibilityRole="button">
                     <Text variant="label">OK</Text>
                   </TouchableOpacity>
                 </View>

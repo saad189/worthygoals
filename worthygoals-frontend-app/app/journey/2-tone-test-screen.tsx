@@ -9,6 +9,7 @@
  */
 import React, { useRef, useState } from 'react';
 import { Animated, PanResponder, Pressable, StyleSheet, View } from 'react-native';
+import { useReducedMotion } from '@/hooks/useMotion';
 import { useNavigation } from 'expo-router';
 import { ParamListBase } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -53,13 +54,21 @@ export default function ToneTestScreen() {
   // mirroring the LEFT/RIGHT labels on the card. Kept on plain Animated +
   // PanResponder so taps on either side still work untouched.
   const panX = useRef(new Animated.Value(0)).current;
+  // Core Animated ignores the OS reduce-motion setting (Reanimated doesn't).
+  const reduceMotion = useReducedMotion();
+  const reduceRef = useRef(reduceMotion);
+  reduceRef.current = reduceMotion;
+  const settle = () =>
+    reduceRef.current
+      ? panX.setValue(0)
+      : Animated.spring(panX, { toValue: 0, useNativeDriver: true }).start();
   const chooseRef = useRef(choose);
   chooseRef.current = choose;
 
   const swipeOut = (isHard: boolean) => {
     Animated.timing(panX, {
       toValue: isHard ? SWIPE_OUT_DISTANCE : -SWIPE_OUT_DISTANCE,
-      duration: 180,
+      duration: reduceRef.current ? 0 : 180,
       useNativeDriver: true,
     }).start(() => {
       panX.setValue(0);
@@ -77,11 +86,9 @@ export default function ToneTestScreen() {
       onPanResponderRelease: (_evt, g) => {
         if (g.dx > SWIPE_THRESHOLD) swipeOut(true);
         else if (g.dx < -SWIPE_THRESHOLD) swipeOut(false);
-        else
-          Animated.spring(panX, { toValue: 0, useNativeDriver: true }).start();
+        else settle();
       },
-      onPanResponderTerminate: () =>
-        Animated.spring(panX, { toValue: 0, useNativeDriver: true }).start(),
+      onPanResponderTerminate: settle,
     }),
   ).current;
 

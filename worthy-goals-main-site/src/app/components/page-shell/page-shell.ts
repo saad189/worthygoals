@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { Wordmark } from '../wordmark/wordmark';
 import { RevealDirective } from '../../shared/reveal.directive';
 import { BRAND } from '../../data/content';
@@ -8,6 +8,7 @@ import { BRAND } from '../../data/content';
  * wordmark bar → eyebrow + heading + projected content → sticky footer.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'wg-page-shell',
   standalone: true,
   imports: [Wordmark, RevealDirective],
@@ -16,10 +17,10 @@ import { BRAND } from '../../data/content';
       <div class="wrap"><wg-wordmark link="/" /></div>
     </header>
 
-    <main>
+    <main id="main-content" tabindex="-1">
       <div class="wrap">
-        @if (eyebrow) { <p class="eyebrow" appReveal>{{ eyebrow }}</p> }
-        <h1 appReveal>{{ heading }}</h1>
+        @if (eyebrow()) { <p class="eyebrow" appReveal>{{ eyebrow() }}</p> }
+        <h1 appReveal>{{ heading() }}</h1>
         <div class="content" appReveal>
           <ng-content />
         </div>
@@ -48,8 +49,8 @@ import { BRAND } from '../../data/content';
   `],
 })
 export class PageShell {
-  @Input() eyebrow = '';
-  @Input({ required: true }) heading = '';
+  readonly eyebrow = input('');
+  readonly heading = input.required<string>();
   readonly brand = BRAND;
   readonly year = new Date().getFullYear();
 }

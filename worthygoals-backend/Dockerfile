@@ -26,6 +26,11 @@ COPY --from=builder /app/dist ./dist
 # enableShutdownHooks() in main.ts actually fire.
 RUN apk add --no-cache tini
 
+# node:20-alpine ships an unprivileged `node` user that went unused, so the
+# process — and anything that escaped it — ran as uid 0. The app only reads
+# /app, so no chown is needed.
+USER node
+
 EXPOSE 3000
 
 # Readiness, not liveness: this hits Postgres, so a container that booted but

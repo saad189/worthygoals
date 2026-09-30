@@ -83,6 +83,18 @@ describe('MemoryService', () => {
       expect(ctx).toContain('Completed morning run');
     });
 
+    it('keeps the other layers when one fails', async () => {
+      const svc = makeService();
+      mockEmbeddingRepo.find.mockResolvedValue(<any>[
+        { embeddingText: 'Completed morning run', createdAt: new Date() },
+      ]);
+      mockDigestRepo.findOne.mockRejectedValue(new Error('digest table down'));
+
+      const ctx = await svc.buildContext(1, 'marcus', 'how am I doing?');
+      expect(ctx).toContain('Completed morning run');
+      mockDigestRepo.findOne.mockResolvedValue(<any>null);
+    });
+
     it('includes digest when available', async () => {
       const svc = makeService();
       mockEmbeddingRepo.find.mockResolvedValue(<any>[]);

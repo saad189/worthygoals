@@ -34,12 +34,12 @@ export class AuthService {
       : new InternalServerErrorException();
   }
 
-  async signUpUser(auth: SignUpAuthDto): Promise<any> {
+  async signUpUser(auth: SignUpAuthDto): Promise<true> {
     try {
       await this.awsService.signUpUser(auth);
       return true;
     } catch (error) {
-      this.logger.log(
+      this.logger.error(
         `${AuthService.name}:${this.signUpUser.name}: ${JSON.stringify(error.message)}`,
       );
       throw this.rethrow(error);
@@ -50,7 +50,7 @@ export class AuthService {
     try {
       return await this.awsService.loginUser(loginAuth);
     } catch (error) {
-      this.logger.log(
+      this.logger.error(
         `${AuthService.name}:${this.loginUser.name}: ${JSON.stringify(error.message)}`,
       );
       // An unknown address and a wrong password must be indistinguishable.
@@ -59,14 +59,14 @@ export class AuthService {
     }
   }
 
-  async refreshTokens(refreshDto: RefreshTokenDto): Promise<any> {
+  async refreshTokens(refreshDto: RefreshTokenDto): Promise<AuthTokens> {
     try {
       const { username, refreshToken } = refreshDto;
       if (!username || !refreshToken) throw new BadRequestException();
 
       return await this.awsService.refreshTokens(username, refreshToken);
     } catch (error) {
-      this.logger.log(
+      this.logger.error(
         `${AuthService.name}:${this.refreshTokens.name}: ${JSON.stringify(error.message)}`,
       );
       throw this.rethrow(error);
@@ -77,14 +77,14 @@ export class AuthService {
     try {
       await this.awsService.logoutUser(accessToken);
     } catch (error) {
-      this.logger.log(
+      this.logger.error(
         `${AuthService.name}:${this.logoutUser.name}: ${JSON.stringify(error.message)}`,
       );
       throw this.rethrow(error);
     }
   }
 
-  async confirmSignUp(identity: string, code: string): Promise<any> {
+  async confirmSignUp(identity: string, code: string): Promise<true> {
     try {
       await this.awsService.confirmSignUp(identity, code);
       return true;
@@ -133,7 +133,7 @@ export class AuthService {
     email,
     code,
     password,
-  }: ConfirmPasswordDto): Promise<any> {
+  }: ConfirmPasswordDto): Promise<true> {
     try {
       await this.awsService.confirmForgotPassword(email, code, password);
       return true;

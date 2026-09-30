@@ -39,28 +39,6 @@
         "EXPO_PUBLIC_ENV": "preview"
       }
     },
-    "preview2": {
-      "distribution": "internal",
-      "android": {
-        "gradleCommand": ":app:assembleRelease"
-      },
-      "env": {
-        "EXPO_PUBLIC_ENV": "preview"
-      }
-    },
-    "preview3": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "env": {
-        "EXPO_PUBLIC_ENV": "preview"
-      }
-    },
-    "preview4": {
-      "distribution": "internal",
-      "env": {
-        "EXPO_PUBLIC_ENV": "preview"
-      }
-    },
     "production": {
       "autoIncrement": true,
       "env": {

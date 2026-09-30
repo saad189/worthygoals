@@ -1,7 +1,9 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger, Optional } from '@nestjs/common';
 import { Job } from 'bullmq';
-import Expo from 'expo-server-sdk';
+import Expo, { ExpoPushTicket } from 'expo-server-sdk';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { NotificationsService } from './notifications.service';
 import { NotificationVoicingService } from './notification-voicing.service';
@@ -9,7 +11,14 @@ import { UsersService } from 'src/modules/users/users.service';
 import {
   NOTIFICATION_QUEUE,
   NotificationJobData,
+  NotificationQueueData,
+  PUSH_RECEIPTS_JOB,
+  PushReceiptJobData,
 } from './types/notification-job.types';
+
+// Expo publishes receipts within ~15 minutes of a ticket and keeps them for a
+// day; checking at 15 min is their recommended cadence.
+const RECEIPT_DELAY_MS = 15 * 60 * 1000;
 
 @Processor(NOTIFICATION_QUEUE)
 export class NotificationProcessor extends WorkerHost {
@@ -20,6 +29,8 @@ export class NotificationProcessor extends WorkerHost {
     private readonly notifService: NotificationsService,
     private readonly config: ConfigService,
     private readonly usersService: UsersService,
+    @InjectQueue(NOTIFICATION_QUEUE)
+    private readonly queue: Queue<NotificationQueueData>,
     @Optional() private readonly voicingService?: NotificationVoicingService,
   ) {
     super();
@@ -28,7 +39,14 @@ export class NotificationProcessor extends WorkerHost {
     });
   }
 
-  async process(job: Job<NotificationJobData>): Promise<void> {
+  async process(job: Job<NotificationQueueData>): Promise<void> {
+    if (job.name === PUSH_RECEIPTS_JOB) {
+      return this.checkReceipts(job.data as PushReceiptJobData);
+    }
+    return this.send(job as Job<NotificationJobData>);
+  }
+
+  private async send(job: Job<NotificationJobData>): Promise<void> {
     const { userId, kind, scheduledFor } = job.data;
 
     const tokens = await this.notifService.getTokens(userId);
@@ -64,27 +82,66 @@ export class NotificationProcessor extends WorkerHost {
     if (!messages.length) return;
 
     const chunks = this.expo.chunkPushNotifications(messages);
+    const accepted: PushReceiptJobData['tickets'] = [];
     for (const chunk of chunks) {
-      try {
-        const receipts = await this.expo.sendPushNotificationsAsync(chunk);
-        for (let i = 0; i < receipts.length; i++) {
-          const receipt = receipts[i];
-          const token = messages[i].to;
-          const status = receipt.status === 'ok' ? 'sent' : 'error';
-          await this.notifService.recordSent(userId, kind, tz, token, status);
-        }
-      } catch (err) {
-        this.logger.error(
-          `Push send failed for user ${userId}: ${err.message}`,
+      // A thrown send (network, Expo 5xx) propagates so BullMQ retries the job
+      // with backoff. It used to be caught and logged, which completed the job
+      // green with nothing delivered — and there was no retry policy anyway.
+      const tickets = await this.expo.sendPushNotificationsAsync(chunk);
+      for (let i = 0; i < tickets.length; i++) {
+        // chunk[i], not messages[i]: past the first chunk the two diverge and
+        // every status was recorded against the wrong token.
+        const token = chunk[i].to as string;
+        const ticket = tickets[i];
+        await this.handleTicket(ticket, token);
+        await this.notifService.recordSent(
+          userId,
+          kind,
+          tz,
+          token,
+          ticket.status === 'ok' ? 'sent' : 'error',
         );
-        for (const msg of chunk) {
-          await this.notifService.recordSent(
-            userId,
-            kind,
-            tz,
-            msg.to as string,
-            'error',
-          );
+        if (ticket.status === 'ok') accepted.push({ id: ticket.id, token });
+      }
+    }
+
+    // A ticket only means Expo accepted the message. Whether it reached the
+    // device is in the receipt, which nothing ever read.
+    if (accepted.length) {
+      await this.queue.add(
+        PUSH_RECEIPTS_JOB,
+        { tickets: accepted },
+        { delay: RECEIPT_DELAY_MS },
+      );
+    }
+  }
+
+  private async handleTicket(
+    ticket: ExpoPushTicket,
+    token: string,
+  ): Promise<void> {
+    if (ticket.status === 'ok') return;
+    this.logger.warn(`Push ticket error for ${token}: ${ticket.message}`);
+    if (ticket.details?.error === 'DeviceNotRegistered') {
+      await this.notifService.deactivateToken(token);
+    }
+  }
+
+  private async checkReceipts({ tickets }: PushReceiptJobData): Promise<void> {
+    const tokenById = new Map(tickets.map((t) => [t.id, t.token]));
+    const idChunks = this.expo.chunkPushNotificationReceiptIds([
+      ...tokenById.keys(),
+    ]);
+    for (const ids of idChunks) {
+      const receipts = await this.expo.getPushNotificationReceiptsAsync(ids);
+      for (const [id, receipt] of Object.entries(receipts)) {
+        if (receipt.status === 'ok') continue;
+        const token = tokenById.get(id);
+        this.logger.warn(
+          `Push receipt error for ${token}: ${receipt.details?.error ?? receipt.message}`,
+        );
+        if (token && receipt.details?.error === 'DeviceNotRegistered') {
+          await this.notifService.deactivateToken(token);
         }
       }
     }

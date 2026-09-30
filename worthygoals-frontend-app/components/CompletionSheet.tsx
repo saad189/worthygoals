@@ -20,7 +20,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { Button, MentorAvatar, Text } from '@/components/ui';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { CompleteTaskPayload } from '@/models';
-import { mediaService } from '@/services/media.service';
+import { uploadImage } from '@/services/media.service';
 import { personaBySlug } from '@/constants/Personalities';
 import { triggerPersonalityHaptic, triggerSelectionHaptic } from '@/helpers/haptics';
 
@@ -123,15 +123,12 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
           { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG },
         );
 
-        const fileName = `photo_${Date.now()}.jpg`;
-        const { uploadUrl, mediaId: newMediaId } = await mediaService.requestUploadUrl(
-          fileName,
-          'image/jpeg',
+        const newMediaId = await uploadImage(
+          resized.uri,
+          `photo_${Date.now()}.jpg`,
           resized.width,
           resized.height,
         );
-
-        await mediaService.uploadToPresignedUrl(uploadUrl, resized.uri, 'image/jpeg');
         setPhotoUri(resized.uri);
         setMediaId(newMediaId);
       } catch {
@@ -314,7 +311,10 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
                 {photoUri ? (
                   <>
                     <Image source={{ uri: photoUri }} style={s.photoThumb} />
-                    <TouchableOpacity style={s.removeBtn} onPress={removePhoto}>
+                    <TouchableOpacity style={s.removeBtn}
+                onPress={removePhoto}
+                accessibilityRole="button"
+                accessibilityLabel="Remove photo">
                       <Text variant="label" color="primary">
                         Remove
                       </Text>

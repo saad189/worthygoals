@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 /**
  * "The Cradle" (1C) brand mark: a mentor's arc holds the space while a seed
@@ -10,11 +10,12 @@ import { Component, Input } from '@angular/core';
  * --logo-ink / --logo-acc on an ancestor.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'wg-logo-mark',
   standalone: true,
   template: `
-    <svg viewBox="0 0 64 64" class="mark" [class.animate]="animate" [style.width.px]="size" [style.height.px]="size"
-         role="img" [attr.aria-label]="title" fill="none">
+    <svg viewBox="0 0 64 64" class="mark" [class.animate]="animate()" [style.width.px]="size()" [style.height.px]="size()"
+         role="img" [attr.aria-label]="title()" fill="none">
       <path class="arc"  d="M13 32 A 19 19 0 0 0 51 32" pathLength="1" stroke="var(--logo-ink, #1A1714)" stroke-width="3.6" stroke-linecap="round"/>
       <path class="stem" d="M32 41 C 32 35 32 29 32 23"  pathLength="1" stroke="var(--logo-acc, #C04124)" stroke-width="3.2" stroke-linecap="round"/>
       <path class="leaf leaf-l" d="M32 30.5 C 27 30.5 22 26.5 21.5 20.5 C 27 21.5 31 25 32 30.5 Z" fill="var(--logo-acc, #C04124)"/>
@@ -43,9 +44,9 @@ import { Component, Input } from '@angular/core';
 })
 export class LogoMark {
   /** Square px size of the mark. */
-  @Input() size = 22;
+  readonly size = input(22);
   /** Play the draw-on animation once on render. */
-  @Input() animate = false;
+  readonly animate = input(false);
   /** Accessible label (the wordmark already labels the link, so default is empty/decorative). */
-  @Input() title = '';
+  readonly title = input('');
 }

@@ -28,20 +28,24 @@ export class User {
     nullable: true,
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'accountId' })
+  @JoinColumn({
+    name: 'accountId',
+    foreignKeyConstraintName: 'fk_users_account',
+  })
   account: Account;
 
-  @Column()
+  @Column({ length: 255 })
   email: string;
 
-  @Column({ nullable: true })
+  @Column({ length: 255, nullable: true })
   firstName: string;
 
-  @Column({ nullable: true })
+  @Column({ length: 255, nullable: true })
   lastName: string;
 
+  // timestamptz hydrates as a Date; it was declared string.
   @Column({ type: 'timestamptz', nullable: true })
-  dateOfBirth: string;
+  dateOfBirth: Date | null;
 
   @Column({ type: 'char', length: 1, nullable: true })
   gender: string;
@@ -78,6 +82,7 @@ export class User {
   personalityId: string;
 
   @ManyToOne(() => Role, (role) => role.users, { eager: true })
+  @JoinColumn({ name: 'roleId', foreignKeyConstraintName: 'fk_users_role' })
   role: Role;
 
   @OneToMany(() => Conversation, (c) => c.user)
@@ -89,9 +94,9 @@ export class User {
   @OneToMany(() => MessageFeedback, (f) => f.user)
   feedback!: MessageFeedback[];
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   dateAdded: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   dateUpdated: Date;
 }

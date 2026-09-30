@@ -28,7 +28,10 @@ export class ConversationSummary {
   conversationId!: string;
 
   @ManyToOne(() => Conversation, (c) => c.summaries, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'conversationId' })
+  @JoinColumn({
+    name: 'conversationId',
+    foreignKeyConstraintName: 'fk_conv_summaries_conv',
+  })
   conversation!: Conversation;
 
   @Column({ type: 'varchar', length: 16 })
@@ -43,13 +46,13 @@ export class ConversationSummary {
   @Column({ type: 'text' })
   summaryText!: string;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   summaryEmotions!: Record<string, any> | null;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   summaryTopics!: Record<string, any> | null;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   keyFacts!: Record<string, any> | null;
 
   @Column({ type: 'varchar', length: 64, nullable: true })

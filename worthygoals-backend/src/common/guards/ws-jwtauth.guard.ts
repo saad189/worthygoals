@@ -13,9 +13,10 @@ export class WsJwtAuthGuard extends AuthGuard(JWT) {
     // socket.io client has a handshake with headers; passport-jwt reads Authorization
     const handshake = client.handshake;
 
-    const tokenFromAuth = handshake?.auth?.token;
-    const tokenFromQuery = handshake?.query?.token;
-    const token = tokenFromAuth || tokenFromQuery;
+    // handshake.auth only. A ?token= query parameter used to be accepted too,
+    // which puts a live access token into proxy logs and history — and the
+    // app never used it, so it only ever served someone else.
+    const token = handshake?.auth?.token;
 
     if (token) {
       handshake.headers = handshake.headers ?? {};

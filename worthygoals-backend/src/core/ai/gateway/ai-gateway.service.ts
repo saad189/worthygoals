@@ -234,6 +234,8 @@ export class AiGatewayService {
           userMessage,
           output,
           model: req.model ?? null,
+          // System callers pass a negative sentinel id; only real users link.
+          userId: req.userId > 0 ? req.userId : null,
         }),
       )
       .catch((err) => {

@@ -1,60 +1,64 @@
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { AiCall } from 'src/database/models/ai-call.entity';
+import { AiQuotaUsage } from 'src/database/models/ai-quota-usage.entity';
 import { UserTier } from 'src/common/constants/enums';
 import { QuotaExceededException, QuotaService } from '../quota/quota.service';
 
-const mockRepo = () => ({ count: jest.fn() });
-
 describe('QuotaService', () => {
   let service: QuotaService;
-  let repo: jest.Mocked<Pick<Repository<AiCall>, 'count'>>;
+  let repo: { query: jest.Mock };
+
+  // The upsert returns the post-increment count for this call.
+  const nthCallToday = (n: number) =>
+    repo.query.mockResolvedValue([{ count: n }]);
 
   beforeEach(async () => {
+    repo = { query: jest.fn() };
     const module = await Test.createTestingModule({
       providers: [
         QuotaService,
-        { provide: getRepositoryToken(AiCall), useFactory: mockRepo },
+        { provide: getRepositoryToken(AiQuotaUsage), useValue: repo },
       ],
     }).compile();
-
     service = module.get(QuotaService);
-    repo = module.get(getRepositoryToken(AiCall));
   });
 
-  it('allows call when under limit', async () => {
-    repo.count = jest.fn().mockResolvedValue(5);
+  it('allows the 20th free call of the day', async () => {
+    nthCallToday(20);
     await expect(
       service.checkAndEnforce(1, UserTier.FREE),
     ).resolves.toBeUndefined();
   });
 
-  it('throws QuotaExceededException at limit', async () => {
-    repo.count = jest.fn().mockResolvedValue(20);
+  it('refuses the 21st free call', async () => {
+    nthCallToday(21);
     await expect(
       service.checkAndEnforce(1, UserTier.FREE),
     ).rejects.toBeInstanceOf(QuotaExceededException);
   });
 
-  it('throws at standard limit (100)', async () => {
-    repo.count = jest.fn().mockResolvedValue(100);
+  it('refuses the 101st standard call', async () => {
+    nthCallToday(101);
     await expect(
       service.checkAndEnforce(1, UserTier.STANDARD),
     ).rejects.toBeInstanceOf(QuotaExceededException);
   });
 
-  it('never throws for premium regardless of count', async () => {
-    repo.count = jest.fn().mockResolvedValue(9999);
-    await expect(
-      service.checkAndEnforce(1, UserTier.PREMIUM),
-    ).resolves.toBeUndefined();
-    expect(repo.count).not.toHaveBeenCalled();
+  it('never meters premium', async () => {
+    await service.checkAndEnforce(1, UserTier.PREMIUM);
+    expect(repo.query).not.toHaveBeenCalled();
   });
 
-  it('returns today usage', async () => {
-    repo.count = jest.fn().mockResolvedValue(7);
-    const usage = await service.getUsage(1);
-    expect(usage.today).toBe(7);
+  it('never meters system calls (negative sentinel user id)', async () => {
+    await service.checkAndEnforce(-1, UserTier.FREE);
+    expect(repo.query).not.toHaveBeenCalled();
+  });
+
+  it('reserves with a single atomic upsert', async () => {
+    nthCallToday(1);
+    await service.checkAndEnforce(7, UserTier.FREE);
+    expect(repo.query).toHaveBeenCalledTimes(1);
+    expect(repo.query.mock.calls[0][0]).toContain('ON CONFLICT');
+    expect(repo.query.mock.calls[0][1]).toEqual([7]);
   });
 });

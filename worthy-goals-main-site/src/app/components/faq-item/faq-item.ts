@@ -1,4 +1,4 @@
-import { Component, HostListener, Input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, input, signal } from '@angular/core';
 import { FaqItem as FaqItemData } from '../../data/content';
 
 let faqUid = 0;
@@ -10,6 +10,7 @@ let faqUid = 0;
  * embed links.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'wg-faq-item',
   standalone: true,
   template: `
@@ -23,16 +24,25 @@ let faqUid = 0;
           [attr.aria-controls]="panelId"
           (click)="toggle()"
         >
-          <span class="faq-q-text">{{ item.q }}</span>
+          <span class="faq-q-text">{{ item().q }}</span>
           <span class="faq-icon" aria-hidden="true">
             <i class="bar bar-h"></i>
             <i class="bar bar-v"></i>
           </span>
         </button>
       </h3>
-      <div class="faq-panel" [id]="panelId" role="region" [attr.aria-labelledby]="btnId">
+      <!-- inert while closed: the grid-row collapse hides the answer visually
+           only, so its links stayed in the tab order and the answer in the
+           accessibility tree (WCAG 2.4.3 / 1.3.2). -->
+      <div
+        class="faq-panel"
+        [id]="panelId"
+        role="region"
+        [attr.aria-labelledby]="btnId"
+        [attr.inert]="open() ? null : ''"
+      >
         <div class="faq-panel-inner">
-          <div class="faq-a" [innerHTML]="item.a"></div>
+          <div class="faq-a" [innerHTML]="item().a"></div>
         </div>
       </div>
     </div>
@@ -84,7 +94,7 @@ let faqUid = 0;
   `],
 })
 export class FaqItem {
-  @Input({ required: true }) item!: FaqItemData;
+  readonly item = input.required<FaqItemData>();
 
   readonly open = signal(false);
 

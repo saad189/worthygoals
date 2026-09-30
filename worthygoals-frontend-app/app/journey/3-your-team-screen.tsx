@@ -8,7 +8,7 @@
  * correctly even if the backend mentor table hasn't been reseeded yet (U2
  * handoff); the real backend mentorId is merged in by slug when available.
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { ParamListBase } from '@react-navigation/native';
@@ -21,7 +21,6 @@ import {
   PersonalitySlug,
   recommendPersonality,
 } from '@/constants/Personalities';
-import mentorService from '@/services/mentor.service';
 import { useAppTheme } from '@/hooks/useAppTheme';
 
 export default function YourTeamScreen() {
@@ -30,38 +29,19 @@ export default function YourTeamScreen() {
   const { hard, answered } = useLocalSearchParams<{ hard?: string; answered?: string }>();
 
   const recommended = useMemo(
-    () => recommendPersonality(Number(hard ?? 0), Number(answered ?? 0)),
+    // Route params are strings from anywhere (the scheme is public); a
+    // non-number must not become NaN inside the scorer.
+    () => recommendPersonality(Number(hard) || 0, Number(answered) || 0),
     [hard, answered],
   );
 
   const [selected, setSelected] = useState<PersonalitySlug>(recommended.slug);
-  // slug → backend mentor id (when the roster has been reseeded).
-  const [mentorIds, setMentorIds] = useState<Record<string, number>>({});
-
-  useEffect(() => {
-    let active = true;
-    mentorService
-      .getMentorList()
-      .then((mentors) => {
-        if (!active) return;
-        const map: Record<string, number> = {};
-        for (const m of mentors) if (m.slug) map[m.slug] = m.id;
-        setMentorIds(map);
-      })
-      .catch(() => {
-        /* offline / not-yet-seeded — local roster still renders. */
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
   const onStart = () => {
     const persona = PERSONALITIES.find((p) => p.slug === selected)!;
+    // Slug only. A backend mentor id used to be fetched here and passed along,
+    // but nothing downstream reads it — the backend sync is by slug.
     navigation.navigate(ROUTE_NAMES.JOURNEY.CONFIRM_SCREEN, {
       slug: persona.slug,
-      name: persona.name,
-      mentorId: mentorIds[persona.slug] != null ? String(mentorIds[persona.slug]) : '',
     } as never);
   };
 

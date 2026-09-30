@@ -37,7 +37,9 @@ export class EmbeddingService {
       });
       return res.data[0].embedding;
     } catch (err: any) {
-      this.logger.warn(`Embedding failed: ${err?.message}`);
+      // error, not warn: a revoked key or broken index turns off indexing and
+      // RAG for every user, and alerting filters on error.
+      this.logger.error(`Embedding failed: ${err?.message}`);
       return null;
     }
   }
@@ -96,7 +98,7 @@ export class EmbeddingService {
         score: parseFloat(r.score),
       }));
     } catch (err: any) {
-      this.logger.warn(`Vector search failed: ${err?.message}`);
+      this.logger.error(`Vector search failed: ${err?.message}`);
       return [];
     }
   }

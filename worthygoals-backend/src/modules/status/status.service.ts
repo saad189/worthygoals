@@ -1,11 +1,13 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { LessThan, Repository } from 'typeorm';
+import { parseLimit } from 'src/common/pagination';
 import { StatusPost } from 'src/database/models/status-post.entity';
 import { StatusReaction } from 'src/database/models/status-reaction.entity';
 import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
 import { MediaService } from '../media/media.service';
 import { UsersService } from '../users/users.service';
+import { SafetyService } from 'src/core/safety/safety.service';
 import { CreateStatusDto } from './dto/create-status.dto';
 import { StatusPostDto } from './dto/status-post.dto';
 
@@ -38,58 +40,89 @@ export class StatusService {
     private readonly usersService: UsersService,
     private readonly gateway: AiGatewayService,
     private readonly mediaService: MediaService,
+    private readonly safetyService: SafetyService,
   ) {}
 
   async create(sub: string, dto: CreateStatusDto): Promise<StatusPostDto> {
     const user = await this.usersService.findByAccountSub(sub);
     if (!user) throw new NotFoundException('User not found');
 
-    const post = await this.statusRepo.save(
-      this.statusRepo.create({
-        userId: user.id,
-        text: dto.text,
-        mediaId: dto.mediaId ?? null,
-      }),
-    );
+    // A status in crisis gets the audited safe response, never three persona
+    // replies. Chat and task completion already had this gate; status did not.
+    const crisis = this.safetyService.isCrisisSignal(dto.text);
 
-    // Photo uploaded through the presign path — mark the draft attached so it
-    // isn't collectable as an orphan.
-    if (dto.mediaId) {
-      await this.mediaService.markAttached(dto.mediaId, sub);
-    }
-
-    // Fan out to every personality in parallel — the team reacts at once.
-    const reactions = await Promise.all(
-      ROSTER.map(async (member) => {
-        const text = await this.generateReaction(
-          user.id,
-          member.personalityId,
-          dto.text,
-          member.fallback,
+    // The AI calls run first, outside any transaction (they take seconds).
+    // The post and its reactions then commit together: previously the post
+    // was saved before the fan-out, so a crash in between left a permanently
+    // silent post with no way to repair it.
+    const reactionDrafts = crisis
+      ? []
+      : await Promise.all(
+          ROSTER.map(async (member) => ({
+            personalityId: member.personalityId,
+            mentorName: member.name,
+            text: await this.generateReaction(
+              user.id,
+              member.personalityId,
+              dto.text,
+              member.fallback,
+            ),
+          })),
         );
-        return this.reactionRepo.create({
-          statusId: post.id,
-          personalityId: member.personalityId,
-          mentorName: member.name,
-          text,
-        });
-      }),
+
+    const { post, reactions } = await this.statusRepo.manager.transaction(
+      async (em) => {
+        const saved = await em.save(
+          em.create(StatusPost, {
+            userId: user.id,
+            text: dto.text,
+            mediaId: dto.mediaId ?? null,
+          }),
+        );
+        const savedReactions = await em.save(
+          reactionDrafts.map((r) =>
+            em.create(StatusReaction, { ...r, statusId: saved.id }),
+          ),
+        );
+        // Photo uploaded through the presign path — mark the draft attached
+        // so it isn't collectable as an orphan.
+        if (dto.mediaId) {
+          await this.mediaService.markAttached(dto.mediaId, sub, em);
+        }
+        return { post: saved, reactions: savedReactions };
+      },
     );
 
-    await this.reactionRepo.save(reactions);
-
-    return this.toDto(post, reactions);
+    const result = await this.toDto(post, reactions);
+    return crisis
+      ? {
+          ...result,
+          safetyFlag: true,
+          crisisResponse: this.safetyService.getCrisisResponse(),
+        }
+      : result;
   }
 
-  async findAllForUser(sub: string): Promise<StatusPostDto[]> {
+  async findAllForUser(
+    sub: string,
+    page: { limit?: string; before?: Date } = {},
+  ): Promise<StatusPostDto[]> {
     const user = await this.usersService.findByAccountSub(sub);
     if (!user) throw new NotFoundException('User not found');
 
+    // Capped at STATUS_FEED_LIMIT with no way past it; `before` (the oldest
+    // createdAt the client holds) is the cursor for the next page.
     const posts = await this.statusRepo.find({
-      where: { userId: user.id },
+      where: {
+        userId: user.id,
+        ...(page.before ? { createdAt: LessThan(page.before) } : {}),
+      },
       relations: { reactions: true },
       order: { createdAt: 'DESC' },
-      take: STATUS_FEED_LIMIT,
+      take: parseLimit(page.limit, {
+        fallback: STATUS_FEED_LIMIT,
+        max: STATUS_FEED_LIMIT,
+      }),
     });
 
     return Promise.all(

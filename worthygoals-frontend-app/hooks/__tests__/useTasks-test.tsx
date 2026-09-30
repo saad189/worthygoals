@@ -1,7 +1,7 @@
 import React from 'react';
 import { renderHook, waitFor, act } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useTasks } from '@/hooks/useTasks';
+import { markTaskStatus, useTasks } from '@/hooks/useTasks';
 import { tasksService } from '@/services/tasks.service';
 import { TaskItem } from '@/models';
 
@@ -68,7 +68,7 @@ describe('useTasks', () => {
     expect(mockedTasks.list).not.toHaveBeenCalled();
   });
 
-  it('optimisticUpdateStatus rewrites the cached task status', async () => {
+  it('markTaskStatus rewrites the cached task status', async () => {
     const client = trackedClient(new QueryClient({
       defaultOptions: { queries: { retry: false } },
     }));
@@ -79,7 +79,7 @@ describe('useTasks', () => {
     });
     await waitFor(() => expect(result.current.tasks).toHaveLength(1));
 
-    act(() => result.current.optimisticUpdateStatus('t1', 'completed'));
+    await act(() => markTaskStatus(client, 't1', 'completed'));
 
     await waitFor(() =>
       expect(result.current.tasks[0].status).toBe('completed'),

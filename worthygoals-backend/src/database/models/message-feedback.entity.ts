@@ -21,7 +21,10 @@ export class MessageFeedback {
   messageId!: string;
 
   @ManyToOne(() => Message, (m) => m.feedback, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'messageId' })
+  @JoinColumn({
+    name: 'messageId',
+    foreignKeyConstraintName: 'fk_msg_feedback_message',
+  })
   message!: Message;
 
   /**
@@ -31,13 +34,17 @@ export class MessageFeedback {
   userId!: number;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId', referencedColumnName: 'id' })
+  @JoinColumn({
+    name: 'userId',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'fk_msg_feedback_user',
+  })
   user!: User;
 
   @Column({ type: 'smallint' })
   rating!: number; // e.g. -1, +1 or 1..5 later
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   tags!: Record<string, any> | null;
 
   @Column({ type: 'text', nullable: true })

@@ -1,3 +1,4 @@
+import { parseLimit } from 'src/common/pagination';
 import {
   ConflictException,
   ForbiddenException,
@@ -96,7 +97,11 @@ export class TasksService {
     return this.taskRepo.save(task);
   }
 
-  async findAllForGoal(sub: string, goalId: string): Promise<Task[]> {
+  async findAllForGoal(
+    sub: string,
+    goalId: string,
+    limit?: string,
+  ): Promise<Task[]> {
     const user = await this.resolveUser(sub);
     // Postgres throws on a non-UUID literal compared to a uuid column, which
     // would surface as a 500. Treat a malformed id as "not found" instead.
@@ -106,10 +111,14 @@ export class TasksService {
     if (!goal) throw new NotFoundException(`Goal ${goalId} not found`);
     if (goal.userId !== user.id) throw new ForbiddenException();
 
-    return this.taskRepo.find({
+    // Recurring goals grow a task a day, so this is bounded. Take the latest
+    // N by due date and hand them back oldest-first, the order the app shows.
+    const latest = await this.taskRepo.find({
       where: { goalId },
-      order: { dueDate: 'ASC', createdAt: 'ASC' },
+      order: { dueDate: 'DESC', createdAt: 'DESC' },
+      take: parseLimit(limit, { fallback: 100, max: 500 }),
     });
+    return latest.reverse();
   }
 
   async findOne(sub: string, taskId: string): Promise<Task> {
@@ -123,7 +132,14 @@ export class TasksService {
     const task = await this.taskRepo.findOne({ where: { id: taskId } });
     if (!task) throw new NotFoundException(`Task ${taskId} not found`);
     await this.assertGoalOwnership(sub, task.goalId);
-    this.taskRepo.merge(task, dto as unknown as Partial<Task>);
+    // dueDate arrives as an ISO string (@IsDateString) for a Date column. The
+    // old `as unknown as Partial<Task>` cast hid that and left a string on
+    // task.dueDate until the round-trip.
+    const { dueDate, ...rest } = dto;
+    this.taskRepo.merge(task, {
+      ...rest,
+      ...(dueDate !== undefined ? { dueDate: new Date(dueDate) } : {}),
+    });
     return this.taskRepo.save(task);
   }
 
@@ -322,10 +338,17 @@ export class TasksService {
       result.mentorReaction = aiResp.text;
       // Persist reaction on completions so the board can display it later
       if (result.data instanceof TaskCompletion && aiResp.text) {
-        await this.completionRepo.update(
-          { id: (result.data as TaskCompletion).id },
+        const { affected } = await this.completionRepo.update(
+          { id: result.data.id },
           { mentorReaction: aiResp.text },
         );
+        // The user already has the reaction in this response; a miss here only
+        // means the board will never show it — log rather than fail the call.
+        if (!affected) {
+          this.logger.warn(
+            `Mentor reaction not persisted: completion ${result.data.id} is gone`,
+          );
+        }
       }
     } catch (err: any) {
       this.logger.warn(`Mentor reaction failed: ${err?.message}`);

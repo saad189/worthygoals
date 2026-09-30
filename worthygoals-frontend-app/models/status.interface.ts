@@ -17,4 +17,8 @@ export interface StatusPost {
   /** Presigned GET url for the attached photo, if any (screen 12's chip). */
   imageUrl?: string | null;
   reactions: StatusReaction[];
+  /** Set when the status tripped the crisis gate: no mentor reactions. */
+  safetyFlag?: boolean;
+  /** The safe response with crisis resources, when safetyFlag. */
+  crisisResponse?: string;
 }

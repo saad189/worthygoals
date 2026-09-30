@@ -1,3 +1,4 @@
+import { parseLimit } from 'src/common/pagination';
 import {
   ForbiddenException,
   Injectable,
@@ -32,6 +33,41 @@ const buildProposalPrompt = (today: string) =>
 
 Return ONLY valid JSON — no prose, no markdown fences.`;
 
+const str = (v: unknown, max: number): string | undefined =>
+  typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : undefined;
+
+/**
+ * Take only well-typed fields from the model's JSON. It was cast straight to
+ * GoalProposalDto, so `{"title": 42}`, `{}` or `[]` came back as a "valid"
+ * proposal; malformed JSON was handled, the wrong shape was not. Lengths match
+ * CreateGoalDto, so an accepted proposal always passes validation on create.
+ */
+export function toProposal(
+  raw: unknown,
+  fallbackTitle: string,
+): GoalProposalDto {
+  const o =
+    raw && typeof raw === 'object' && !Array.isArray(raw)
+      ? (raw as Record<string, unknown>)
+      : {};
+  const repeatRule =
+    o.repeatRule &&
+    typeof o.repeatRule === 'object' &&
+    !Array.isArray(o.repeatRule)
+      ? (o.repeatRule as Record<string, unknown>)
+      : undefined;
+  return {
+    title: str(o.title, 255) ?? fallbackTitle,
+    description: str(o.description, 2000),
+    costText: str(o.costText, 1000),
+    benefitText: str(o.benefitText, 1000),
+    failureText: str(o.failureText, 1000),
+    deadline: str(o.deadline, 40),
+    category: str(o.category, 32) as GoalCategory | undefined,
+    repeatRule,
+  };
+}
+
 @Injectable()
 export class GoalsService {
   private readonly logger = new Logger(GoalsService.name);
@@ -62,15 +98,16 @@ export class GoalsService {
       ],
     });
 
-    let parsed: GoalProposalDto;
+    let raw: unknown;
     try {
-      parsed = JSON.parse(response.text) as GoalProposalDto;
+      raw = JSON.parse(response.text);
     } catch {
       this.logger.warn(
         'Goal proposal JSON parse failed, returning minimal proposal',
       );
-      parsed = { title: dto.raw.slice(0, 60) };
+      raw = {};
     }
+    const parsed = toProposal(raw, dto.raw.slice(0, 60));
 
     if (
       !Object.values(GoalCategory).includes(parsed.category as GoalCategory)
@@ -137,12 +174,16 @@ export class GoalsService {
       : null;
   }
 
-  async findAllForUser(sub: string): Promise<ResponseGoalDto[]> {
+  async findAllForUser(
+    sub: string,
+    limit?: string,
+  ): Promise<ResponseGoalDto[]> {
     const user = await this.usersService.findByAccountSub(sub);
     if (!user) throw new NotFoundException('User not found');
     const goals = await this.goalRepository.find({
       where: { userId: user.id },
       order: { createdAt: 'DESC' },
+      take: parseLimit(limit, { fallback: 100, max: 200 }),
     });
     return goals.map((g) => this.toDto(g));
   }
@@ -212,7 +253,7 @@ export class GoalsService {
       failureText,
       deadline,
       repeatRule,
-      stakeAmount: stakeAmount ? Number(stakeAmount) : undefined,
+      stakeAmount: stakeAmount ?? undefined,
       imageUri,
       createdAt,
       updatedAt,

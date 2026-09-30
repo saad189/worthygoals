@@ -19,25 +19,26 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Unique,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { Conversation } from './conversation.entity';
 import { Message } from './message.entity';
 
 @Entity('mentors')
+@Unique('uq_mentors_slug', ['slug'])
 export class Mentor {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Index({ unique: true })
   @Column({ type: 'varchar', length: 120 })
   slug: string;
 
-  @Index()
+  @Index('idx_mentors_personality_id')
   @Column({ type: 'varchar', length: 64, nullable: true, default: null })
   personalityId: string | null;
 
-  @Index()
+  @Index('idx_mentors_name')
   @Column({ type: 'varchar', length: 120 })
   name: string;
 
@@ -56,75 +57,75 @@ export class Mentor {
   @Column({ type: 'text', nullable: true })
   coverImageUrl?: string;
 
-  @Index()
+  @Index('idx_mentors_language')
   @Column({ type: 'varchar', length: 16, default: 'en' })
   language: string;
 
   // MySQL: json. (Use jsonb only on Postgres.)
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   supportedLanguages?: string[];
 
   @Column({
-    type: 'enum',
-    enum: MentorCommunicationStyle,
+    type: 'varchar',
+    length: 32,
     default: MentorCommunicationStyle.GENTLE,
   })
   communicationStyle: MentorCommunicationStyle;
 
   @Column({
-    type: 'enum',
-    enum: MentorResponseLength,
+    type: 'varchar',
+    length: 16,
     default: MentorResponseLength.MEDIUM,
   })
   responseLength: MentorResponseLength;
 
-  @Index()
+  @Index('idx_mentors_sort_order')
   @Column({ type: 'int', default: 0 })
   sortOrder: number;
 
   // ---- Your existing ones, upgraded as structured JSON ----
   @Exclude()
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   personalityTraits?: PersonalityTraits;
 
   // Instead of a single giant prompt, store blocks.
   // @Exclude: this is the mentor's system prompt. It must never leave the
   // server — not via GET /mentors and not via GET /conversations?include=mentor.
   @Exclude()
-  @Column({ type: 'json' })
+  @Column({ type: 'jsonb' })
   promptBlocks: PromptBlocks;
 
   @Exclude()
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   topicPolicy?: TopicPolicy;
 
   @Exclude()
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   safetyPolicy?: SafetyPolicy;
 
   @Exclude()
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   memoryPolicy?: MemoryPolicy;
 
   @Exclude()
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   modelConfig?: ModelConfig;
 
   // Feature flags / rollout control
-  @Index()
+  @Index('idx_mentors_is_active')
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
-  @Index()
+  @Index('idx_mentors_visibility')
   @Column({
-    type: 'enum',
-    enum: MentorVisibility,
+    type: 'varchar',
+    length: 16,
     default: MentorVisibility.PUBLIC,
   })
   visibility: MentorVisibility;
 
   // Monetization / gating
-  @Index()
+  @Index('idx_mentors_is_premium')
   @Column({ type: 'boolean', default: false })
   isPremium: boolean;
 
@@ -132,7 +133,7 @@ export class Mentor {
   requiredPlan?: string; // "standard" | "enhanced"
 
   // Versioning (important for prompt changes)
-  @Index()
+  @Index('idx_mentors_version')
   @Column({ type: 'int', default: 1 })
   version: number;
 
@@ -149,9 +150,9 @@ export class Mentor {
   @OneToMany(() => Message, (m) => m.mentor)
   messages!: Message[];
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 }

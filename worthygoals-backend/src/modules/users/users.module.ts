@@ -19,8 +19,10 @@ import {
   TaskExplanation,
   User,
   UserPersonality,
+  StatusPost,
+  DriftSample,
 } from 'src/database/models';
-import { Media } from '../media/media.entity';
+import { Media } from 'src/database/models/media.entity';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
@@ -37,6 +39,8 @@ import { AuthModule } from '../auth/auth.module';
       Message,
       UserPersonality,
       MemoryDigest,
+      StatusPost,
+      DriftSample,
       MemoryEmbedding,
       PushToken,
       NotificationLog,

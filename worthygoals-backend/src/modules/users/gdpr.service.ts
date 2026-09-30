@@ -1,6 +1,9 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+import { DeleteObjectsCommand } from '@aws-sdk/client-s3';
+import { createObjectStorage, ObjectStorage } from '../media/object-storage';
 import {
   Account,
   AiCall,
@@ -16,8 +19,10 @@ import {
   TaskExplanation,
   User,
   UserPersonality,
+  StatusPost,
+  DriftSample,
 } from 'src/database/models';
-import { Media } from '../media/media.entity';
+import { Media } from 'src/database/models/media.entity';
 import { AWSCognitoService } from '../auth/aws-cognito.service';
 
 @Injectable()
@@ -57,8 +62,17 @@ export class GdprService {
     private readonly aiCallRepo: Repository<AiCall>,
     @InjectRepository(Media)
     private readonly mediaRepo: Repository<Media>,
+    @InjectRepository(StatusPost)
+    private readonly statusPostRepo: Repository<StatusPost>,
+    @InjectRepository(DriftSample)
+    private readonly driftSampleRepo: Repository<DriftSample>,
     private readonly cognitoService: AWSCognitoService,
-  ) {}
+    config: ConfigService,
+  ) {
+    this.storage = createObjectStorage(config);
+  }
+
+  private readonly storage: ObjectStorage | null;
 
   async exportData(sub: string): Promise<Record<string, unknown>> {
     const user = await this.findBySub(sub);
@@ -110,6 +124,8 @@ export class GdprService {
       notificationLogs,
       aiCalls,
       media,
+      statusPosts,
+      driftSamples,
     ] = await Promise.all([
       this.userPersonalityRepo.find({ where: { userId: user.id } }),
       this.memoryDigestRepo.find({ where: { userId: user.id } }),
@@ -129,6 +145,13 @@ export class GdprService {
       this.notificationLogRepo.find({ where: { userId: user.id } }),
       this.aiCallRepo.find({ where: { userId: user.id } }),
       this.mediaRepo.find({ where: { userId: user.id } }),
+      // User-authored text; deletion already reached these by FK cascade,
+      // but the export left them out.
+      this.statusPostRepo.find({
+        where: { userId: user.id },
+        relations: { reactions: true },
+      }),
+      this.driftSampleRepo.find({ where: { userId: user.id } }),
     ]);
 
     return {
@@ -164,11 +187,21 @@ export class GdprService {
       notificationLogs,
       aiCalls,
       media,
+      statusPosts,
+      driftSamples,
     };
   }
 
   async deleteAccount(sub: string): Promise<void> {
     const user = await this.findBySub(sub);
+    // Read before the rows cascade away — the keys are the only pointer to
+    // the uploaded photos.
+    const mediaKeys = (
+      await this.mediaRepo.find({
+        where: { userId: user.id },
+        select: { s3Key: true },
+      })
+    ).map((m) => m.s3Key);
 
     await this.dataSource.transaction(async (manager) => {
       // These tables carry a userId but no FK to users, so the
@@ -200,7 +233,49 @@ export class GdprService {
       );
     }
 
+    await this.purgeObjects(user.id, mediaKeys);
+
     this.logger.log(`GDPR account deletion completed for user ${user.id}`);
+  }
+
+  /**
+   * Delete the user's uploaded photos from S3/R2. Deletion used to drop the
+   * media rows and leave the objects in the bucket, unreachable but not
+   * erased. Same policy as Cognito: the DB deletion stands; a storage failure
+   * is logged loudly for manual follow-up.
+   */
+  private async purgeObjects(userId: number, keys: string[]): Promise<void> {
+    if (!keys.length) return;
+    if (!this.storage) {
+      this.logger.error(
+        `GDPR: ${keys.length} media object(s) for user ${userId} not purged — storage is not configured here. Delete them manually.`,
+      );
+      return;
+    }
+    const { s3, bucket } = this.storage;
+    try {
+      // DeleteObjects takes at most 1000 keys per call.
+      for (let i = 0; i < keys.length; i += 1000) {
+        const res = await s3.send(
+          new DeleteObjectsCommand({
+            Bucket: bucket,
+            Delete: {
+              Objects: keys.slice(i, i + 1000).map((Key) => ({ Key })),
+              Quiet: true,
+            },
+          }),
+        );
+        if (res.Errors?.length) {
+          throw new Error(
+            `${res.Errors.length} key(s) failed, e.g. ${res.Errors[0].Key}: ${res.Errors[0].Message}`,
+          );
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        `GDPR: DB data deleted but media purge FAILED for user ${userId} — delete drafts/${userId}/ manually. ${(error as Error).message}`,
+      );
+    }
   }
 
   private async findBySub(sub: string): Promise<User> {

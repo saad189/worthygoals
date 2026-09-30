@@ -1,13 +1,14 @@
-import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Wordmark } from '../wordmark/wordmark';
 import { BRAND } from '../../data/content';
 
 /** Full site footer used on the landing page. */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'wg-site-footer',
   standalone: true,
-  imports: [Wordmark, RouterLink],
+  imports: [Wordmark, RouterLink, RouterLinkActive],
   template: `
     <div class="wrap">
       <div class="foot-inner">
@@ -17,8 +18,8 @@ import { BRAND } from '../../data/content';
         </div>
         <nav class="foot-links" aria-label="Footer">
           <a href="#join" (click)="scrollToJoin($event)">Join waitlist</a>
-          <a routerLink="/privacy">Privacy</a>
-          <a routerLink="/contact">Contact</a>
+          <a routerLink="/privacy" routerLinkActive="active" ariaCurrentWhenActive="page">Privacy</a>
+          <a routerLink="/contact" routerLinkActive="active" ariaCurrentWhenActive="page">Contact</a>
         </nav>
       </div>
       <p class="foot-legal">© <span>{{ year }}</span> {{ brand.name }}. {{ brand.legal }}</p>

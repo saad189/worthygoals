@@ -23,16 +23,17 @@ type Props = {
 function visual(mentor: string | undefined, colors: AppTheme['colors']) {
   switch (mentor) {
     case 'lyra':
-      return { color: colors.mentorLyra, circle: true, letter: 'L' };
+      return { color: colors.mentorLyra, circle: true, letter: 'L', name: 'Lyra' };
     case 'goggs':
-      return { color: colors.mentorGoggs, circle: false, letter: 'G' };
+      return { color: colors.mentorGoggs, circle: false, letter: 'G', name: 'Goggs' };
     case 'marcus':
-      return { color: colors.mentorMarcus, circle: false, letter: 'M' };
+      return { color: colors.mentorMarcus, circle: false, letter: 'M', name: 'Marcus' };
     default:
       return {
         color: colors.mentorMarcus,
         circle: false,
         letter: (mentor?.[0] ?? '?').toUpperCase(),
+        name: mentor ? mentor[0].toUpperCase() + mentor.slice(1) : 'Mentor',
       };
   }
 }
@@ -40,8 +41,13 @@ function visual(mentor: string | undefined, colors: AppTheme['colors']) {
 export default function MentorAvatar({ mentor, size = 40, style }: Props) {
   const { colors, radius } = useAppTheme();
   const v = visual(mentor, colors);
+  // The avatar is often the only marker of who is speaking (feed, chat list),
+  // so it carries the mentor's name rather than reading as a bare letter.
   return (
     <View
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={v.name}
       style={[
         styles.base,
         {
