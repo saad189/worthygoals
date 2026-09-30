@@ -264,9 +264,16 @@ export default function TodoProposeScreen() {
         />
 
         {!isSkip && error ? (
-          <Text variant="muted" color="primary" style={{ marginBottom: space['4'] }}>
-            {error}
-          </Text>
+          <View style={{ marginBottom: space['4'], gap: space['2'] }}>
+            <Text variant="muted" color="primary">
+              {error}
+            </Text>
+            {/* The proposal ran once on mount with no way to ask again; a
+                transient failure meant filling the form by hand. */}
+            {raw ? (
+              <Button label="Try again" variant="secondary" onPress={() => propose(raw)} />
+            ) : null}
+          </View>
         ) : null}
 
         {loading ? (

@@ -2,7 +2,7 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import Storage from "@/helpers/SecureStorageUtil";
 import { ID_TOKEN, ROUTE_NAMES } from "@/constants";
-import { clearTokens, decodeJwtToken, getUserLocationAsync } from "@/helpers";
+import { clearTokens, decodeJwtToken } from "@/helpers";
 
 import { authEmitter } from "@/core";
 import { asyncStoragePersister, queryClient } from "@/core/queryClient";
@@ -42,10 +42,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     LocationCoordinates | undefined
   >(undefined);
 
-  // const getUserLocation = async () => {
-  //     const location = await getUserLocationAsync();
-  //     setUserLocation(location);
-  // }
 
   const checkAuth = async () => {
     const token = await Storage.getItem(ID_TOKEN);

@@ -101,7 +101,7 @@ const DashboardScreen = () => {
       <Card
         key={task.id}
         style={styles.taskCard}
-        onPress={() => router.push(`/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.TODO_LIST_SCREEN}` as never)}
+        onPress={() => router.navigate(`/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.TODO_LIST_SCREEN}` as never)}
       >
         <View style={styles.taskRow}>
           <View style={[styles.taskTick, { borderColor: colors.border }]} />
@@ -165,7 +165,7 @@ const DashboardScreen = () => {
               </Svg>
             </View>
             <Pressable
-              onPress={() => router.push(`/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.ME_SCREEN}` as never)}
+              onPress={() => router.navigate(`/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.ME_SCREEN}` as never)}
               accessibilityRole="button"
               accessibilityLabel="Open your profile"
               style={({ pressed }) => pressed && { opacity: 0.7 }}
@@ -273,7 +273,7 @@ const DashboardScreen = () => {
 
           {/* Listening row — the roster lives here; tap through to the feed. */}
           <Pressable
-            onPress={() => router.push(`/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.FEED_SCREEN}` as never)}
+            onPress={() => router.navigate(`/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.FEED_SCREEN}` as never)}
             style={({ pressed }) => [listeningRowStyle, pressed && { opacity: 0.7 }]}
             accessibilityRole="button"
             accessibilityLabel="Tell the team how it went"
