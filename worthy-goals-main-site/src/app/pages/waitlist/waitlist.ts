@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { NavBar } from '../../components/nav-bar/nav-bar';
 import { SiteFooter } from '../../components/site-footer/site-footer';
 import { EmailCapture } from '../../components/email-capture/email-capture';
@@ -15,6 +15,7 @@ import { BENEFITS, BRAND, CAPTURE, CTA, FAILURE, FAQ, HERO, HOW, MENTORS, PROBLE
 
 /** The Worthy Goals waitlist landing page (flow: hero → proof → CTA → FAQ). */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'wg-waitlist',
   standalone: true,
   imports: [

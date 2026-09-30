@@ -1,4 +1,4 @@
-import { Component, Input, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CAPTURE } from '../../data/content';
@@ -11,21 +11,22 @@ import { CAPTURE } from '../../data/content';
  * when null, success is simulated so the flow can be demoed.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'wg-email-capture',
   standalone: true,
   imports: [ReactiveFormsModule],
   template: `
-    <form class="capture" [style.max-width.px]="maxWidth" (submit)="onSubmit($event)" novalidate>
+    <form class="capture" [style.max-width.px]="maxWidth()" (submit)="onSubmit($event)" novalidate>
       <!-- Visible, not sr-only: the placeholder was the only visible label and
            disappears on typing (WCAG 3.3.2). -->
-      <label [for]="inputId" class="field-label">Email address</label>
+      <label [for]="inputId()" class="field-label">Email address</label>
       <div class="capture-row">
         <!-- aria-invalid + aria-describedby tie the message to the input.
              Without them the alert is announced once and a screen reader
              returning to the field hears nothing about why it was rejected
              (WCAG 3.3.1); aria-describedby had 0 occurrences site-wide. -->
         <input
-          [id]="inputId"
+          [id]="inputId()"
           [formControl]="email"
           type="email"
           inputmode="email"
@@ -36,7 +37,7 @@ import { CAPTURE } from '../../data/content';
           required
         />
         <button type="submit" class="btn btn-primary" [disabled]="sending()">
-          {{ sending() ? copy.sendingLabel : buttonLabel }}
+          {{ sending() ? copy.sendingLabel : buttonLabel() }}
         </button>
       </div>
       <p [id]="messageId" class="form-msg" [class.error]="!!message()" role="alert" aria-live="polite">{{ message() }}</p>
@@ -87,13 +88,13 @@ import { CAPTURE } from '../../data/content';
 })
 export class EmailCapture {
   /** Submit button label. */
-  @Input() buttonLabel = CAPTURE.heroButton;
+  readonly buttonLabel = input(CAPTURE.heroButton);
   /** Unique id so the label/input pair is valid when two forms share a page. */
-  @Input() inputId = 'email';
+  readonly inputId = input('email');
   /** Optional max-width override (px). */
-  @Input() maxWidth?: number;
+  readonly maxWidth = input<number>();
   /** POST URL of your form provider; null simulates success. */
-  @Input() endpoint: string | null = CAPTURE.subscribeUrl;
+  readonly endpoint = input<string | null>(CAPTURE.subscribeUrl);
 
   readonly copy = CAPTURE;
   readonly email = new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] });
@@ -101,11 +102,11 @@ export class EmailCapture {
   readonly message = signal('');
 
   get messageId(): string {
-    return `${this.inputId}-message`;
+    return `${this.inputId()}-message`;
   }
 
   get reassureId(): string {
-    return `${this.inputId}-reassure`;
+    return `${this.inputId()}-reassure`;
   }
 
   /**
@@ -138,8 +139,9 @@ export class EmailCapture {
       this.message.set(this.copy.errorMsg);
     };
 
-    if (this.endpoint) {
-      fetch(this.endpoint, {
+    const endpoint = this.endpoint();
+    if (endpoint) {
+      fetch(endpoint, {
         method: 'POST',
         headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: value }),

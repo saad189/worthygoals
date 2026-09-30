@@ -1,10 +1,11 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Wordmark } from '../wordmark/wordmark';
 import { BRAND } from '../../data/content';
 
 /** Full site footer used on the landing page. */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'wg-site-footer',
   standalone: true,
   imports: [Wordmark, RouterLink, RouterLinkActive],

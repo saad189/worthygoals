@@ -1,21 +1,22 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { MentorCardData } from '../../data/content';
 
 /** Roster card: crest, name + archetype, philosophy, and a sample quote. */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'wg-mentor-card',
   standalone: true,
   template: `
     <article class="card">
-      <div class="crest" [style.background]="mentor.color" aria-hidden="true">{{ mentor.initial }}</div>
+      <div class="crest" [style.background]="mentor().color" aria-hidden="true">{{ mentor().initial }}</div>
       <div class="cname">
-        <h3>{{ mentor.name }}</h3>
-        <span class="arch">{{ mentor.archetype }}</span>
+        <h3>{{ mentor().name }}</h3>
+        <span class="arch">{{ mentor().archetype }}</span>
       </div>
-      <p class="phil">{{ mentor.philosophy }}</p>
+      <p class="phil">{{ mentor().philosophy }}</p>
       <div class="quote">
-        <span class="lbl">{{ mentor.quoteLabel }}</span>
-        <p>{{ mentor.quote }}</p>
+        <span class="lbl">{{ mentor().quoteLabel }}</span>
+        <p>{{ mentor().quote }}</p>
       </div>
     </article>
   `,
@@ -46,5 +47,5 @@ import { MentorCardData } from '../../data/content';
   `],
 })
 export class MentorCard {
-  @Input({ required: true }) mentor!: MentorCardData;
+  readonly mentor = input.required<MentorCardData>();
 }

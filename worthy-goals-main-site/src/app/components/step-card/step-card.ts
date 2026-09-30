@@ -1,15 +1,16 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { Step } from '../../data/content';
 
 /** A numbered "how it works" step. */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'wg-step-card',
   standalone: true,
   template: `
     <div class="step">
-      <div class="num">{{ step.num }}</div>
-      <h3>{{ step.title }}</h3>
-      <p>{{ step.body }}</p>
+      <div class="num">{{ step().num }}</div>
+      <h3>{{ step().title }}</h3>
+      <p>{{ step().body }}</p>
     </div>
   `,
   styles: [`
@@ -28,5 +29,5 @@ import { Step } from '../../data/content';
   `],
 })
 export class StepCard {
-  @Input({ required: true }) step!: Step;
+  readonly step = input.required<Step>();
 }

@@ -1,9 +1,10 @@
-import { Component, HostBinding, HostListener } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostBinding, HostListener, signal } from '@angular/core';
 import { Wordmark } from '../wordmark/wordmark';
 import { CTA } from '../../data/content';
 
 /** Sticky top navigation. Gains a hairline border once the page scrolls. */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'wg-nav-bar',
   standalone: true,
   imports: [Wordmark],
@@ -38,11 +39,17 @@ import { CTA } from '../../data/content';
 export class NavBar {
   readonly cta = CTA;
 
-  @HostBinding('class.scrolled') scrolled = false;
+  // A signal, so the OnPush host class updates from the window listener
+  // without relying on the listener to mark the view dirty.
+  readonly scrolled = signal(false);
+
+  @HostBinding('class.scrolled') get isScrolled(): boolean {
+    return this.scrolled();
+  }
 
   @HostListener('window:scroll')
   onScroll(): void {
-    this.scrolled = window.scrollY > 8;
+    this.scrolled.set(window.scrollY > 8);
   }
 
   scrollToJoin(event: Event): void {
