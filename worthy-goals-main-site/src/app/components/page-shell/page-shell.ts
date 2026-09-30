@@ -16,7 +16,7 @@ import { BRAND } from '../../data/content';
       <div class="wrap"><wg-wordmark link="/" /></div>
     </header>
 
-    <main>
+    <main id="main-content" tabindex="-1">
       <div class="wrap">
         @if (eyebrow) { <p class="eyebrow" appReveal>{{ eyebrow }}</p> }
         <h1 appReveal>{{ heading }}</h1>

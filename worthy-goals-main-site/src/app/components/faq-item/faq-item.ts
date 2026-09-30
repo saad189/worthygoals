@@ -30,7 +30,16 @@ let faqUid = 0;
           </span>
         </button>
       </h3>
-      <div class="faq-panel" [id]="panelId" role="region" [attr.aria-labelledby]="btnId">
+      <!-- inert while closed: the grid-row collapse hides the answer visually
+           only, so its links stayed in the tab order and the answer in the
+           accessibility tree (WCAG 2.4.3 / 1.3.2). -->
+      <div
+        class="faq-panel"
+        [id]="panelId"
+        role="region"
+        [attr.aria-labelledby]="btnId"
+        [attr.inert]="open() ? null : ''"
+      >
         <div class="faq-panel-inner">
           <div class="faq-a" [innerHTML]="item.a"></div>
         </div>

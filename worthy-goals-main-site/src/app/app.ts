@@ -8,4 +8,9 @@ import { RouterOutlet } from '@angular/router';
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
-export class App {}
+export class App {
+  skipToMain(event: Event): void {
+    event.preventDefault();
+    document.querySelector<HTMLElement>('main')?.focus();
+  }
+}

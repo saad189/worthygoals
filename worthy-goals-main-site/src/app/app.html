@@ -1,1 +1,5 @@
+<!-- Skip link (WCAG 2.4.1): a keyboard user otherwise tabs through the header
+     on every page. A plain href="#main-content" would resolve against
+     <base href="/"> and navigate to the home page, so it focuses in code. -->
+<a class="skip-link" href="#main-content" (click)="skipToMain($event)">Skip to content</a>
 <router-outlet />

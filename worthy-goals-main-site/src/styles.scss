@@ -11,6 +11,11 @@
   --ink-70: rgba(26, 23, 20, 0.70);
   --ink-55: rgba(26, 23, 20, 0.55);
   --ink-40: rgba(26, 23, 20, 0.40);
+  /* AA-safe tiers on --paper (computed, not eyeballed): --ink-64 is 5.07:1 for
+     small/placeholder text (4.5:1 needed); --ink-50 is 3.3:1 for a control's
+     boundary (1.4.11 needs 3:1). --ink-40 / --ink-12 fail both. */
+  --ink-64: rgba(26, 23, 20, 0.64);
+  --ink-50: rgba(26, 23, 20, 0.50);
   --ink-12: rgba(26, 23, 20, 0.12);
   --ink-08: rgba(26, 23, 20, 0.08);
   --rust: #C04124;
@@ -56,6 +61,16 @@ summary:focus-visible {
   outline-offset: 3px;
   border-radius: 4px;
 }
+
+/* Off-screen until focused, then pinned top-left above the sticky nav. */
+.skip-link {
+  position: absolute; left: 12px; top: -64px; z-index: 100;
+  padding: 10px 16px; border-radius: 10px;
+  background: var(--ink); color: var(--cream); font-family: var(--sans);
+  text-decoration: none;
+}
+.skip-link:focus { top: 12px; }
+main:focus { outline: none; }
 
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
