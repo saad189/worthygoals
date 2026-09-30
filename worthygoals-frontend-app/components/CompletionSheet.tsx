@@ -311,7 +311,10 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
                 {photoUri ? (
                   <>
                     <Image source={{ uri: photoUri }} style={s.photoThumb} />
-                    <TouchableOpacity style={s.removeBtn} onPress={removePhoto}>
+                    <TouchableOpacity style={s.removeBtn}
+                onPress={removePhoto}
+                accessibilityRole="button"
+                accessibilityLabel="Remove photo">
                       <Text variant="label" color="primary">
                         Remove
                       </Text>

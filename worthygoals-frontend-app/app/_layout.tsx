@@ -1,4 +1,5 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { useSlide } from '@/hooks/useMotion';
 import { DefaultTheme, Theme as NavTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Redirect, Stack, useSegments } from "expo-router";
@@ -130,6 +131,7 @@ function RootLayout() {
 }
 
 function Routes() {
+  const slide = useSlide();
   return (
     <Stack>
       <Stack.Screen
@@ -149,22 +151,22 @@ function Routes() {
       />
       <Stack.Screen
         name={ROUTE_NAMES.JOURNEY.self}
-        options={{ headerShown: false, animation: "slide_from_right" }}
+        options={{ headerShown: false, animation: slide('slide_from_right') }}
       />
       <Stack.Screen name="modal" options={{ presentation: "modal" }} />
       <Stack.Screen
         name={ROUTE_NAMES.CHAT.self}
-        options={{ animation: "slide_from_right", headerShown: false }}
+        options={{ animation: slide('slide_from_right'), headerShown: false }}
       />
 
       <Stack.Screen
         name={ROUTE_NAMES.MENTORS.self}
-        options={{ animation: "slide_from_right", headerShown: false }}
+        options={{ animation: slide('slide_from_right'), headerShown: false }}
       />
 
       <Stack.Screen
         name={ROUTE_NAMES.TODO.self}
-        options={{ animation: "slide_from_right", headerShown: false }}
+        options={{ animation: slide('slide_from_right'), headerShown: false }}
       />
       <Stack.Screen
         name={ROUTE_NAMES.STATUS.self}
@@ -172,14 +174,14 @@ function Routes() {
       />
       <Stack.Screen
         name={ROUTE_NAMES.REVIEW.self}
-        options={{ animation: "slide_from_right", headerShown: false }}
+        options={{ animation: slide('slide_from_right'), headerShown: false }}
       />
       {/* Motivational board — wins + memory pictures; entered from the me
           tab's MEMORIES card (S47 re-entry after the Hi-Fi IA dropped the
           board tab). */}
       <Stack.Screen
         name={ROUTE_NAMES.TABS.INSPIRATION.self}
-        options={{ animation: "slide_from_right", headerShown: false }}
+        options={{ animation: slide('slide_from_right'), headerShown: false }}
       />
       {/* Forced step for new users — no back affordance; the screen renders
           its own editorial header. */}

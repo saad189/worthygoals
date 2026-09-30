@@ -41,6 +41,8 @@ const ChatItem = ({ chat }: { chat: ConversationListItem }) => {
     <TouchableOpacity
       style={[staticStyles.chatItem, { borderBottomColor: colors.border }]}
       onPress={openChatDetail}
+      accessibilityRole="button"
+      accessibilityLabel={`Chat with ${name}. ${lastMessage || 'No messages yet'}`}
     >
       <MentorAvatar mentor={slug} size={48} style={staticStyles.avatar} />
 

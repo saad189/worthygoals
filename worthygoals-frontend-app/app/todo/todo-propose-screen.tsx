@@ -171,7 +171,7 @@ function DeadlineField({ value, onChange }: { value: string; onChange: (v: strin
                 onChange={(_e, picked) => picked && setTemp(picked)}
               />
               <View style={styles.pickerActions}>
-                <TouchableOpacity onPress={() => setOpen(false)}>
+                <TouchableOpacity onPress={() => setOpen(false)} accessibilityRole="button">
                   <Text variant="label" color="textMuted">
                     Cancel
                   </Text>
@@ -181,6 +181,7 @@ function DeadlineField({ value, onChange }: { value: string; onChange: (v: strin
                     onChange(toYmd(temp));
                     setOpen(false);
                   }}
+              accessibilityRole="button"
                 >
                   <Text variant="label">OK</Text>
                 </TouchableOpacity>
