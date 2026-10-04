@@ -18,7 +18,6 @@ import {
   TaskCompletion,
   TaskExplanation,
   User,
-  UserPersonality,
   StatusPost,
   DriftSample,
 } from 'src/database/models';
@@ -48,8 +47,6 @@ export class GdprService {
     private readonly conversationRepo: Repository<Conversation>,
     @InjectRepository(Message)
     private readonly messageRepo: Repository<Message>,
-    @InjectRepository(UserPersonality)
-    private readonly userPersonalityRepo: Repository<UserPersonality>,
     @InjectRepository(MemoryDigest)
     private readonly memoryDigestRepo: Repository<MemoryDigest>,
     @InjectRepository(MemoryEmbedding)
@@ -117,7 +114,6 @@ export class GdprService {
     ]);
 
     const [
-      personalities,
       memoryDigests,
       memoryEmbeddings,
       pushTokens,
@@ -127,7 +123,6 @@ export class GdprService {
       statusPosts,
       driftSamples,
     ] = await Promise.all([
-      this.userPersonalityRepo.find({ where: { userId: user.id } }),
       this.memoryDigestRepo.find({ where: { userId: user.id } }),
       this.memoryEmbeddingRepo
         .createQueryBuilder('me')
@@ -164,6 +159,8 @@ export class GdprService {
         dateOfBirth: user.dateOfBirth,
         gender: user.gender,
         tier: user.tier,
+        tone: user.tone,
+        personalityId: user.personalityId,
         createdAt: user.dateAdded,
       },
       goals: goals.map((g) => ({
@@ -180,7 +177,6 @@ export class GdprService {
         ...c,
         messages: messages.filter((m) => m.conversationId === c.id),
       })),
-      personalities,
       memoryDigests,
       memorySnippets: memoryEmbeddings,
       pushTokens,
@@ -204,14 +200,9 @@ export class GdprService {
     ).map((m) => m.s3Key);
 
     await this.dataSource.transaction(async (manager) => {
-      // These tables carry a userId but no FK to users, so the
-      // users-row cascade never reaches them — purge explicitly.
-      await manager.delete(MemoryEmbedding, { userId: user.id });
-      await manager.delete(MemoryDigest, { userId: user.id });
-      await manager.delete(PushToken, { userId: user.id });
-      await manager.delete(NotificationLog, { userId: user.id });
-      await manager.delete(AiCall, { userId: user.id });
-
+      // Every user-owned table now cascades from users (ECC-1 H5). This used
+      // to purge five FK-less tables by hand here, which made erasure depend
+      // on every deletion path remembering the same list.
       // The FK cascade runs accounts → users → owned data, so the account
       // row must be the deletion root; removing only the user would leave
       // the accounts row (email + sub) behind.

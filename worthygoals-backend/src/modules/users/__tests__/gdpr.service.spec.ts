@@ -16,7 +16,6 @@ import {
   TaskCompletion,
   TaskExplanation,
   User,
-  UserPersonality,
   StatusPost,
   DriftSample,
 } from 'src/database/models';
@@ -72,7 +71,6 @@ describe('GdprService', () => {
       TaskExplanation,
       Conversation,
       Message,
-      UserPersonality,
       MemoryDigest,
       MemoryEmbedding,
       PushToken,
@@ -139,24 +137,6 @@ describe('GdprService', () => {
       expect(error.mock.calls[0][0]).toContain('media purge FAILED');
     });
 
-    it('purges the FK-less tables inside the transaction', async () => {
-      await service.deleteAccount('sub-123');
-
-      const deleted = manager.delete.mock.calls.map(([entity]) => entity);
-      expect(deleted).toEqual(
-        expect.arrayContaining([
-          MemoryEmbedding,
-          MemoryDigest,
-          PushToken,
-          NotificationLog,
-          AiCall,
-        ]),
-      );
-      manager.delete.mock.calls.forEach(([, where]) => {
-        expect(where).toEqual({ userId: user.id });
-      });
-    });
-
     it('removes the account row so the cascade reaches the user', async () => {
       await service.deleteAccount('sub-123');
       expect(manager.remove).toHaveBeenCalledWith(account);
@@ -200,7 +180,6 @@ describe('GdprService', () => {
           profile: expect.objectContaining({ id: user.id }),
           goals: [],
           conversations: [],
-          personalities: [],
           memoryDigests: [],
           memorySnippets: [],
           pushTokens: [],

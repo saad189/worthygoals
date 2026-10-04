@@ -38,12 +38,7 @@ function buildLoader(personalities: PersonalitySchema[]): PersonalityLoader {
 
 function buildService(personalities: PersonalitySchema[]): PersonalityService {
   const loader = buildLoader(personalities);
-  const userPersonalityRepo = {
-    findOne: jest.fn(),
-    create: jest.fn(),
-    save: jest.fn(),
-  } as any;
-  return new PersonalityService(loader, userPersonalityRepo);
+  return new PersonalityService(loader);
 }
 
 describe('PersonalityService', () => {

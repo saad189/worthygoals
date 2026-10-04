@@ -1,10 +1,13 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
+import { User } from './user.entity';
 import { NotificationJobKind } from 'src/modules/notifications/types/notification-job.types';
 
 @Entity('notification_logs')
@@ -32,4 +35,11 @@ export class NotificationLog {
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({
+    name: 'userId',
+    foreignKeyConstraintName: 'fk_notification_logs_user',
+  })
+  user?: User;
 }

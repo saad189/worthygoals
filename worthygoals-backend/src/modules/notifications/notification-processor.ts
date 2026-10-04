@@ -157,10 +157,9 @@ export class NotificationProcessor extends WorkerHost {
     }
 
     try {
-      // users.personalityId, not user_personalities. The latter's only writer,
-      // setUserPersonality, has zero callers in the monorepo and the table is
-      // empty, so this lookup always returned null and every push shipped the
-      // generic fallback — the whole voicing pipeline was unreachable.
+      // users.personalityId. This used to read user_personalities, whose only
+      // writer was never called, so every push shipped the generic fallback.
+      // That table is dropped (DropUserPersonalities1769800000000).
       const user = await this.usersService.findOne(userId);
       if (!user?.personalityId) {
         this.logger.debug(

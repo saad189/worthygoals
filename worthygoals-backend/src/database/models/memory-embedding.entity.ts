@@ -3,8 +3,11 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { User } from './user.entity';
 
 export enum MemorySourceType {
   COMPLETION = 'completion',
@@ -18,8 +21,6 @@ export enum MemorySourceType {
   'personalityId',
   'createdAt',
 ])
-// HNSW (vector_cosine_ops) — not expressible in TypeORM, so unsynchronised.
-@Index('idx_memory_embeddings_hnsw', { synchronize: false })
 export class MemoryEmbedding {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -53,4 +54,11 @@ export class MemoryEmbedding {
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({
+    name: 'userId',
+    foreignKeyConstraintName: 'fk_memory_embeddings_user',
+  })
+  user?: User;
 }

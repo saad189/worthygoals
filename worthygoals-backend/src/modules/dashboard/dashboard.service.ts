@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Goal, Task, TaskCompletion } from 'src/database/models';
 import { GoalStatus, TaskStatus } from 'src/common/constants';
 import { UsersService } from '../users/users.service';
+import { completionDaysByGoal } from 'src/common/streaks/completion-days';
 import {
   DashboardResponseDto,
   GoalSummaryDto,
@@ -101,34 +102,50 @@ export class DashboardService {
     today: Date,
     tomorrow: Date,
   ): Promise<GoalSummaryDto[]> {
-    const goals = await this.goalRepo.find({
-      where: { userId, status: GoalStatus.ACTIVE },
-      relations: ['tasks', 'tasks.completions'],
-      order: { createdAt: 'DESC' },
-    });
+    // Three bounded queries instead of hydrating goals × tasks × completions
+    // (ECC-1 H4): the goals, their distinct completion days, and today's
+    // per-goal task counts.
+    const [goals, daysByGoal, todayRows] = await Promise.all([
+      this.goalRepo.find({
+        where: { userId, status: GoalStatus.ACTIVE },
+        select: { id: true, title: true, category: true },
+        order: { createdAt: 'DESC' },
+      }),
+      completionDaysByGoal(this.goalRepo.manager, userId, {
+        activeGoalsOnly: true,
+      }),
+      this.taskRepo
+        .createQueryBuilder('t')
+        .innerJoin('t.goal', 'g')
+        .where('g.userId = :userId', { userId })
+        .andWhere('g.status = :active', { active: GoalStatus.ACTIVE })
+        .andWhere('t.dueDate >= :today', { today })
+        .andWhere('t.dueDate < :tomorrow', { tomorrow })
+        .select('t.goalId', 'goalId')
+        .addSelect('COUNT(*)', 'total')
+        .addSelect(
+          `COUNT(*) FILTER (WHERE t.status = '${TaskStatus.COMPLETED}')`,
+          'completed',
+        )
+        .groupBy('t.goalId')
+        .getRawMany<{ goalId: string; total: string; completed: string }>(),
+    ]);
+
+    const todayByGoal = new Map(todayRows.map((r) => [r.goalId, r]));
 
     return goals.map((goal) => {
-      const allDates = goal.tasks.flatMap((t) =>
-        t.completions.map((c) => c.createdAt),
+      const { current, longest } = this.computeStreak(
+        daysByGoal.get(goal.id) ?? [],
       );
-      const { current, longest } = this.computeStreak(allDates);
-
-      const todayTasks = goal.tasks.filter((t) => {
-        if (!t.dueDate) return false;
-        const d = new Date(t.dueDate);
-        return d >= today && d < tomorrow;
-      });
-
+      const counts = todayByGoal.get(goal.id);
       return {
         id: goal.id,
         title: goal.title,
         category: goal.category,
         currentStreak: current,
         longestStreak: longest,
-        todayTaskCount: todayTasks.length,
-        completedTodayCount: todayTasks.filter(
-          (t) => t.status === TaskStatus.COMPLETED,
-        ).length,
+        todayTaskCount: Number(counts?.total ?? 0),
+        completedTodayCount: Number(counts?.completed ?? 0),
       };
     });
   }

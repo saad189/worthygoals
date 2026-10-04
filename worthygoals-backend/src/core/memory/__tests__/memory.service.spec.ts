@@ -123,6 +123,25 @@ describe('MemoryService', () => {
     });
   });
 
+  describe('getEmbeddingsForDigest', () => {
+    it('bounds by date and count in SQL and returns oldest-first', async () => {
+      const svc = makeService();
+      const since = new Date('2026-09-01');
+      mockEmbeddingRepo.find.mockResolvedValue(<any>[
+        { embeddingText: 'newer' },
+        { embeddingText: 'older' },
+      ]);
+
+      const texts = await svc.getEmbeddingsForDigest(1, 'marcus', since);
+
+      const arg = (mockEmbeddingRepo.find.mock.calls.at(-1) as any[])[0];
+      expect(arg.where.createdAt.value).toBe(since);
+      expect(arg.take).toBe(80);
+      expect(arg.order).toEqual({ createdAt: 'DESC' });
+      expect(texts).toEqual(['older', 'newer']);
+    });
+  });
+
   describe('saveDigest', () => {
     it('saves a digest row with correct fields', async () => {
       const svc = makeService();

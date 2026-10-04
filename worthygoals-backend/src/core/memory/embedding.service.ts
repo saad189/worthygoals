@@ -82,6 +82,13 @@ export class EmbeddingService {
       const limitIdx = params.length + 1;
       params.push(limit);
 
+      // Exact search: the planner filters on the (userId, personalityId,
+      // createdAt) btree and sorts that user's rows by distance. The global
+      // HNSW index it used to have could post-filter every candidate away and
+      // return nothing (ECC-1 H6).
+      // ponytail: exact scan per user; if one user×mentor pair ever reaches
+      // ~100k embeddings, add a per-personality partial HNSW index with
+      // hnsw.iterative_scan (pgvector ≥ 0.8) rather than restoring the global one.
       const rows = await this.embeddingRepo.manager.query<
         Array<{ embeddingText: string; score: string }>
       >(

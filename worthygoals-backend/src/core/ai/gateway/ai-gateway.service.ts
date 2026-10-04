@@ -170,7 +170,9 @@ export class AiGatewayService {
         : null;
 
     const call = this.aiCallRepo.create({
-      userId: req.userId,
+      // System callers pass a negative sentinel; ai_calls.userId now has a
+      // cascading FK to users, so they are recorded with no user.
+      userId: req.userId > 0 ? req.userId : null,
       feature: req.feature,
       provider: usedProvider.name,
       model: result.model,
