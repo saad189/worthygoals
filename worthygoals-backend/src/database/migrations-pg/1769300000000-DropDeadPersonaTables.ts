@@ -11,9 +11,9 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  *    `mentor_to_tags`    retired in E-5. 0 rows, its seeder was never wired, and
  *                        the `mentors.tags` relation only ever produced empty output.
  *
- * `user_personalities` is intentionally NOT dropped here — it's still referenced
- * by the notification voicing path and its replacement (`users.personalityId`)
- * isn't merged yet.
+ * `user_personalities` was intentionally NOT dropped here — it was still
+ * referenced by the notification voicing path at the time. Dropped later by
+ * DropUserPersonalities1769800000000 once voicing read users.personalityId.
  */
 export class DropDeadPersonaTables1769300000000 implements MigrationInterface {
   name = 'DropDeadPersonaTables1769300000000';
