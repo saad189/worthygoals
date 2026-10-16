@@ -1,16 +1,17 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { MissResponse } from '../../data/content';
 
 /** How a mentor responds to a missed goal — tagged empathy / nudge / real talk. */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'wg-miss-card',
   standalone: true,
   template: `
     <div class="miss">
-      <span class="tag" [class]="response.tagClass">{{ response.tag }}</span>
+      <span class="tag" [class]="response().tagClass">{{ response().tag }}</span>
       <div>
-        <div class="who">{{ response.who }}</div>
-        <p>{{ response.body }}</p>
+        <div class="who">{{ response().who }}</div>
+        <p>{{ response().body }}</p>
       </div>
     </div>
   `,
@@ -37,5 +38,5 @@ import { MissResponse } from '../../data/content';
   `],
 })
 export class MissCard {
-  @Input({ required: true }) response!: MissResponse;
+  readonly response = input.required<MissResponse>();
 }

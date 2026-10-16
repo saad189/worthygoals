@@ -34,7 +34,10 @@ const ImageViewerModal = () => {
   return (
     <View style={[styles.container, { backgroundColor: colors.black }]}>
       <StatusBar style="light" />
-      <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+      <Pressable style={StyleSheet.absoluteFill}
+        onPress={handleClose}
+        accessibilityRole="button"
+        accessibilityLabel="Close image" />
       <ImageViewerModalComponent
         ref={imageRef}
         imageUri={imageUri}

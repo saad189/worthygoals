@@ -1,9 +1,11 @@
 import { ROUTE_NAMES } from "@/constants";
+import { useSlide } from '@/hooks/useMotion';
 import { useAuth } from "@/hooks";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
 
 export default function AuthLayout() {
+  const slide = useSlide();
   const { checkAuth } = useAuth();
   useEffect(() => {
     checkAuth().catch((e) => {
@@ -18,7 +20,7 @@ export default function AuthLayout() {
         options={{
           headerShown: false,
           animationTypeForReplace: "push",
-          animation: "slide_from_bottom",
+          animation: slide('slide_from_bottom'),
         }}
       />
 
@@ -27,7 +29,7 @@ export default function AuthLayout() {
         options={{
           headerShown: false,
           animationTypeForReplace: "push",
-          animation: "slide_from_left",
+          animation: slide('slide_from_left'),
         }}
       />
       <Stack.Screen
@@ -35,7 +37,7 @@ export default function AuthLayout() {
         options={{
           headerShown: false,
           animationTypeForReplace: "push",
-          animation: "slide_from_right",
+          animation: slide('slide_from_right'),
         }}
       />
       <Stack.Screen
@@ -44,7 +46,7 @@ export default function AuthLayout() {
           headerShown: true,
           title: "Reset Password",
           animationTypeForReplace: "push",
-          animation: "slide_from_bottom",
+          animation: slide('slide_from_bottom'),
         }}
       />
 
@@ -54,7 +56,7 @@ export default function AuthLayout() {
           title: "Verify Email",
           headerShown: true,
           animationTypeForReplace: "push",
-          animation: "slide_from_right",
+          animation: slide('slide_from_right'),
         }}
       />
 
@@ -64,7 +66,7 @@ export default function AuthLayout() {
           title: "Create New Password",
           headerShown: true,
           animationTypeForReplace: "push",
-          animation: "slide_from_right",
+          animation: slide('slide_from_right'),
         }}
       />
     </Stack>

@@ -89,7 +89,9 @@ export class ConversationsService {
       const { data } = await this.api.get<ApiConversation[]>(
         `/${this.endpoint}`,
         {
-          include: "mentor,messages",
+          // lastMessage, not messages: the old include pulled every message of
+          // every conversation just to render one preview line.
+          include: "mentor,lastMessage",
         }
       );
 

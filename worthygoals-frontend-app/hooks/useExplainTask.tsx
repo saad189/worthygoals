@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { tasksService } from '@/services/tasks.service';
 import { enqueueExplain } from '@/helpers/taskOutbox';
 import { ExplainTaskPayload } from '@/models';
+import { markTaskStatus } from '@/hooks/useTasks';
 
 export function useExplainTask(
   onSuccess?: (taskId: string, hasReaction: boolean) => void,
@@ -14,6 +15,7 @@ export function useExplainTask(
   const mutation = useMutation({
     mutationFn: ({ taskId, payload }: { taskId: string; payload: ExplainTaskPayload }) =>
       tasksService.explain(taskId, payload),
+    onMutate: ({ taskId }) => markTaskStatus(queryClient, taskId, 'skipped'),
     onSuccess: (response, { taskId }) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       // a skip changes today's counts + this week's per-goal counts, so the

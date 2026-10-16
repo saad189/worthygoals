@@ -11,6 +11,9 @@
  * every push shipped generic fallback copy. users.personalityId is the column
  * the app actually writes.
  */
+const mockSend = jest.fn();
+const mockReceipts = jest.fn();
+
 // expo-server-sdk ships ESM, which ts-jest's CommonJS transform cannot load.
 jest.mock('expo-server-sdk', () => {
   class MockExpo {
@@ -18,26 +21,32 @@ jest.mock('expo-server-sdk', () => {
       typeof t === 'string' && t.startsWith('ExponentPushToken');
     chunkPushNotifications = (messages: unknown[]) =>
       messages.length ? [messages] : [];
-    sendPushNotificationsAsync = jest
-      .fn()
-      .mockResolvedValue([{ status: 'ok' }]);
+    sendPushNotificationsAsync = mockSend;
+    chunkPushNotificationReceiptIds = (ids: string[]) => [ids];
+    getPushNotificationReceiptsAsync = mockReceipts;
   }
   return { __esModule: true, default: MockExpo };
 });
 
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
+import { getQueueToken } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 
 import { UsersService } from 'src/modules/users/users.service';
 import { NotificationProcessor } from '../notification-processor';
 import { NotificationVoicingService } from '../notification-voicing.service';
 import { NotificationsService } from '../notifications.service';
+import {
+  NOTIFICATION_QUEUE,
+  PUSH_RECEIPTS_JOB,
+} from '../types/notification-job.types';
 
 const USER_ID = 7;
 
 const job = (overrides = {}) =>
   ({
+    name: 'morning_setup',
     data: {
       userId: USER_ID,
       kind: 'morning_setup',
@@ -53,13 +62,16 @@ describe('NotificationProcessor', () => {
     getTokens: jest.fn(),
     checkPacingAllowed: jest.fn().mockResolvedValue(true),
     recordSent: jest.fn(),
+    deactivateToken: jest.fn(),
   };
+  const queue = { add: jest.fn() };
   const usersService = { findOne: jest.fn() };
   const voicingService = { getOrGenerateCopy: jest.fn() };
 
   beforeEach(async () => {
     jest.clearAllMocks();
     notifService.checkPacingAllowed.mockResolvedValue(true);
+    mockSend.mockResolvedValue([{ status: 'ok', id: 'ticket-1' }]);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -68,6 +80,7 @@ describe('NotificationProcessor', () => {
         { provide: UsersService, useValue: usersService },
         { provide: NotificationVoicingService, useValue: voicingService },
         { provide: ConfigService, useValue: { get: () => undefined } },
+        { provide: getQueueToken(NOTIFICATION_QUEUE), useValue: queue },
       ],
     }).compile();
 
@@ -118,5 +131,74 @@ describe('NotificationProcessor', () => {
     await processor.process(job());
 
     expect(voicingService.getOrGenerateCopy).not.toHaveBeenCalled();
+  });
+
+  describe('delivery tracking', () => {
+    beforeEach(() => {
+      notifService.getTokens.mockResolvedValue([
+        { token: 'ExponentPushToken[xxx]', timezone: 'UTC' },
+      ]);
+      usersService.findOne.mockResolvedValue({ id: USER_ID });
+    });
+
+    it('schedules a receipt check for accepted tickets', async () => {
+      await processor.process(job());
+
+      expect(queue.add).toHaveBeenCalledWith(
+        PUSH_RECEIPTS_JOB,
+        { tickets: [{ id: 'ticket-1', token: 'ExponentPushToken[xxx]' }] },
+        expect.objectContaining({ delay: expect.any(Number) }),
+      );
+    });
+
+    it('rethrows a failed send so BullMQ retries it', async () => {
+      mockSend.mockRejectedValue(new Error('ECONNRESET'));
+
+      await expect(processor.process(job())).rejects.toThrow('ECONNRESET');
+      expect(notifService.recordSent).not.toHaveBeenCalled();
+    });
+
+    it('retires a token the ticket reports as unregistered', async () => {
+      mockSend.mockResolvedValue([
+        {
+          status: 'error',
+          message: 'gone',
+          details: { error: 'DeviceNotRegistered' },
+        },
+      ]);
+
+      await processor.process(job());
+
+      expect(notifService.deactivateToken).toHaveBeenCalledWith(
+        'ExponentPushToken[xxx]',
+      );
+      expect(queue.add).not.toHaveBeenCalled();
+    });
+
+    it('retires a token the receipt reports as unregistered', async () => {
+      mockReceipts.mockResolvedValue({
+        'ticket-1': {
+          status: 'error',
+          message: 'gone',
+          details: { error: 'DeviceNotRegistered' },
+        },
+        'ticket-2': { status: 'ok' },
+      });
+
+      await processor.process({
+        name: PUSH_RECEIPTS_JOB,
+        data: {
+          tickets: [
+            { id: 'ticket-1', token: 'ExponentPushToken[dead]' },
+            { id: 'ticket-2', token: 'ExponentPushToken[live]' },
+          ],
+        },
+      } as Job<any>);
+
+      expect(notifService.deactivateToken).toHaveBeenCalledTimes(1);
+      expect(notifService.deactivateToken).toHaveBeenCalledWith(
+        'ExponentPushToken[dead]',
+      );
+    });
   });
 });

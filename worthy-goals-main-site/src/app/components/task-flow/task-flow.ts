@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RevealDirective } from '../../shared/reveal.directive';
 
 /**
@@ -11,6 +11,7 @@ import { RevealDirective } from '../../shared/reveal.directive';
  * content.ts if this copy needs to be edited by non-devs.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'wg-task-flow',
   standalone: true,
   imports: [RevealDirective],

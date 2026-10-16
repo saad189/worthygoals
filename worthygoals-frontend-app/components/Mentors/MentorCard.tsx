@@ -29,6 +29,9 @@ export default function MentorCard({
         style={staticStyles.mainPressArea}
         onPress={onPress}
         accessibilityRole="button"
+        accessibilityLabel={[mentor.name, mentor.title, mentor.shortDescription]
+          .filter(Boolean)
+          .join('. ')}
       >
         {/* U2 handoff: avatarUrl is null after the roster reseed — identity now
             comes from the per-personality MentorAvatar keyed by slug. */}

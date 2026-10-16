@@ -14,9 +14,17 @@ type Props = {
   selected?: boolean;
   onPress?: () => void;
   style?: ViewStyle;
+  /** Spoken name when pressable; defaults to the card's text content. */
+  accessibilityLabel?: string;
 };
 
-export default function Card({ children, selected = false, onPress, style }: Props) {
+export default function Card({
+  children,
+  selected = false,
+  onPress,
+  style,
+  accessibilityLabel,
+}: Props) {
   const { colors, space, radius, shadow } = useAppTheme();
 
   // ponytail: border grows on select, so pad by the difference — border + padding
@@ -37,6 +45,10 @@ export default function Card({ children, selected = false, onPress, style }: Pro
       <Pressable
         onPress={onPress}
         style={({ pressed }) => [cardStyle, pressed ? styles.pressed : null, style]}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        // The picker cards' selected state was visual only (the ink border).
+        accessibilityState={{ selected }}
       >
         {children}
       </Pressable>

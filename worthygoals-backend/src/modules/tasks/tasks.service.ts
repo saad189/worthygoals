@@ -1,3 +1,4 @@
+import { parseLimit } from 'src/common/pagination';
 import {
   ConflictException,
   ForbiddenException,
@@ -33,6 +34,8 @@ export interface TaskReactionResult<T> {
 
 /** Postgres unique_violation. */
 const UNIQUE_VIOLATION = '23505';
+
+const RECURRING_PAGE_SIZE = 500;
 
 @Injectable()
 export class TasksService {
@@ -96,7 +99,11 @@ export class TasksService {
     return this.taskRepo.save(task);
   }
 
-  async findAllForGoal(sub: string, goalId: string): Promise<Task[]> {
+  async findAllForGoal(
+    sub: string,
+    goalId: string,
+    limit?: string,
+  ): Promise<Task[]> {
     const user = await this.resolveUser(sub);
     // Postgres throws on a non-UUID literal compared to a uuid column, which
     // would surface as a 500. Treat a malformed id as "not found" instead.
@@ -106,10 +113,14 @@ export class TasksService {
     if (!goal) throw new NotFoundException(`Goal ${goalId} not found`);
     if (goal.userId !== user.id) throw new ForbiddenException();
 
-    return this.taskRepo.find({
+    // Recurring goals grow a task a day, so this is bounded. Take the latest
+    // N by due date and hand them back oldest-first, the order the app shows.
+    const latest = await this.taskRepo.find({
       where: { goalId },
-      order: { dueDate: 'ASC', createdAt: 'ASC' },
+      order: { dueDate: 'DESC', createdAt: 'DESC' },
+      take: parseLimit(limit, { fallback: 100, max: 500 }),
     });
+    return latest.reverse();
   }
 
   async findOne(sub: string, taskId: string): Promise<Task> {
@@ -123,7 +134,14 @@ export class TasksService {
     const task = await this.taskRepo.findOne({ where: { id: taskId } });
     if (!task) throw new NotFoundException(`Task ${taskId} not found`);
     await this.assertGoalOwnership(sub, task.goalId);
-    this.taskRepo.merge(task, dto as unknown as Partial<Task>);
+    // dueDate arrives as an ISO string (@IsDateString) for a Date column. The
+    // old `as unknown as Partial<Task>` cast hid that and left a string on
+    // task.dueDate until the round-trip.
+    const { dueDate, ...rest } = dto;
+    this.taskRepo.merge(task, {
+      ...rest,
+      ...(dueDate !== undefined ? { dueDate: new Date(dueDate) } : {}),
+    });
     return this.taskRepo.save(task);
   }
 
@@ -242,47 +260,69 @@ export class TasksService {
    * Materializes the next occurrence of all repeating tasks whose dueDate
    * has passed. Called by a scheduled cron job daily.
    */
+  /**
+   * Create the next occurrence of every completed, overdue recurring task
+   * that does not have one yet.
+   *
+   * This used to load every completed task in the database, filter it in
+   * JavaScript, then issue one findOne per candidate — and since a task stays
+   * "completed" forever, every recurring task ever finished was re-checked
+   * every night. The cron runs in-process, so that grew into an OOM of the
+   * API. Now one keyset-paged query returns only tasks with no next
+   * occurrence (NOT EXISTS), served by idx_tasks_recurring_due and
+   * idx_tasks_parent_occurrence, and each page is inserted in one statement.
+   */
   async materializeRecurringTasks(): Promise<number> {
-    const now = new Date();
-    const repeatingTasks = await this.taskRepo.find({
-      where: { status: TaskStatus.COMPLETED },
-    });
-
-    const candidates = repeatingTasks.filter(
-      (t) =>
-        t.repeatFrequency !== TaskRepeatFrequency.NONE &&
-        t.dueDate &&
-        t.dueDate < now,
-    );
-
     let created = 0;
-    for (const parent of candidates) {
-      // The filter above already requires a dueDate; this keeps that fact
-      // visible to the compiler rather than asserting it away.
-      if (!parent.dueDate) continue;
-      const nextDue = this.nextDueDate(parent.dueDate, parent.repeatFrequency);
+    let afterId = '00000000-0000-0000-0000-000000000000';
 
-      // Skip if a future occurrence already exists
-      const exists = await this.taskRepo.findOne({
-        where: {
-          parentTaskId: parent.id,
-          occurrenceIndex: parent.occurrenceIndex + 1,
-        },
-      });
-      if (exists) continue;
+    for (;;) {
+      const page: Array<{
+        id: string;
+        goalId: string;
+        title: string;
+        description: string | null;
+        repeatFrequency: TaskRepeatFrequency;
+        dueDate: Date;
+        occurrenceIndex: number;
+      }> = await this.taskRepo.query(
+        `
+        SELECT p.id, p."goalId", p.title, p.description, p."repeatFrequency",
+               p."dueDate", p."occurrenceIndex"
+          FROM tasks p
+         WHERE p.status = 'completed'
+           AND p."repeatFrequency" <> 'none'
+           AND p."dueDate" < now()
+           AND p.id > $1
+           AND NOT EXISTS (
+                 SELECT 1 FROM tasks c
+                  WHERE c."parentTaskId" = p.id::text
+                    AND c."occurrenceIndex" = p."occurrenceIndex" + 1)
+         ORDER BY p.id
+         LIMIT $2
+        `,
+        [afterId, RECURRING_PAGE_SIZE],
+      );
+      if (!page.length) break;
 
-      await this.taskRepo.save(
-        this.taskRepo.create({
+      await this.taskRepo.insert(
+        page.map((parent) => ({
           goalId: parent.goalId,
           title: parent.title,
-          description: parent.description,
+          description: parent.description ?? undefined,
           repeatFrequency: parent.repeatFrequency,
-          dueDate: nextDue,
+          dueDate: this.nextDueDate(
+            new Date(parent.dueDate),
+            parent.repeatFrequency,
+          ),
           occurrenceIndex: parent.occurrenceIndex + 1,
           parentTaskId: parent.id,
-        }),
+        })),
       );
-      created++;
+      created += page.length;
+
+      if (page.length < RECURRING_PAGE_SIZE) break;
+      afterId = page[page.length - 1].id;
     }
 
     return created;
@@ -322,10 +362,17 @@ export class TasksService {
       result.mentorReaction = aiResp.text;
       // Persist reaction on completions so the board can display it later
       if (result.data instanceof TaskCompletion && aiResp.text) {
-        await this.completionRepo.update(
-          { id: (result.data as TaskCompletion).id },
+        const { affected } = await this.completionRepo.update(
+          { id: result.data.id },
           { mentorReaction: aiResp.text },
         );
+        // The user already has the reaction in this response; a miss here only
+        // means the board will never show it — log rather than fail the call.
+        if (!affected) {
+          this.logger.warn(
+            `Mentor reaction not persisted: completion ${result.data.id} is gone`,
+          );
+        }
       }
     } catch (err: any) {
       this.logger.warn(`Mentor reaction failed: ${err?.message}`);

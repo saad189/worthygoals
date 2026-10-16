@@ -2,6 +2,8 @@ import { Injectable, Logger, Optional } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { MemoryService } from './memory.service';
 import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
+import { DataSource } from 'typeorm';
+import { CRON_LOCK, runExclusive } from 'src/common/cron/run-exclusive';
 
 const DIGEST_LOOKBACK_DAYS = 30;
 const SYSTEM_USER_ID = -1;
@@ -12,12 +14,22 @@ export class MemoryDigestCron {
 
   constructor(
     private readonly memory: MemoryService,
+    private readonly dataSource: DataSource,
     @Optional() private readonly gateway?: AiGatewayService,
   ) {}
 
   // Weekly Sunday midnight UTC
   @Cron(CronExpression.EVERY_WEEK)
   async generateDigests(): Promise<void> {
+    await runExclusive(
+      this.dataSource,
+      CRON_LOCK.memoryDigest,
+      this.logger,
+      () => this.generate(),
+    );
+  }
+
+  private async generate(): Promise<void> {
     if (!this.gateway) {
       this.logger.warn('AI gateway unavailable — skipping digest generation');
       return;
@@ -42,10 +54,7 @@ export class MemoryDigestCron {
         );
         if (texts.length < 3) continue;
 
-        const combined = texts
-          .slice(-80)
-          .map((t, i) => `[${i + 1}] ${t}`)
-          .join('\n');
+        const combined = texts.map((t, i) => `[${i + 1}] ${t}`).join('\n');
 
         const res = await this.gateway.chat({
           userId: SYSTEM_USER_ID,

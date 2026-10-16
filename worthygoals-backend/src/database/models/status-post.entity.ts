@@ -26,7 +26,11 @@ export class StatusPost {
   userId!: number;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId', referencedColumnName: 'id' })
+  @JoinColumn({
+    name: 'userId',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'fk_status_posts_user',
+  })
   user!: User;
 
   @Column({ type: 'text' })

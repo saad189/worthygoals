@@ -16,11 +16,6 @@ export function useGoalProposal() {
     [mutation],
   );
 
-  const reset = useCallback(() => {
-    setProposal(null);
-    mutation.reset();
-  }, [mutation]);
-
   return {
     proposal,
     loading: mutation.isPending,
@@ -28,6 +23,5 @@ export function useGoalProposal() {
       ? 'Could not generate a proposal. You can still fill in the details manually.'
       : null,
     propose,
-    reset,
   };
 }

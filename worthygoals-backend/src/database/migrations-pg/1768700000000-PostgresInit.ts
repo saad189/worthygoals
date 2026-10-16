@@ -635,6 +635,14 @@ export class PostgresInit1768700000000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    // Reverting this migration drops every table and the vector extension —
+    // i.e. the database. `typeorm:revert` one step too far in production must
+    // not be able to do that.
+    if (process.env.NODE_ENV === 'prod') {
+      throw new Error(
+        'Refusing to revert PostgresInit in production: it drops the entire schema.',
+      );
+    }
     const tables = [
       'notification_copy_cache',
       'notification_logs',

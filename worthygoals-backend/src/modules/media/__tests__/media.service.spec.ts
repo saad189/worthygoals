@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { MediaService } from '../media.service';
-import { Media } from '../media.entity';
+import { Media } from 'src/database/models/media.entity';
 import { UsersService } from '../../users/users.service';
 
 const mockRepo = () => ({
@@ -73,6 +73,7 @@ describe('MediaService', () => {
         unconfiguredService.createUploadUrl('sub', {
           fileName: 'photo.jpg',
           contentType: 'image/jpeg',
+          byteSize: 1000,
         }),
       ).rejects.toThrow(ServiceUnavailableException);
     });
@@ -83,8 +84,26 @@ describe('MediaService', () => {
         service.createUploadUrl('sub', {
           fileName: 'photo.jpg',
           contentType: 'image/jpeg',
+          byteSize: 1000,
         }),
       ).rejects.toThrow(ServiceUnavailableException);
+    });
+
+    it('signs the declared size into the upload URL', async () => {
+      usersService.findByAccountSub.mockResolvedValue({ id: 1 });
+      repo.create.mockImplementation((v) => v);
+      repo.save.mockResolvedValue({ id: 'media-uuid' });
+
+      const { uploadUrl } = await service.createUploadUrl('sub', {
+        fileName: 'photo.jpg',
+        contentType: 'image/jpeg',
+        byteSize: 12345,
+      });
+
+      const signed = new URL(uploadUrl).searchParams.get('X-Amz-SignedHeaders');
+      expect(signed?.split(';')).toEqual(
+        expect.arrayContaining(['content-length', 'content-type']),
+      );
     });
   });
 
@@ -101,10 +120,20 @@ describe('MediaService', () => {
       );
     });
 
-    it('does nothing when user is not found', async () => {
+    it('throws when the user is not found', async () => {
       usersService.findByAccountSub.mockResolvedValue(null);
-      await service.markAttached('media-uuid', 'unknown-sub');
+      await expect(
+        service.markAttached('media-uuid', 'unknown-sub'),
+      ).rejects.toThrow('Media not found');
       expect(repo.update).not.toHaveBeenCalled();
+    });
+
+    it("throws when the media id is someone else's", async () => {
+      usersService.findByAccountSub.mockResolvedValue({ id: 1 });
+      repo.update.mockResolvedValue({ affected: 0 });
+      await expect(
+        service.markAttached('media-uuid', 'cognito-sub'),
+      ).rejects.toThrow('Media not found');
     });
   });
 });

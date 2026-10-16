@@ -1,3 +1,4 @@
+import { AuthenticatedRequest } from 'src/common/interfaces';
 import {
   Body,
   Controller,
@@ -28,36 +29,45 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  create(@Request() req, @Body() dto: CreateTaskDto) {
+  create(@Request() req: AuthenticatedRequest, @Body() dto: CreateTaskDto) {
     return this.tasksService.create(req.user.sub, dto);
   }
 
   @Get()
   @ApiQuery({ name: 'goalId', required: true })
-  findAll(@Request() req, @Query('goalId') goalId: string) {
-    return this.tasksService.findAllForGoal(req.user.sub, goalId);
+  @ApiQuery({ name: 'limit', required: false })
+  findAll(
+    @Request() req: AuthenticatedRequest,
+    @Query('goalId') goalId: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.tasksService.findAllForGoal(req.user.sub, goalId, limit);
   }
 
   @Get(':id')
-  findOne(@Request() req, @Param('id') id: string) {
+  findOne(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.tasksService.findOne(req.user.sub, id);
   }
 
   @Patch(':id')
-  update(@Request() req, @Param('id') id: string, @Body() dto: UpdateTaskDto) {
+  update(
+    @Request() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() dto: UpdateTaskDto,
+  ) {
     return this.tasksService.update(req.user.sub, id, dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Request() req, @Param('id') id: string) {
+  async remove(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
     await this.tasksService.remove(req.user.sub, id);
   }
 
   @Post(':id/complete')
   @HttpCode(HttpStatus.CREATED)
   complete(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: CompleteTaskDto,
   ) {
@@ -67,7 +77,7 @@ export class TasksController {
   @Post(':id/explain')
   @HttpCode(HttpStatus.CREATED)
   explain(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: ExplainTaskDto,
   ) {

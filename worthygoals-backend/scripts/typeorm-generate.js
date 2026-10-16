@@ -110,7 +110,7 @@ async function main() {
   const dataSource = 'src/database/dataSource.ts';
   await ensureMetadataTable();
   // Pass only the name, let TypeORM build the timestamped file name.
-  const cmd = `ts-node ${tsNodeRegister} ${cliPath} migration:generate src/database/migrations/${pascalName} -d ${dataSource}`;
+  const cmd = `ts-node ${tsNodeRegister} ${cliPath} migration:generate src/database/migrations-pg/${pascalName} -d ${dataSource}`;
   console.log('Running:', cmd);
   try {
     execSync(cmd, { stdio: 'inherit' });

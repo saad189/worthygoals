@@ -241,6 +241,8 @@ export default function ChatViewScreen() {
               });
             }}
             style={{ minWidth: 150, minHeight: 150 }}
+            accessibilityRole="imagebutton"
+            accessibilityLabel="Open image"
           >
             <Animated.Image
               source={{ uri: item.content }}
@@ -307,6 +309,8 @@ export default function ChatViewScreen() {
             });
           }}
           style={staticStyles.profileImageWrapper}
+          accessibilityRole="button"
+          accessibilityLabel={`${chatDetail.name}, ${persona.role}. Open mentor profile`}
         >
           <MentorAvatar mentor={persona.slug} size={38} style={{ marginHorizontal: 8 }} />
           <View>
@@ -317,9 +321,8 @@ export default function ChatViewScreen() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => {}}>
-          <Ionicons name="ellipsis-vertical" size={20} color={colors.text} />
-        </TouchableOpacity>
+        {/* A "⋮" that did nothing on press used to sit here: a focusable,
+            unnamed control with no action. Removed until it has a menu. */}
       </View>
 
       {messagesLoading && messages.length === 0 ? (

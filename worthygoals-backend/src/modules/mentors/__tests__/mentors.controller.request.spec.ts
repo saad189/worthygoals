@@ -128,4 +128,20 @@ describe('/mentors (request level)', () => {
       .send({ promptBlocks: { system: 'pwned' } })
       .expect(404);
   });
+
+  // A mentor's conversations and messages belong to every user who talks to
+  // it; ?include=conversations.messages used to return all of them.
+  it.each([
+    '/mentors?include=conversations.messages',
+    '/mentors/1?include=messages',
+  ])("%s cannot pull other users' chats", async (url) => {
+    await request(app.getHttpServer()).get(url).expect(200);
+    const calls = [...findAll.mock.calls, ...findOne.mock.calls];
+    expect(calls.flat()).not.toContainEqual(
+      expect.stringContaining('conversations'),
+    );
+    expect(calls.flat()).not.toContainEqual(
+      expect.stringContaining('messages'),
+    );
+  });
 });

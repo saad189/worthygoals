@@ -22,14 +22,11 @@ import { PersonalitySlug, ToneKey } from '@/constants/Personalities';
 
 export interface SavedMentor {
   slug: PersonalitySlug;
-  /** Backend mentor id when the roster has been reseeded; null otherwise. */
-  mentorId: number | null;
 }
 
 export interface OnboardingChoice {
   tone: ToneKey;
   mentorSlug: PersonalitySlug;
-  mentorId?: number | null;
 }
 
 export const onboardingService = {
@@ -37,7 +34,6 @@ export const onboardingService = {
     await Storage.setItem(ONBOARDING_TONE, choice.tone);
     await Storage.setItem(ONBOARDING_MENTOR, {
       slug: choice.mentorSlug,
-      mentorId: choice.mentorId ?? null,
     } as SavedMentor);
     await Storage.setItem(ONBOARDING_COMPLETE, true);
 

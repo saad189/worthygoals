@@ -20,7 +20,10 @@ export class MessageAttachment {
   messageId!: string;
 
   @ManyToOne(() => Message, (m) => m.attachments, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'messageId' })
+  @JoinColumn({
+    name: 'messageId',
+    foreignKeyConstraintName: 'fk_msg_attach_message',
+  })
   message!: Message;
 
   @Column({ type: 'varchar', length: 16 })

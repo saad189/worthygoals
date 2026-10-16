@@ -1,10 +1,11 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { PageShell } from '../../components/page-shell/page-shell';
 import { SeoService } from '../../shared/seo.service';
 import { BRAND, PRIVACY } from '../../data/content';
 
 /** Privacy policy page — placeholder shell; real copy to be drafted. */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'wg-privacy',
   standalone: true,
   imports: [PageShell],

@@ -13,8 +13,17 @@ import { MessagesService } from './messages.service';
 import { AgentService } from 'src/core/ai';
 import { SafetyService } from 'src/core/safety/safety.service';
 import { MessageResponseDto } from './dto/message-response.dto';
+import { corsOrigin } from 'src/common/cors';
+import { CognitoAccessClaims } from 'src/common/interfaces';
 
-@WebSocketGateway({ namespace: '/messages', cors: true })
+/** WsJwtAuthGuard puts the verified claims on the handshake. */
+const subOf = (client: Socket) =>
+  (client.handshake as { user?: CognitoAccessClaims }).user?.sub;
+
+@WebSocketGateway({
+  namespace: '/messages',
+  cors: { origin: corsOrigin, credentials: true },
+})
 export class MessagesGateway {
   private readonly logger = new Logger(MessagesGateway.name);
 
@@ -40,7 +49,7 @@ export class MessagesGateway {
     const conversationId = body?.conversationId;
     if (!conversationId) throw new WsException('conversationId is required');
 
-    const sub = (client.handshake as any)?.user?.sub;
+    const sub = subOf(client);
     if (!sub) throw new WsException('Unauthorized');
 
     // The room receives messageChunk and messageCreated. Joining it unchecked
@@ -100,7 +109,7 @@ export class MessagesGateway {
     if (!text || typeof text !== 'string')
       throw new WsException('text is required');
 
-    const sub = (client.handshake as any)?.user?.sub;
+    const sub = subOf(client);
     if (!sub) throw new WsException('Unauthorized');
 
     // 1) Save user message

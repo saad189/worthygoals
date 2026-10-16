@@ -8,28 +8,19 @@ import { NOTIFICATION_QUEUE } from '../types/notification-job.types';
 
 const USER_ID = 1;
 
-const makeToken = (o: Partial<PushToken> = {}) =>
-  ({
-    id: 'tok-uuid',
-    userId: USER_ID,
-    token: 'ExponentPushToken[xxx]',
-    platform: 'expo' as const,
-    timezone: 'America/New_York',
-    active: true,
-    ...o,
-  }) as PushToken;
-
 describe('NotificationsService', () => {
   let service: NotificationsService;
   let tokenRepo: Record<string, jest.Mock>;
   let logRepo: Record<string, jest.Mock>;
-  let queue: { add: jest.Mock; getJob: jest.Mock };
+  let queue: { add: jest.Mock; addBulk: jest.Mock };
 
   beforeEach(async () => {
     tokenRepo = {
       upsert: jest.fn().mockResolvedValue(undefined),
       update: jest.fn().mockResolvedValue(undefined),
       find: jest.fn().mockResolvedValue([]),
+      // activeUserPages: first call returns the page, the next an empty one.
+      manager: { query: jest.fn().mockResolvedValue([]) } as any,
     };
     logRepo = {
       count: jest.fn().mockResolvedValue(0),
@@ -38,7 +29,7 @@ describe('NotificationsService', () => {
     };
     queue = {
       add: jest.fn().mockResolvedValue({ id: 'job-1' }),
-      getJob: jest.fn().mockResolvedValue(null),
+      addBulk: jest.fn().mockResolvedValue([]),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -95,26 +86,40 @@ describe('NotificationsService', () => {
   });
 
   describe('materializeNext24h', () => {
+    const onePage = (rows: Array<{ userId: number; timezone: string }>) =>
+      (tokenRepo.manager as any).query.mockResolvedValueOnce(rows);
+
     it('does nothing when no tokens exist', async () => {
-      tokenRepo.find.mockResolvedValue([]);
       await service.materializeNext24h();
-      expect(queue.add).not.toHaveBeenCalled();
+      expect(queue.addBulk).not.toHaveBeenCalled();
     });
 
-    it('schedules morning and evening jobs for a user with a token', async () => {
-      tokenRepo.find.mockResolvedValue([makeToken({ timezone: 'UTC' })]);
+    it('bulk-schedules morning and evening jobs with stable jobIds', async () => {
+      onePage([{ userId: USER_ID, timezone: 'UTC' }]);
       await service.materializeNext24h();
-      expect(queue.add).toHaveBeenCalledTimes(2);
-      const kinds = queue.add.mock.calls.map((c) => c[0]);
-      expect(kinds).toContain('morning_setup');
-      expect(kinds).toContain('evening_check_in');
+      expect(queue.addBulk).toHaveBeenCalledTimes(1);
+      const jobs = queue.addBulk.mock.calls[0][0];
+      expect(jobs.map((j) => j.name).sort()).toEqual([
+        'evening_check_in',
+        'morning_setup',
+      ]);
+      for (const j of jobs) {
+        expect(j.opts.jobId).toMatch(/^1:(morning_setup|evening_check_in):/);
+      }
     });
 
-    it('skips jobs that already exist in the queue', async () => {
-      tokenRepo.find.mockResolvedValue([makeToken({ timezone: 'UTC' })]);
-      queue.getJob.mockResolvedValue({ id: 'existing' });
+    it('pages by userId until a short page', async () => {
+      const full = Array.from({ length: 500 }, (_, i) => ({
+        userId: i + 1,
+        timezone: 'UTC',
+      }));
+      onePage(full);
+      onePage([{ userId: 501, timezone: 'UTC' }]);
       await service.materializeNext24h();
-      expect(queue.add).not.toHaveBeenCalled();
+      const calls = (tokenRepo.manager as any).query.mock.calls;
+      expect(calls).toHaveLength(2);
+      expect(calls[1][1][0]).toBe(500);
+      expect(queue.addBulk).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -123,11 +128,13 @@ describe('NotificationsService', () => {
       new Date(Date.now() - n * 24 * 60 * 60 * 1000).toISOString();
 
     beforeEach(() => {
-      tokenRepo.find.mockResolvedValue([makeToken({ timezone: 'UTC' })]);
+      (tokenRepo.manager as any).query.mockResolvedValueOnce([
+        { userId: USER_ID, timezone: 'UTC' },
+      ]);
     });
 
     it('enqueues a voiced re_engage with daysSince for a user quiet 3+ days', async () => {
-      (logRepo.manager as any).query.mockResolvedValue([
+      (logRepo.manager as any).query.mockResolvedValueOnce([
         { userId: USER_ID, lastTs: daysAgo(4) },
       ]);
       await service.scheduleLapseReEngagement();
@@ -161,19 +168,9 @@ describe('NotificationsService', () => {
     });
 
     it('suppresses a re_engage sent within the last week', async () => {
-      (logRepo.manager as any).query.mockResolvedValue([
-        { userId: USER_ID, lastTs: daysAgo(5) },
-      ]);
-      logRepo.count.mockResolvedValue(1);
-      await service.scheduleLapseReEngagement();
-      expect(queue.add).not.toHaveBeenCalled();
-    });
-
-    it('does not double-enqueue when the job already exists', async () => {
-      (logRepo.manager as any).query.mockResolvedValue([
-        { userId: USER_ID, lastTs: daysAgo(5) },
-      ]);
-      queue.getJob.mockResolvedValue({ id: 'existing' });
+      (logRepo.manager as any).query
+        .mockResolvedValueOnce([{ userId: USER_ID, lastTs: daysAgo(5) }])
+        .mockResolvedValueOnce([{ userId: USER_ID }]);
       await service.scheduleLapseReEngagement();
       expect(queue.add).not.toHaveBeenCalled();
     });

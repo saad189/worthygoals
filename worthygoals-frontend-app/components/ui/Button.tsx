@@ -70,7 +70,11 @@ export default function Button({
       disabled={disabled || loading}
       activeOpacity={0.8}
       accessibilityRole="button"
-      accessibilityState={{ disabled: disabled || loading }}
+      // The label is swapped for a spinner while loading, which removed the
+      // button's accessible name exactly while it was working. Name it
+      // explicitly and report busy.
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: disabled || loading, busy: !!loading }}
       style={[containerStyle, disabled ? styles.disabled : null, style]}
     >
       {loading ? (

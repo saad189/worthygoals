@@ -11,6 +11,9 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { GoalCategory } from 'src/common/constants';
 
+// Every free-text field is spliced into the mentor's system prompt. The quota
+// counts calls, not tokens, so unbounded text let 20 free calls each burn a
+// full context window.
 export class CreateGoalDto {
   @ApiProperty({ example: '20-minute morning run' })
   @IsString()
@@ -20,6 +23,7 @@ export class CreateGoalDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(2000)
   description?: string;
 
   @ApiPropertyOptional({ enum: GoalCategory, default: GoalCategory.POWER })
@@ -35,16 +39,19 @@ export class CreateGoalDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   costText?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   benefitText?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   failureText?: string;
 
   @ApiPropertyOptional({ example: '2026-12-31T00:00:00.000Z' })
@@ -52,7 +59,14 @@ export class CreateGoalDto {
   @IsDateString()
   deadline?: string;
 
-  @ApiPropertyOptional({ example: { frequency: 'daily' } })
+  // type/additionalProperties: without them the spec emitted `{}` and the
+  // generated client typed this Record<string, never>, which no honest caller
+  // could satisfy (ECC-2).
+  @ApiPropertyOptional({
+    type: 'object',
+    additionalProperties: true,
+    example: { frequency: 'daily' },
+  })
   @IsOptional()
   @IsObject()
   repeatRule?: Record<string, unknown>;

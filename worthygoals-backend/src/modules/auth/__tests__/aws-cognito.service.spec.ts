@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 /**
  * Guards D7: the service must not throw from inside its own catch.
  *
@@ -19,8 +20,9 @@ describe('AWSCognitoService error normalisation', () => {
     jest.resetModules();
     process.env = {
       ...ENV,
-      // All four are Joi.string().required() in env.validation, so the
-      // constructor reads them through requireEnv and throws without them.
+      // All five are Joi.string().required() in env.validation, so the
+      // constructor reads them through ConfigService and throws without them.
+      AWS_REGION: 'eu-north-1',
       AWS_ACCESS_KEY_ID: 'test-key-id',
       AWS_SECRET_ACCESS_KEY: 'test-secret',
       AWS_COGNITO_APP_CLIENT_ID: 'client-id',
@@ -34,7 +36,9 @@ describe('AWSCognitoService error normalisation', () => {
   });
 
   function serviceWithSendResult(result: Promise<unknown>) {
-    const service = new AWSCognitoService();
+    const service = new AWSCognitoService(
+      new ConfigService({ ...process.env }),
+    );
     (service as any).cognitoClient = {
       send: jest.fn().mockReturnValue(result),
     };
@@ -42,7 +46,9 @@ describe('AWSCognitoService error normalisation', () => {
   }
 
   it('omits SECRET_HASH when no client secret is configured', async () => {
-    const service = new AWSCognitoService();
+    const service = new AWSCognitoService(
+      new ConfigService({ ...process.env }),
+    );
     const send = jest.fn().mockResolvedValue({
       AuthenticationResult: {
         AccessToken: 'a',

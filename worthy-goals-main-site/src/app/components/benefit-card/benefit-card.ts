@@ -1,14 +1,15 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { Benefit } from '../../data/content';
 
 /** A launch-benefit row with a line icon, title, and description. */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'wg-benefit-card',
   standalone: true,
   template: `
     <div class="ben">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
-        @switch (benefit.icon) {
+        @switch (benefit().icon) {
           @case ('roster') {
             <circle cx="9" cy="8" r="3.2"></circle>
             <path d="M3.5 19c0-3 2.4-5 5.5-5s5.5 2 5.5 5"></path>
@@ -31,8 +32,8 @@ import { Benefit } from '../../data/content';
         }
       </svg>
       <div>
-        <h3>{{ benefit.title }}</h3>
-        <p>{{ benefit.body }}</p>
+        <h3>{{ benefit().title }}</h3>
+        <p>{{ benefit().body }}</p>
       </div>
     </div>
   `,
@@ -44,5 +45,5 @@ import { Benefit } from '../../data/content';
   `],
 })
 export class BenefitCard {
-  @Input({ required: true }) benefit!: Benefit;
+  readonly benefit = input.required<Benefit>();
 }

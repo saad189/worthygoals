@@ -25,11 +25,9 @@ const CONFIRM_LINE: Record<PersonalitySlug, string> = {
 export default function ConfirmScreen() {
   const { space } = useAppTheme();
   const queryClient = useQueryClient();
-  const { slug, name, mentorId } = useLocalSearchParams<{
-    slug?: string;
-    name?: string;
-    mentorId?: string;
-  }>();
+  // Only the slug is taken from the route, and only as a lookup key into the
+  // local roster — name and id are never trusted from a (public) deep link.
+  const { slug } = useLocalSearchParams<{ slug?: string }>();
 
   const persona = personaBySlug(slug);
 
@@ -39,7 +37,6 @@ export default function ConfirmScreen() {
       .save({
         tone: persona.tone,
         mentorSlug: persona.slug,
-        mentorId: mentorId ? Number(mentorId) : null,
       })
       .then(() => {
         // The save persisted tone + personalityId to the backend; refetch the
@@ -50,14 +47,14 @@ export default function ConfirmScreen() {
       .catch(() => {
         /* persistence is best-effort; the user can still proceed. */
       });
-  }, [persona, mentorId, queryClient]);
+  }, [persona, queryClient]);
 
   const enter = () =>
     router.replace(
       `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.HOME_SCREEN}` as never,
     );
 
-  const displayName = name ?? persona?.name ?? 'Your mentor';
+  const displayName = persona?.name ?? 'Your mentor';
   const line = persona ? CONFIRM_LINE[persona.slug] : "Let's get to work.";
 
   return (

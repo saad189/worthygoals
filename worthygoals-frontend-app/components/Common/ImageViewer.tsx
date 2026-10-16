@@ -113,7 +113,9 @@ const ImageViewerModalComponent = forwardRef<
               still renders, just without the cross-screen morph. */}
           <GestureDetector gesture={pinchHandler}>
             {closeOnPress ? (
-              <Pressable onPress={requestClose}>
+              <Pressable onPress={requestClose}
+        accessibilityRole="button"
+        accessibilityLabel="Close image">
                 <Animated.Image
                   source={{
                     uri: imageUri,

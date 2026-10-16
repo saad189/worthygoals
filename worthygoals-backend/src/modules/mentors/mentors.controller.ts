@@ -4,7 +4,6 @@ import {
   Get,
   Param,
   ParseIntPipe,
-  Query,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -34,17 +33,12 @@ export class MentorsController {
   constructor(private readonly mentorsService: MentorsService) {}
 
   @Get()
-  async findAll(
-    @Query('include') include?: string | string[],
-  ): Promise<Mentor[]> {
-    return this.mentorsService.findAll(include);
+  async findAll(): Promise<Mentor[]> {
+    return this.mentorsService.findAll();
   }
 
   @Get(':id')
-  async findOne(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('include') include?: string | string[],
-  ): Promise<Mentor> {
-    return this.mentorsService.findOne(id, include);
+  async findOne(@Param('id', ParseIntPipe) id: number): Promise<Mentor> {
+    return this.mentorsService.findOne(id);
   }
 }

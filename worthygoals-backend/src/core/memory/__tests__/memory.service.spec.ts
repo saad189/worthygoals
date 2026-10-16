@@ -83,6 +83,18 @@ describe('MemoryService', () => {
       expect(ctx).toContain('Completed morning run');
     });
 
+    it('keeps the other layers when one fails', async () => {
+      const svc = makeService();
+      mockEmbeddingRepo.find.mockResolvedValue(<any>[
+        { embeddingText: 'Completed morning run', createdAt: new Date() },
+      ]);
+      mockDigestRepo.findOne.mockRejectedValue(new Error('digest table down'));
+
+      const ctx = await svc.buildContext(1, 'marcus', 'how am I doing?');
+      expect(ctx).toContain('Completed morning run');
+      mockDigestRepo.findOne.mockResolvedValue(<any>null);
+    });
+
     it('includes digest when available', async () => {
       const svc = makeService();
       mockEmbeddingRepo.find.mockResolvedValue(<any>[]);
@@ -108,6 +120,25 @@ describe('MemoryService', () => {
       const ctx = await svc.buildContext(1, 'marcus', 'my knee hurts again');
       expect(ctx).toContain('Injury from two weeks ago');
       expect(ctx).not.toContain('Irrelevant low-score entry');
+    });
+  });
+
+  describe('getEmbeddingsForDigest', () => {
+    it('bounds by date and count in SQL and returns oldest-first', async () => {
+      const svc = makeService();
+      const since = new Date('2026-09-01');
+      mockEmbeddingRepo.find.mockResolvedValue(<any>[
+        { embeddingText: 'newer' },
+        { embeddingText: 'older' },
+      ]);
+
+      const texts = await svc.getEmbeddingsForDigest(1, 'marcus', since);
+
+      const arg = (mockEmbeddingRepo.find.mock.calls.at(-1) as any[])[0];
+      expect(arg.where.createdAt.value).toBe(since);
+      expect(arg.take).toBe(80);
+      expect(arg.order).toEqual({ createdAt: 'DESC' });
+      expect(texts).toEqual(['older', 'newer']);
     });
   });
 

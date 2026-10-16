@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { Wordmark } from '../../components/wordmark/wordmark';
 import { RevealDirective } from '../../shared/reveal.directive';
 import { SeoService } from '../../shared/seo.service';
@@ -6,6 +6,7 @@ import { BRAND, THANK_YOU } from '../../data/content';
 
 /** Post-signup confirmation: next steps, referral share, and a mentor teaser. */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'wg-thank-you',
   standalone: true,
   imports: [Wordmark, RevealDirective],

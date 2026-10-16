@@ -4,6 +4,7 @@ import { tasksService } from '@/services/tasks.service';
 import { enqueueComplete } from '@/helpers/taskOutbox';
 import { syncPushToken } from '@/services/push.service';
 import { CompleteTaskPayload } from '@/models';
+import { markTaskStatus } from '@/hooks/useTasks';
 
 export function useCompleteTask(
   onSuccess?: (taskId: string, hasReaction: boolean) => void,
@@ -15,6 +16,7 @@ export function useCompleteTask(
   const mutation = useMutation({
     mutationFn: ({ taskId, payload }: { taskId: string; payload: CompleteTaskPayload }) =>
       tasksService.complete(taskId, payload),
+    onMutate: ({ taskId }) => markTaskStatus(queryClient, taskId, 'completed'),
     onSuccess: (response, { taskId }) => {
       // Prime push permission after a value moment — the OS shows the dialog
       // only once, and syncPushToken no-ops if already granted/registered.

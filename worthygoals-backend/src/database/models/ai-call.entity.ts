@@ -3,17 +3,22 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { User } from './user.entity';
 
 @Entity('ai_calls')
-@Index(['userId', 'createdAt'])
+@Index('idx_ai_calls_user_date', ['userId', 'createdAt'])
 export class AiCall {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  userId: number;
+  // Nullable: system calls (memory digests, copy pre-generation) have no user.
+  // They used a -1 sentinel, which the cascading FK to users cannot accept.
+  @Column({ type: 'integer', nullable: true })
+  userId: number | null;
 
   @Column({ length: 64 })
   feature: string;
@@ -36,6 +41,10 @@ export class AiCall {
   @Column({ type: 'int', nullable: true })
   latencyMs: number | null;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId', foreignKeyConstraintName: 'fk_ai_calls_user' })
+  user?: User;
 }

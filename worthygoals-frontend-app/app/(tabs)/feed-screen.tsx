@@ -7,8 +7,16 @@
  * board — status is the feed tab per the Hi-Fi IA (TabBar active={3}).
  * Tapping a reply talks back 1:1 — it opens that mentor's chat (S47).
  */
-import React, { useState } from 'react';
-import { Alert, Image, RefreshControl, StyleSheet, View } from 'react-native';
+import React, { memo, useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  RefreshControl,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useNavigation } from 'expo-router';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { ParamListBase } from '@react-navigation/native';
@@ -32,124 +40,162 @@ function postTime(iso: string): string {
     .toUpperCase();
 }
 
-export default function FeedScreen() {
+/**
+ * One post and its replies. Memoized: rows used to be `posts.map` inside a
+ * ScrollView, so every post, image and reaction card mounted at once and all
+ * of them re-rendered on any state change in the screen.
+ */
+const PostItem = memo(function PostItem({
+  post,
+  onTalkBack,
+}: {
+  post: StatusPost;
+  onTalkBack: (reaction: StatusReaction) => void;
+}) {
   const { colors, space, radius } = useAppTheme();
+  return (
+    <View style={{ gap: space['4'], marginBottom: space['8'] }}>
+      {/* The post */}
+      <View
+        style={{
+          padding: space['4'],
+          borderRadius: radius.lg,
+          backgroundColor: colors.canvas,
+          borderWidth: 1,
+          borderColor: colors.border,
+        }}
+      >
+        <Text variant="eyebrow">YOU · {postTime(post.createdAt)}</Text>
+        <Text variant="body" style={{ marginTop: space['2'], fontStyle: 'italic' }}>
+          “{post.text}”
+        </Text>
+        {post.imageUrl ? (
+          <Image
+            source={{ uri: post.imageUrl }}
+            style={{
+              marginTop: space['3'],
+              width: '100%',
+              aspectRatio: 4 / 3,
+              borderRadius: radius.md,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+            accessibilityLabel="Photo attached to this status"
+          />
+        ) : null}
+      </View>
+
+      <Text variant="eyebrow">
+        {post.reactions.length} {post.reactions.length === 1 ? 'reply' : 'replies'}
+      </Text>
+
+      {post.reactions.map((r) => (
+        <StatusReactionCard
+          key={`${post.id}-${r.personalityId}`}
+          reaction={r}
+          onPress={onTalkBack}
+        />
+      ))}
+
+      {post.reactions.length > 0 && (
+        <Text variant="muted" style={styles.talkBackHint}>
+          tap a reply to talk back · 1:1
+        </Text>
+      )}
+    </View>
+  );
+});
+
+export default function FeedScreen() {
+  const { colors, space } = useAppTheme();
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
-  const { posts, loading, error, refetch, refreshing } = useStatusFeed();
+  const { posts, loading, error, refetch, refreshing, loadMore, loadingMore } =
+    useStatusFeed();
   const { mentors } = useMentors();
   const [openingChat, setOpeningChat] = useState(false);
 
-  const compose = () =>
-    navigation.navigate(ROUTE_NAMES.STATUS.self as any, {
-      screen: ROUTE_NAMES.STATUS.COMPOSE_SCREEN,
-    });
+  const compose = useCallback(
+    () =>
+      navigation.navigate(ROUTE_NAMES.STATUS.self as any, {
+        screen: ROUTE_NAMES.STATUS.COMPOSE_SCREEN,
+      }),
+    [navigation],
+  );
 
   // "tap a reply to talk back · 1:1" (screen 13) — resolve the reaction's
   // personality slug to the roster mentor (slug === personalityId on the WG
   // roster) and drop into that mentor's chat, same path as mentor-detail.
-  const talkBack = async (reaction: StatusReaction) => {
-    if (openingChat) return;
-    const mentor = mentors.find((m: Mentor) => m.slug === reaction.personalityId);
-    if (!mentor) return;
-    try {
-      setOpeningChat(true);
-      const chatData = await conversationsService.getConversationShellByMentorId(mentor.id);
-      navigation.navigate(ROUTE_NAMES.CHAT.self as any, {
-        screen: ROUTE_NAMES.CHAT.CHAT_VIEW_SCREEN,
-        params: { chatData },
-      });
-    } catch (e: any) {
-      Alert.alert("Couldn't open the chat", formatErrorMessage(e));
-    } finally {
-      setOpeningChat(false);
-    }
-  };
+  const talkBack = useCallback(
+    async (reaction: StatusReaction) => {
+      if (openingChat) return;
+      const mentor = mentors.find((m: Mentor) => m.slug === reaction.personalityId);
+      if (!mentor) return;
+      try {
+        setOpeningChat(true);
+        const chatData = await conversationsService.getConversationShellByMentorId(mentor.id);
+        navigation.navigate(ROUTE_NAMES.CHAT.self as any, {
+          screen: ROUTE_NAMES.CHAT.CHAT_VIEW_SCREEN,
+          params: { chatData },
+        });
+      } catch (e: any) {
+        Alert.alert("Couldn't open the chat", formatErrorMessage(e));
+      } finally {
+        setOpeningChat(false);
+      }
+    },
+    [openingChat, mentors, navigation],
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: StatusPost }) => <PostItem post={item} onTalkBack={talkBack} />,
+    [talkBack],
+  );
+
+  const empty =
+    loading ? (
+      <Text variant="muted" style={{ marginTop: space['8'] }}>
+        Loading the feed…
+      </Text>
+    ) : error ? (
+      <Text variant="muted" color="primary" style={{ marginTop: space['8'] }}>
+        {error}
+      </Text>
+    ) : (
+      <View style={{ marginTop: space['8'], gap: space['4'] }}>
+        <Text variant="display" style={{ fontSize: 26 }}>
+          Tell the team something.
+        </Text>
+        <Text variant="muted">
+          Post a win, a miss, or both — Marcus, Lyra and Goggs each react in their own voice.
+        </Text>
+        <Button label="+ status" onPress={compose} />
+      </View>
+    );
 
   return (
-    <Screen
-      scroll
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={refetch} tintColor={colors.textMuted} />
-      }
-    >
-      <View style={styles.headerRow}>
-        <Header eyebrow="FEED" title="the team." style={styles.noMargin} />
-        <Button label="+ status" onPress={compose} block={false} />
-      </View>
-
-      {loading && posts.length === 0 ? (
-        <Text variant="muted" style={{ marginTop: space['8'] }}>
-          Loading the feed…
-        </Text>
-      ) : error ? (
-        <Text variant="muted" color="primary" style={{ marginTop: space['8'] }}>
-          {error}
-        </Text>
-      ) : posts.length === 0 ? (
-        <View style={{ marginTop: space['8'], gap: space['4'] }}>
-          <Text variant="display" style={{ fontSize: 26 }}>
-            Tell the team something.
-          </Text>
-          <Text variant="muted">
-            Post a win, a miss, or both — Marcus, Lyra and Goggs each react in their own voice.
-          </Text>
-          <Button label="+ status" onPress={compose} />
-        </View>
-      ) : (
-        <View style={{ gap: space['8'], marginTop: space['2'], paddingBottom: space['8'] }}>
-          {posts.map((post: StatusPost) => (
-            <View key={post.id} style={{ gap: space['4'] }}>
-              {/* The post */}
-              <View
-                style={{
-                  padding: space['4'],
-                  borderRadius: radius.lg,
-                  backgroundColor: colors.canvas,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                }}
-              >
-                <Text variant="eyebrow">YOU · {postTime(post.createdAt)}</Text>
-                <Text variant="body" style={{ marginTop: space['2'], fontStyle: 'italic' }}>
-                  “{post.text}”
-                </Text>
-                {post.imageUrl ? (
-                  <Image
-                    source={{ uri: post.imageUrl }}
-                    style={{
-                      marginTop: space['3'],
-                      width: '100%',
-                      aspectRatio: 4 / 3,
-                      borderRadius: radius.md,
-                      borderWidth: 1,
-                      borderColor: colors.border,
-                    }}
-                    accessibilityLabel="Photo attached to this status"
-                  />
-                ) : null}
-              </View>
-
-              <Text variant="eyebrow">
-                {post.reactions.length} {post.reactions.length === 1 ? 'reply' : 'replies'}
-              </Text>
-
-              {post.reactions.map((r) => (
-                <StatusReactionCard
-                  key={`${post.id}-${r.personalityId}`}
-                  reaction={r}
-                  onPress={talkBack}
-                />
-              ))}
-
-              {post.reactions.length > 0 && (
-                <Text variant="muted" style={styles.talkBackHint}>
-                  tap a reply to talk back · 1:1
-                </Text>
-              )}
-            </View>
-          ))}
-        </View>
-      )}
+    <Screen>
+      <FlatList
+        testID="status-feed"
+        data={posts}
+        keyExtractor={(p) => p.id}
+        renderItem={renderItem}
+        ListHeaderComponent={
+          <View style={[styles.headerRow, { marginBottom: space['2'] }]}>
+            <Header eyebrow="FEED" title="the team." style={styles.noMargin} />
+            <Button label="+ status" onPress={compose} block={false} />
+          </View>
+        }
+        ListEmptyComponent={empty}
+        ListFooterComponent={
+          loadingMore ? <ActivityIndicator color={colors.textMuted} /> : null
+        }
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={refetch} tintColor={colors.textMuted} />
+        }
+        showsVerticalScrollIndicator={false}
+      />
     </Screen>
   );
 }

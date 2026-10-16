@@ -17,7 +17,11 @@ import { ConversationSummary } from './conversation-summary.entity';
 import { ConversationMemoryItem } from './conversation-memory-item.entity';
 
 @Entity({ name: 'conversations' })
-@Index('idx_conversations_user_last_message_at', ['userId', 'lastMessageAt'])
+@Index('idx_conversations_user_last_msg_created', [
+  'userId',
+  'lastMessageAt',
+  'createdAt',
+])
 @Index('idx_conversations_mentor_last_message_at', [
   'mentorId',
   'lastMessageAt',
@@ -31,7 +35,11 @@ export class Conversation {
   userId!: number;
 
   @ManyToOne(() => User, (u) => u.conversations, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId', referencedColumnName: 'id' })
+  @JoinColumn({
+    name: 'userId',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'fk_conversations_user',
+  })
   user!: User;
 
   @Column({ type: 'int' })
@@ -39,7 +47,10 @@ export class Conversation {
   mentorId!: number;
 
   @ManyToOne(() => Mentor, (m) => m.conversations, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'mentorId' })
+  @JoinColumn({
+    name: 'mentorId',
+    foreignKeyConstraintName: 'fk_conversations_mentor',
+  })
   mentor!: Mentor;
 
   @Column({ type: 'varchar', length: 16, default: ConversationStatus.ACTIVE })
@@ -54,7 +65,7 @@ export class Conversation {
   @Column({ type: 'uuid', nullable: true })
   lastMessageId!: string | null;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   metadata!: Record<string, any> | null;
 
   @CreateDateColumn({ type: 'timestamptz' })

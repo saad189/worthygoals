@@ -1,6 +1,6 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThanOrEqual } from 'typeorm';
 import { toSql } from 'pgvector';
 import {
   MemoryEmbedding,
@@ -12,6 +12,9 @@ import { EmbeddingService } from './embedding.service';
 const SHORT_TERM_LIMIT = 10;
 const RAG_SNIPPET_LIMIT = 3;
 const RAG_LOOKBACK_DAYS = 90;
+
+/** The digest summarises at most this many recent snippets. */
+export const DIGEST_MAX_SNIPPETS = 80;
 
 @Injectable()
 export class MemoryService {
@@ -82,38 +85,48 @@ export class MemoryService {
     queryText: string,
   ): Promise<string> {
     if (!this.embeddingRepo || !this.digestRepo) return '';
-    try {
-      const [shortTerm, digest, ragSnippets] = await Promise.all([
-        this.getShortTerm(userId, personalityId),
-        this.getLatestDigest(userId, personalityId),
-        this.getRagSnippets(userId, personalityId, queryText),
-      ]);
-
-      if (!shortTerm.length && !digest && !ragSnippets.length) return '';
-
-      const parts: string[] = ['[Memory Context]'];
-
-      if (shortTerm.length) {
-        parts.push('--- Recent interactions ---');
-        parts.push(shortTerm.join('\n'));
+    // allSettled, not all: one failing layer (typically the vector search)
+    // used to throw away the other two, so a RAG hiccup left the mentor with
+    // no memory at all for that turn.
+    const settled = await Promise.allSettled([
+      this.getShortTerm(userId, personalityId),
+      this.getLatestDigest(userId, personalityId),
+      this.getRagSnippets(userId, personalityId, queryText),
+    ]);
+    const layers = ['short-term', 'digest', 'rag'];
+    settled.forEach((r, i) => {
+      if (r.status === 'rejected') {
+        this.logger.warn(
+          `buildContext: ${layers[i]} layer failed: ${(r.reason as Error)?.message}`,
+        );
       }
+    });
+    const value = <T>(r: PromiseSettledResult<T>, empty: T): T =>
+      r.status === 'fulfilled' ? r.value : empty;
+    const shortTerm = value(settled[0], [] as string[]);
+    const digest = value(settled[1], null as string | null);
+    const ragSnippets = value(settled[2], [] as string[]);
+    if (!shortTerm.length && !digest && !ragSnippets.length) return '';
 
-      if (digest) {
-        parts.push('--- 30-day summary ---');
-        parts.push(digest);
-      }
+    const parts: string[] = ['[Memory Context]'];
 
-      if (ragSnippets.length) {
-        parts.push('--- Related memories ---');
-        ragSnippets.forEach((s) => parts.push(`• ${s}`));
-      }
-
-      parts.push('[End Memory Context]');
-      return parts.join('\n');
-    } catch (err: any) {
-      this.logger.warn(`buildContext failed: ${err?.message}`);
-      return '';
+    if (shortTerm.length) {
+      parts.push('--- Recent interactions ---');
+      parts.push(shortTerm.join('\n'));
     }
+
+    if (digest) {
+      parts.push('--- 30-day summary ---');
+      parts.push(digest);
+    }
+
+    if (ragSnippets.length) {
+      parts.push('--- Related memories ---');
+      ragSnippets.forEach((s) => parts.push(`• ${s}`));
+    }
+
+    parts.push('[End Memory Context]');
+    return parts.join('\n');
   }
 
   private async indexText(
@@ -197,12 +210,16 @@ export class MemoryService {
     since: Date,
   ): Promise<string[]> {
     if (!this.embeddingRepo) return [];
+    // `since` used to be applied in JS after loading the pair's entire
+    // history, of which the digest keeps only the last 80. Both bounds are now
+    // in SQL, served by the (userId, personalityId, createdAt) index.
     const rows = await this.embeddingRepo.find({
-      where: { userId, personalityId },
+      where: { userId, personalityId, createdAt: MoreThanOrEqual(since) },
       select: ['embeddingText', 'createdAt'],
-      order: { createdAt: 'ASC' },
+      order: { createdAt: 'DESC' },
+      take: DIGEST_MAX_SNIPPETS,
     });
-    return rows.filter((r) => r.createdAt >= since).map((r) => r.embeddingText);
+    return rows.reverse().map((r) => r.embeddingText);
   }
 
   async saveDigest(

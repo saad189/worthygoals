@@ -1,3 +1,4 @@
+import { AuthenticatedRequest } from 'src/common/interfaces';
 import {
   Body,
   ClassSerializerInterceptor,
@@ -5,6 +6,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -31,21 +33,23 @@ export class ConversationsController {
 
   @Get()
   async findAll(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Query('mentorId') mentorId?: string,
     @Query('include') include?: string | string[],
+    @Query('limit') limit?: string,
   ): Promise<Conversation[]> {
     return this.conversationsService.findAll({
       sub: req.user.sub,
       mentorId: mentorId ? Number(mentorId) : undefined,
       include,
+      limit,
     });
   }
 
   @Get(':id')
   async findOne(
-    @Request() req,
-    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
     @Query('include') include?: string | string[],
   ): Promise<Conversation> {
     return this.conversationsService.findOne({
@@ -57,7 +61,7 @@ export class ConversationsController {
 
   @Post()
   async create(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Body() createConversationDto: CreateConversationDto,
   ): Promise<Conversation> {
     return this.conversationsService.create({
@@ -68,8 +72,8 @@ export class ConversationsController {
 
   @Patch(':id')
   async update(
-    @Request() req,
-    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateConversationDto: UpdateConversationDto,
   ): Promise<Conversation> {
     return this.conversationsService.update({
@@ -80,7 +84,10 @@ export class ConversationsController {
   }
 
   @Delete(':id')
-  async remove(@Request() req, @Param('id') id: string): Promise<void> {
+  async remove(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
     return this.conversationsService.remove({
       id,
       sub: req.user.sub,

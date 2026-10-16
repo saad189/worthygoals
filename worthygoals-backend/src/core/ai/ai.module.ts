@@ -1,3 +1,4 @@
+import { AiQuotaUsage } from 'src/database/models/ai-quota-usage.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Mentor } from 'src/database/models';
@@ -23,6 +24,7 @@ import { MemoryModule } from 'src/core/memory/memory.module';
       Message,
       ConversationSummary,
       AiCall,
+      AiQuotaUsage,
       DriftSample,
       User,
     ]),

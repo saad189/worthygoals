@@ -1,3 +1,4 @@
+import { AuthenticatedRequest } from 'src/common/interfaces';
 import { Controller, Get, Request, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/common/guards';
@@ -13,7 +14,7 @@ export class BoardController {
 
   @Get()
   @ApiOkResponse({ type: [BoardItemDto] })
-  getBoard(@Request() req: any): Promise<BoardItemDto[]> {
+  getBoard(@Request() req: AuthenticatedRequest): Promise<BoardItemDto[]> {
     return this.boardService.getBoard(req.user.sub);
   }
 }

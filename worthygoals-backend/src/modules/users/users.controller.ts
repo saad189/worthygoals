@@ -1,3 +1,4 @@
+import { AuthenticatedRequest } from 'src/common/interfaces';
 import {
   Controller,
   Get,
@@ -30,7 +31,7 @@ export class UsersController {
   ) {}
 
   @Get('profile')
-  getProfile(@Request() req): Promise<ResponseUserDto> {
+  getProfile(@Request() req: AuthenticatedRequest): Promise<ResponseUserDto> {
     if (!req.user) throw new NotFoundException('User not Logged In');
     return this.usersService.getUserProfile(req.user.sub);
   }
@@ -38,7 +39,7 @@ export class UsersController {
   @Put('profile')
   @ApiOperation({ summary: 'Update the authenticated user profile' })
   updateProfile(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<ResponseUserDto> {
     if (!req.user) throw new NotFoundException('User not Logged In');
@@ -47,7 +48,9 @@ export class UsersController {
 
   @Post('me/data-export')
   @ApiOperation({ summary: 'GDPR: export all data for the authenticated user' })
-  async exportMyData(@Request() req): Promise<Record<string, unknown>> {
+  async exportMyData(
+    @Request() req: AuthenticatedRequest,
+  ): Promise<Record<string, unknown>> {
     if (!req.user) throw new NotFoundException('User not Logged In');
     return this.gdprService.exportData(req.user.sub);
   }
@@ -58,14 +61,17 @@ export class UsersController {
     summary:
       'GDPR: permanently delete the authenticated user account and all associated data',
   })
-  async deleteMyAccount(@Request() req): Promise<void> {
+  async deleteMyAccount(@Request() req: AuthenticatedRequest): Promise<void> {
     if (!req.user) throw new NotFoundException('User not Logged In');
     await this.gdprService.deleteAccount(req.user.sub);
   }
 
   @Post()
   @ApiOperation({ summary: 'Create the profile for the authenticated account' })
-  async create(@Request() req, @Body() createUserDto: CreateUserDto) {
+  async create(
+    @Request() req: AuthenticatedRequest,
+    @Body() createUserDto: CreateUserDto,
+  ) {
     return this.usersService.createForAccount({
       accountSub: req.user.sub,
       dto: createUserDto,

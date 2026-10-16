@@ -48,11 +48,12 @@ export class OpenAiProvider implements IChatProvider {
       { timeout: AI_REQUEST_TIMEOUT_MS },
     );
 
-    const usage: any = (completion as any).usage;
+    // The SDK types both fields; the `as any` casts only hid a future change.
+    const usage = completion.usage;
 
     return {
       text: completion.choices?.[0]?.message?.content ?? '',
-      model: (completion as any).model ?? params.model ?? this.defaultModel,
+      model: completion.model ?? params.model ?? this.defaultModel,
       tokensIn:
         typeof usage?.prompt_tokens === 'number' ? usage.prompt_tokens : null,
       tokensOut:
@@ -95,7 +96,7 @@ export class OpenAiProvider implements IChatProvider {
         tokensIn = chunk.usage.prompt_tokens ?? null;
         tokensOut = chunk.usage.completion_tokens ?? null;
       }
-      if ((chunk as any).model) model = (chunk as any).model;
+      if (chunk.model) model = chunk.model;
     }
 
     return { text, model, tokensIn, tokensOut };

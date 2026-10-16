@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -35,7 +35,7 @@ export default function TodoListScreen() {
   // completion sheets) are scoped to whichever goal is selected — `useTasks`
   // stays disabled until one is.
   const [selectedGoal, setSelectedGoal] = useState<ApiGoal | null>(null);
-  const { tasks, loading, error, refetch, optimisticUpdateStatus } = useTasks(
+  const { tasks, loading, error, refetch } = useTasks(
     selectedGoal?.id ?? null,
   );
 
@@ -84,7 +84,6 @@ export default function TodoListScreen() {
     safetyFlag: completionSafety,
     clearReaction: clearCompletionReaction,
   } = useCompleteTask((taskId, hasReaction) => {
-    optimisticUpdateStatus(taskId, 'completed');
     if (!hasReaction) {
       completionRef.current?.close();
       setActiveTask(null);
@@ -99,7 +98,6 @@ export default function TodoListScreen() {
     safetyFlag: explanationSafety,
     clearReaction: clearExplanationReaction,
   } = useExplainTask((taskId, hasReaction) => {
-    optimisticUpdateStatus(taskId, 'skipped');
     if (!hasReaction) {
       explanationRef.current?.close();
       setActiveTask(null);
@@ -109,33 +107,53 @@ export default function TodoListScreen() {
   // Reset state on OPEN, never on gorhom's onClose — that callback fires
   // spuriously (incl. several times on mount), so tying cleanup to it wiped the
   // acting task out from under the open sheet.
+  //
+  // The sheet opens one frame after the clear. Clearing and expanding in the
+  // same handler let the expand animation start before the cleared state had
+  // rendered, so a sheet could open on the previous task's mentor reaction.
   const openComplete = (task: TaskItem) => {
     clearCompletionReaction();
     actingTaskRef.current = task;
     setActiveTask(task);
-    completionRef.current?.open();
+    requestAnimationFrame(() => completionRef.current?.open());
   };
 
   const openExplain = (task: TaskItem) => {
     clearExplanationReaction();
     actingTaskRef.current = task;
     setActiveTask(task);
-    explanationRef.current?.open();
+    requestAnimationFrame(() => explanationRef.current?.open());
   };
 
   // Let the full-screen modal finish fading before the bottom sheet animates
   // in, so the two transitions don't fight.
-  const answerYes = (task: TaskItem) => {
+  //
+  // First answer wins. `setAskTask(null)` only hides the modal on the next
+  // render, so "Yes" then "Not today" inside 200 ms used to schedule both
+  // timers, open both sheets, and race complete() against explain() on the
+  // same task. The timer is also cleared on unmount.
+  const answerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (answerTimer.current) clearTimeout(answerTimer.current);
+    },
+    [],
+  );
+  const answer = (task: TaskItem, open: (t: TaskItem) => void) => {
+    if (answerTimer.current) return;
     setAskTask(null);
-    setTimeout(() => openComplete(task), 200);
+    answerTimer.current = setTimeout(() => {
+      answerTimer.current = null;
+      open(task);
+    }, 200);
   };
+  const answerYes = (task: TaskItem) => answer(task, openComplete);
+  const answerNotToday = (task: TaskItem) => answer(task, openExplain);
 
-  const answerNotToday = (task: TaskItem) => {
-    setAskTask(null);
-    setTimeout(() => openExplain(task), 200);
-  };
-
-  const s = StyleSheet.create({
+  // Memoized so the list row renderers below can be stable callbacks.
+  const s = useMemo(
+    () =>
+      StyleSheet.create({
     center: {
       flex: 1,
       alignItems: 'center',
@@ -185,10 +203,14 @@ export default function TodoListScreen() {
       paddingTop: space['2'],
       paddingBottom: space['1'],
     },
-  });
+      }),
+    [colors, space, radius],
+  );
 
   // ── Goal card (list level) ──
-  const renderGoal = ({ item }: { item: ApiGoal }) => (
+  // useCallback: both FlatLists got a new renderItem identity on every render
+  // of a screen that also holds two sheets and a modal.
+  const renderGoal = useCallback(({ item }: { item: ApiGoal }) => (
     <TouchableOpacity
       style={[s.card, s.goalCard]}
       onPress={() => setSelectedGoal(item)}
@@ -212,10 +234,10 @@ export default function TodoListScreen() {
         ›
       </Text>
     </TouchableOpacity>
-  );
+  ), [s, space]);
 
   // ── Task card (drilled-in level) ──
-  const renderTask = ({ item }: { item: TaskItem }) => {
+  const renderTask = useCallback(({ item }: { item: TaskItem }) => {
     const isPending = item.status === 'pending';
     const badgeColor =
       item.status === 'completed'
@@ -254,7 +276,7 @@ export default function TodoListScreen() {
         )}
       </TouchableOpacity>
     );
-  };
+  }, [s, space, colors]);
 
   // ── Drilled-in view: one goal's tasks ──
   if (selectedGoal) {

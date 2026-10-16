@@ -24,8 +24,27 @@ const connectionOptions: DataSourceOptions = {
   migrationsRun: false,
   // Full SQL logging leaks PII (emails, goal text, tokens) — opt in via DB_LOGGING (F7).
   logging: process.env.DB_LOGGING === 'true' ? true : ['error', 'warn'],
-  // Managed Postgres (Railway) requires SSL; local dev doesn't — opt in via DB_SSL (F11).
-  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  // Managed Postgres (Railway) requires SSL; local dev doesn't — opt in via
+  // DB_SSL (F11). Certificates are verified unless DB_SSL_REJECT_UNAUTHORIZED
+  // is explicitly 'false': the old hard-coded rejectUnauthorized:false gave an
+  // encrypted but unauthenticated connection to the production database.
+  ssl:
+    process.env.DB_SSL === 'true'
+      ? {
+          rejectUnauthorized:
+            process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
+        }
+      : false,
+  // Bounds on a runaway query. Nothing was configured, so one bad scan could
+  // hold a connection indefinitely and a burst could open unbounded ones.
+  maxQueryExecutionTime: 1000, // logs anything slower as a warning
+  extra: {
+    max: Number(process.env.DB_POOL_MAX ?? 10),
+    // ponytail: migrations share this pool. A future migration that builds an
+    // index on a large table should start with `SET LOCAL statement_timeout = 0`
+    // (migrations run in a transaction, so it stays scoped to that migration).
+    statement_timeout: 30_000,
+  },
   entities: [path.join(__dirname, '**/*.entity{.ts,.js}')],
   migrations: [path.join(__dirname, 'migrations-pg/*{.ts,.js}')],
 };

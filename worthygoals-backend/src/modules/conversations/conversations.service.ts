@@ -1,6 +1,7 @@
+import { parseLimit } from 'src/common/pagination';
+import { rethrowSafe } from 'src/common/errors/rethrow-safe';
 import {
   BadRequestException,
-  HttpException,
   Injectable,
   Logger,
   NotFoundException,
@@ -8,6 +9,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Conversation } from 'src/database/models/conversation.entity';
+import { Message } from 'src/database/models/message.entity';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { UpdateConversationDto } from './dto/update-conversation.dto';
 import { UsersService } from 'src/modules/users/users.service';
@@ -19,17 +21,20 @@ export class ConversationsService {
   constructor(
     @InjectRepository(Conversation)
     private readonly conversationRepository: Repository<Conversation>,
+    @InjectRepository(Message)
+    private readonly messageRepository: Repository<Message>,
     private readonly usersService: UsersService,
   ) {}
 
+  // `messages`, `messages.*`, `summaries` and `memoryItems` joined the user's
+  // entire history into one response — the chat list asked for `messages` on
+  // every load just to show a preview line. `lastMessage` returns only that
+  // line (as a one-element `messages` array, so the response shape holds);
+  // full history is the paginated GET /messages.
   private static readonly allowedIncludePaths = new Set([
     'mentor',
     'user',
-    'messages',
-    'messages.attachments',
-    'messages.feedback',
-    'summaries',
-    'memoryItems',
+    'lastMessage',
   ]);
 
   private normalizeInclude(include?: string | string[]): string[] {
@@ -59,34 +64,37 @@ export class ConversationsService {
 
   private buildRelations(include?: string | string[]) {
     const includes = new Set(this.normalizeInclude(include));
-    const relations: any = {};
+    return {
+      ...(includes.has('mentor') ? { mentor: true } : {}),
+      ...(includes.has('user') ? { user: true } : {}),
+    };
+  }
 
-    if (includes.has('mentor')) relations.mentor = true;
-    if (includes.has('user')) relations.user = true;
-
-    if (
-      includes.has('messages') ||
-      includes.has('messages.attachments') ||
-      includes.has('messages.feedback')
-    ) {
-      relations.messages = relations.messages ?? {};
-      if (includes.has('messages'))
-        relations.messages = relations.messages || true;
-      if (includes.has('messages.attachments'))
-        relations.messages.attachments = true;
-      if (includes.has('messages.feedback')) relations.messages.feedback = true;
+  /** One query for the newest message of each conversation. */
+  private async attachLastMessages(conversations: Conversation[]) {
+    if (!conversations.length) return;
+    const latest = await this.messageRepository
+      .createQueryBuilder('m')
+      .distinctOn(['m.conversationId'])
+      .where('m.conversationId IN (:...ids)', {
+        ids: conversations.map((c) => c.id),
+      })
+      .orderBy('m.conversationId')
+      .addOrderBy('m.createdAt', 'DESC')
+      .addOrderBy('m.id', 'DESC')
+      .getMany();
+    const byConversation = new Map(latest.map((m) => [m.conversationId, m]));
+    for (const c of conversations) {
+      const last = byConversation.get(c.id);
+      c.messages = last ? [last] : [];
     }
-
-    if (includes.has('summaries')) relations.summaries = true;
-    if (includes.has('memoryItems')) relations.memoryItems = true;
-
-    return relations;
   }
 
   async findAll(params: {
     sub: string;
     mentorId?: number;
     include?: string | string[];
+    limit?: string;
   }): Promise<Conversation[]> {
     try {
       const user = await this.usersService.findByAccountSub(params.sub);
@@ -96,7 +104,7 @@ export class ConversationsService {
         );
       }
 
-      return await this.conversationRepository.find({
+      const conversations = await this.conversationRepository.find({
         where: {
           userId: user.id,
           ...(params.mentorId ? { mentorId: params.mentorId } : {}),
@@ -106,12 +114,18 @@ export class ConversationsService {
           lastMessageAt: 'DESC',
           createdAt: 'DESC',
         },
+        take: parseLimit(params.limit, { fallback: 50, max: 100 }),
       });
+      if (this.normalizeInclude(params.include).includes('lastMessage')) {
+        await this.attachLastMessages(conversations);
+      }
+      return conversations;
     } catch (error) {
-      this.logger.log(
-        `${ConversationsService.name}:${this.findAll.name}: ${JSON.stringify(error.message)}`,
+      rethrowSafe(
+        error,
+        this.logger,
+        `${ConversationsService.name}:${this.findAll.name}`,
       );
-      throw new HttpException(error.message, error.status);
     }
   }
 
@@ -131,6 +145,12 @@ export class ConversationsService {
         where: { id: params.id, userId: user.id },
         relations: this.buildRelations(params.include),
       });
+      if (
+        conversation &&
+        this.normalizeInclude(params.include).includes('lastMessage')
+      ) {
+        await this.attachLastMessages([conversation]);
+      }
 
       if (!conversation)
         throw new NotFoundException(
@@ -139,10 +159,11 @@ export class ConversationsService {
 
       return conversation;
     } catch (error) {
-      this.logger.log(
-        `${ConversationsService.name}:${this.findOne.name}: ${JSON.stringify(error.message)}`,
+      rethrowSafe(
+        error,
+        this.logger,
+        `${ConversationsService.name}:${this.findOne.name}`,
       );
-      throw new HttpException(error.message, error.status);
     }
   }
 
@@ -178,10 +199,11 @@ export class ConversationsService {
 
       return await this.conversationRepository.save(conversation);
     } catch (error) {
-      this.logger.log(
-        `${ConversationsService.name}:${this.create.name}: ${JSON.stringify(error.message)}`,
+      rethrowSafe(
+        error,
+        this.logger,
+        `${ConversationsService.name}:${this.create.name}`,
       );
-      throw new HttpException(error.message, error.status);
     }
   }
 
@@ -222,10 +244,11 @@ export class ConversationsService {
 
       return await this.conversationRepository.save(conversation);
     } catch (error) {
-      this.logger.log(
-        `${ConversationsService.name}:${this.update.name}: ${JSON.stringify(error.message)}`,
+      rethrowSafe(
+        error,
+        this.logger,
+        `${ConversationsService.name}:${this.update.name}`,
       );
-      throw new HttpException(error.message, error.status);
     }
   }
 
@@ -248,10 +271,11 @@ export class ConversationsService {
 
       await this.conversationRepository.remove(conversation);
     } catch (error) {
-      this.logger.log(
-        `${ConversationsService.name}:${this.remove.name}: ${JSON.stringify(error.message)}`,
+      rethrowSafe(
+        error,
+        this.logger,
+        `${ConversationsService.name}:${this.remove.name}`,
       );
-      throw new HttpException(error.message, error.status);
     }
   }
 }

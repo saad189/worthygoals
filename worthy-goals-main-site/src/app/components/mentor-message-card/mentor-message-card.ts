@@ -1,21 +1,22 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { MentorMessage } from '../../data/content';
 
 /** A single "delivered" mentor message bubble in the hero stack. */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'wg-mentor-message-card',
   standalone: true,
   template: `
-    <div class="msg" [style.margin-left.px]="message.offset ?? 0">
+    <div class="msg" [style.margin-left.px]="message().offset ?? 0">
       <div class="msg-top">
-        <span class="msg-ava" [style.background]="message.color" aria-hidden="true">{{ message.initial }}</span>
+        <span class="msg-ava" [style.background]="message().color" aria-hidden="true">{{ message().initial }}</span>
         <span>
-          <span class="msg-name">{{ message.name }}</span><br>
-          <span class="msg-role">{{ message.role }}</span>
+          <span class="msg-name">{{ message().name }}</span><br>
+          <span class="msg-role">{{ message().role }}</span>
         </span>
       </div>
-      <p class="msg-body">{{ message.body }}</p>
-      <p class="msg-time">{{ message.time }}</p>
+      <p class="msg-body">{{ message().body }}</p>
+      <p class="msg-time">{{ message().time }}</p>
     </div>
   `,
   styles: [`
@@ -39,5 +40,5 @@ import { MentorMessage } from '../../data/content';
   `],
 })
 export class MentorMessageCard {
-  @Input({ required: true }) message!: MentorMessage;
+  readonly message = input.required<MentorMessage>();
 }

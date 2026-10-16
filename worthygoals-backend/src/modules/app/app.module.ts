@@ -2,8 +2,6 @@ import { Module, ValidationPipe } from '@nestjs/common';
 import { GLOBAL_VALIDATION_PIPE_OPTIONS } from 'src/common/validation-pipe.options';
 import { APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { EntitySchema } from 'typeorm';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { HealthController } from './health.controller';
 import { AppService } from './app.service';
@@ -22,7 +20,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { BoardModule } from '../board/board.module';
 import { StatusModule } from '../status/status.module';
 import { WeeklyReviewModule } from '../weekly-review/weekly-review.module';
-import { WsSkipThrottlerGuard } from 'src/common/guards/throttler-ws.guard';
+import { AppThrottlerGuard } from 'src/common/guards/throttler-ws.guard';
 
 const modules = [
   UsersModule,
@@ -39,9 +37,6 @@ const modules = [
   StatusModule,
   WeeklyReviewModule,
 ];
-const entities = [
-  __dirname + '/**/*.entity{.ts,.js}',
-] as unknown as EntitySchema[];
 
 @Module({
   imports: [
@@ -50,7 +45,6 @@ const entities = [
     // Global rate limiting: 100 requests per 60 seconds per IP
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     ...modules,
-    TypeOrmModule.forFeature(entities),
     CoreModule,
   ],
   controllers: [AppController, HealthController],
@@ -62,7 +56,7 @@ const entities = [
     },
     {
       provide: APP_GUARD,
-      useClass: WsSkipThrottlerGuard,
+      useClass: AppThrottlerGuard,
     },
   ],
 })

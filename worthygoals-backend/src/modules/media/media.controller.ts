@@ -1,3 +1,4 @@
+import { AuthenticatedRequest } from 'src/common/interfaces';
 import { Body, Controller, Post, Request, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/common/guards';
@@ -15,7 +16,10 @@ export class MediaController {
   @ApiOperation({
     summary: 'Get a presigned PUT URL to upload a media file to S3/R2',
   })
-  createUploadUrl(@Request() req, @Body() dto: CreateUploadUrlDto) {
+  createUploadUrl(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: CreateUploadUrlDto,
+  ) {
     return this.mediaService.createUploadUrl(req.user.sub, dto);
   }
 }

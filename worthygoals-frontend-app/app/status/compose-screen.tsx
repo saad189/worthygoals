@@ -25,7 +25,7 @@ import { ParamListBase } from '@react-navigation/native';
 import { Button, Header, MentorAvatar, Screen, Text } from '@/components/ui';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useCreateStatus } from '@/hooks/useCreateStatus';
-import { mediaService } from '@/services/media.service';
+import { uploadImage } from '@/services/media.service';
 import { PERSONALITIES } from '@/constants/Personalities';
 
 const MAX_IMAGE_DIMENSION = 1024;
@@ -38,7 +38,15 @@ export default function StatusComposeScreen() {
   const [mediaId, setMediaId] = useState<string | null>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
 
-  const { post, submitting, error } = useCreateStatus(() => {
+  const { post, submitting, error } = useCreateStatus((created) => {
+    // A status that trips the crisis gate gets resources, not three mentor
+    // replies — say so here rather than returning to a silent post.
+    if (created.safetyFlag && created.crisisResponse) {
+      Alert.alert('You matter more than any goal', created.crisisResponse, [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ]);
+      return;
+    }
     navigation.goBack();
   });
 
@@ -69,14 +77,12 @@ export default function StatusComposeScreen() {
         [{ resize: { width: Math.min(asset.width ?? MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION) } }],
         { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG },
       );
-      const fileName = `status_${Date.now()}.jpg`;
-      const { uploadUrl, mediaId: newMediaId } = await mediaService.requestUploadUrl(
-        fileName,
-        'image/jpeg',
+      const newMediaId = await uploadImage(
+        resized.uri,
+        `status_${Date.now()}.jpg`,
         resized.width,
         resized.height,
       );
-      await mediaService.uploadToPresignedUrl(uploadUrl, resized.uri, 'image/jpeg');
       setPhotoUri(resized.uri);
       setMediaId(newMediaId);
     } catch {

@@ -23,7 +23,11 @@ export class GoalProposalDto {
   @ApiPropertyOptional({ example: '2026-10-01T00:00:00.000Z' })
   deadline?: string;
 
-  @ApiPropertyOptional({ example: { frequency: 'weekly', days: [1, 3, 6] } })
+  @ApiPropertyOptional({
+    type: 'object',
+    additionalProperties: true,
+    example: { frequency: 'weekly', days: [1, 3, 6] },
+  })
   repeatRule?: Record<string, unknown>;
 
   @ApiPropertyOptional({ enum: GoalCategory })

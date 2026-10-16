@@ -22,10 +22,10 @@ with every problem listed at once (`abortEarly: false`).
 
 | Variable | Required | Default | Notes |
 |---|---|---|---|
-| `NODE_ENV` | — | `local` | One of `local`, `lazy`, `dev`, `prod`. Set by the npm scripts. Production is **`prod`**, not `production` — nothing else disables Swagger. |
+| `NODE_ENV` | ✅ | — | One of `local`, `lazy`, `dev`, `prod`. Set by the npm scripts and the Dockerfile. Production is **`prod`**, not `production` — nothing else disables Swagger. No default: a missing value fails boot rather than falling open to `local`. |
 | `PORT` | — | `3000` | |
 | `SERVER_URL` | — | `http://localhost` | Used to build the Swagger server URL. |
-| `ALLOWED_ORIGINS` | — (prod: yes) | — | Comma-separated CORS origins. With none set, prod allows **no** origins and dev allows all. |
+| `ALLOWED_ORIGINS` | — | — | Comma-separated `http(s)://` origins, validated at boot. Applies to HTTP **and** the Socket.IO gateway. With none set, prod allows **no** browser origins and dev allows all. The native app sends no `Origin` and is unaffected. |
 
 ### Database (PostgreSQL + pgvector)
 
@@ -37,7 +37,9 @@ with every problem listed at once (`abortEarly: false`).
 | `DB_PASSWORD` | ✅ | — | |
 | `DB_NAME` | ✅ | — | e.g. `worthygoals` |
 | `DB_LOGGING` | — | `false` | `true` enables full SQL logging, which prints PII (emails, goal text). Errors and warnings are always logged. |
-| `DB_SSL` | — | `false` | `true` for managed Postgres. |
+| `DB_SSL` | — | `false` | `true` for managed Postgres. Only `true`/`false` accepted. |
+| `DB_SSL_REJECT_UNAUTHORIZED` | — | `true` | Set `false` only for a provider whose certificate chain Node cannot verify. Verification used to be hard-coded off. |
+| `DB_POOL_MAX` | — | `10` | Postgres connection pool size. Every statement also has a 30 s `statement_timeout`. |
 
 Migrations run at boot under a Postgres advisory lock, so concurrent replicas
 do not race. To inspect or revert from inside a running container:
@@ -82,7 +84,7 @@ A single model call is capped at 45s so an abandoned request stops billing.
 
 | Variable | Required | Default | Notes |
 |---|---|---|---|
-| `REDIS_URL` | — | `redis://localhost:6379` | BullMQ connection. |
+| `REDIS_URL` | prod: ✅ | `redis://localhost:6379` (non-prod) | BullMQ connection. Required in `prod`: the localhost default let a Redis-less instance boot and queue pushes into nothing. |
 | `EXPO_ACCESS_TOKEN` | — | — | Expo push. Graceful no-op when absent. |
 
 ### Media storage (S3 / R2)
@@ -105,6 +107,9 @@ All optional — with none set, media features no-op rather than fail.
 | `SUPPORT_EMAIL_SENDER` | — | — | Verified SES sender address. |
 
 ### Startup behaviour
+
+At boot the server logs one warning per optional tier that is off (S3, the Anthropic failover, `EXPO_ACCESS_TOKEN`, Sentry), so a disabled integration is visible in the platform log instead of inferred from missing behaviour.
+
 
 ```
 Error: Config validation error:

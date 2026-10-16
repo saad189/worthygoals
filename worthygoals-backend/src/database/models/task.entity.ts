@@ -18,6 +18,11 @@ import { TaskExplanation } from './task-explanation.entity';
 @Index('idx_tasks_goal_id', ['goalId'])
 @Index('idx_tasks_goal_status', ['goalId', 'status'])
 @Index('idx_tasks_due_date', ['dueDate'])
+@Index('idx_tasks_goal_due_created', ['goalId', 'dueDate', 'createdAt'])
+@Index('idx_tasks_parent_occurrence', ['parentTaskId', 'occurrenceIndex'])
+// Partial index for the recurring-task job; TypeORM compares partial-index
+// predicates textually against Postgres's normalised form, so unsynchronised.
+@Index('idx_tasks_recurring_due', { synchronize: false })
 export class Task {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -31,17 +36,13 @@ export class Task {
   @Column({ type: 'text', nullable: true })
   description?: string;
 
-  @Column({ type: 'enum', enum: TaskStatus, default: TaskStatus.PENDING })
+  @Column({ type: 'varchar', length: 16, default: TaskStatus.PENDING })
   status!: TaskStatus;
 
   @Column({ type: 'timestamptz', nullable: true })
   dueDate?: Date;
 
-  @Column({
-    type: 'enum',
-    enum: TaskRepeatFrequency,
-    default: TaskRepeatFrequency.NONE,
-  })
+  @Column({ type: 'varchar', length: 16, default: TaskRepeatFrequency.NONE })
   repeatFrequency!: TaskRepeatFrequency;
 
   /** Populated for recurring instances: which occurrence # is this */
@@ -53,7 +54,7 @@ export class Task {
   parentTaskId?: string;
 
   @ManyToOne(() => Goal, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'goalId' })
+  @JoinColumn({ name: 'goalId', foreignKeyConstraintName: 'fk_tasks_goal' })
   goal!: Goal;
 
   @OneToMany(() => TaskCompletion, (c) => c.task)
@@ -62,9 +63,9 @@ export class Task {
   @OneToMany(() => TaskExplanation, (e) => e.task)
   explanations!: TaskExplanation[];
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt!: Date;
 }

@@ -6,9 +6,9 @@ The codebase historically mixed ID types. The convention **going forward** is:
 
 | ID type | Use for | Examples (existing) |
 |---|---|---|
-| `uuid` (VARCHAR 36, `gen_random_uuid()`) | All new domain entities | `goals`, `tasks`, `task_completions`, `media`, `memory_embeddings`, `push_tokens`, `notification_logs` |
-| Human-readable slug (VARCHAR 64) | Seeded/config-like reference data | `personalities` (`marcus`, `lyra`, `goggs`) |
-| `SERIAL` integer | **Legacy only — do not add new ones** | `users`, `accounts`, `mentors`, `conversations`, `messages`, `ai_calls`, `user_personalities`, `drift_samples` |
+| native `UUID` (`DEFAULT gen_random_uuid()`) | All new domain entities | `goals`, `tasks`, `task_completions`, `media`, `memory_embeddings`, `push_tokens`, `notification_logs`, `conversations`, `messages`, `status_posts` |
+| Human-readable slug (VARCHAR 64) | Seeded/config-like reference data | personality ids (`marcus`, `lyra`, `goggs`) — the YAML runtime, not a table |
+| `SERIAL` integer | **Legacy only — do not add new ones** | `users`, `accounts`, `roles`, `permissions`, `mentors`, `ai_calls`, `user_personalities`, `drift_samples` |
 
 Rules:
 
@@ -28,3 +28,16 @@ Every endpoint that touches user-owned data derives the user from
 No endpoint may accept a foreign `userId`/`id` path or body parameter to act
 on another user's data — admin tooling, when it arrives, gets explicit
 role-guarded routes instead.
+
+## Schema changes
+
+Migrations in `src/database/migrations-pg/` are the source of truth for the
+schema. Entities must describe exactly what they create — column types
+(`timestamptz`, `jsonb`, varchar lengths) and constraint/index names included —
+so `migration:generate` against a migrated database finds nothing. CI's
+`schema` job enforces that with `migration:generate --check`.
+
+Workflow: write the migration, mirror it in the entity, then confirm
+`npm run typeorm:generate --name=Check` produces no file. Expression indexes
+(e.g. `uq_task_completions_task_day`, the HNSW index) are declared with
+`@Index(name, { synchronize: false })` because TypeORM cannot express them.

@@ -1,4 +1,4 @@
-import { Component, Input, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CAPTURE } from '../../data/content';
@@ -11,19 +11,22 @@ import { CAPTURE } from '../../data/content';
  * when null, success is simulated so the flow can be demoed.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'wg-email-capture',
   standalone: true,
   imports: [ReactiveFormsModule],
   template: `
-    <form class="capture" [style.max-width.px]="maxWidth" (submit)="onSubmit($event)" novalidate>
+    <form class="capture" [style.max-width.px]="maxWidth()" (submit)="onSubmit($event)" novalidate>
+      <!-- Visible, not sr-only: the placeholder was the only visible label and
+           disappears on typing (WCAG 3.3.2). -->
+      <label [for]="inputId()" class="field-label">Email address</label>
       <div class="capture-row">
-        <label [for]="inputId" class="sr-only">Email address</label>
         <!-- aria-invalid + aria-describedby tie the message to the input.
              Without them the alert is announced once and a screen reader
              returning to the field hears nothing about why it was rejected
              (WCAG 3.3.1); aria-describedby had 0 occurrences site-wide. -->
         <input
-          [id]="inputId"
+          [id]="inputId()"
           [formControl]="email"
           type="email"
           inputmode="email"
@@ -34,7 +37,7 @@ import { CAPTURE } from '../../data/content';
           required
         />
         <button type="submit" class="btn btn-primary" [disabled]="sending()">
-          {{ sending() ? copy.sendingLabel : buttonLabel }}
+          {{ sending() ? copy.sendingLabel : buttonLabel() }}
         </button>
       </div>
       <p [id]="messageId" class="form-msg" [class.error]="!!message()" role="alert" aria-live="polite">{{ message() }}</p>
@@ -47,7 +50,7 @@ import { CAPTURE } from '../../data/content';
       display: flex;
       gap: 8px;
       background: var(--paper);
-      border: 1px solid var(--ink-12);
+      border: 1px solid var(--ink-50);
       border-radius: 14px;
       padding: 7px;
       transition: border-color .2s ease, box-shadow .2s ease;
@@ -63,15 +66,17 @@ import { CAPTURE } from '../../data/content';
       padding: 11px 12px;
       min-width: 0;
     }
-    input::placeholder { color: var(--ink-40); }
+    input::placeholder { color: var(--ink-64); }
     input:focus { outline: none; }
     .btn-primary { padding: 11px 22px; }
-    .reassure { font-size: 13.5px; color: var(--ink-55); margin: 13px 2px 0; font-family: var(--mono); letter-spacing: .01em; }
+    .field-label { display: block; font-family: var(--mono); font-size: 12.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-64); margin: 0 2px 8px; }
+    :host-context(.cta-band) .field-label { color: rgba(251, 247, 238, 0.72); }
+    .reassure { font-size: 13.5px; color: var(--ink-64); margin: 13px 2px 0; font-family: var(--mono); letter-spacing: .01em; }
     .form-msg { font-size: 14px; margin: 10px 2px 0; min-height: 1.2em; }
     .form-msg.error { color: var(--rust-ink); }
 
     /* dark CTA-band treatment */
-    :host-context(.cta-band) .capture-row { background: rgba(255, 255, 255, 0.10); border-color: rgba(255, 255, 255, 0.28); }
+    :host-context(.cta-band) .capture-row { background: rgba(255, 255, 255, 0.10); border-color: rgba(255, 255, 255, 0.45); }
     :host-context(.cta-band) .capture-row:focus-within { border-color: var(--cream); box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18); }
     :host-context(.cta-band) input[type=email] { color: var(--cream); }
     :host-context(.cta-band) input::placeholder { color: rgba(251, 247, 238, 0.6); }
@@ -83,13 +88,13 @@ import { CAPTURE } from '../../data/content';
 })
 export class EmailCapture {
   /** Submit button label. */
-  @Input() buttonLabel = CAPTURE.heroButton;
+  readonly buttonLabel = input(CAPTURE.heroButton);
   /** Unique id so the label/input pair is valid when two forms share a page. */
-  @Input() inputId = 'email';
+  readonly inputId = input('email');
   /** Optional max-width override (px). */
-  @Input() maxWidth?: number;
+  readonly maxWidth = input<number>();
   /** POST URL of your form provider; null simulates success. */
-  @Input() endpoint: string | null = CAPTURE.subscribeUrl;
+  readonly endpoint = input<string | null>(CAPTURE.subscribeUrl);
 
   readonly copy = CAPTURE;
   readonly email = new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] });
@@ -97,11 +102,11 @@ export class EmailCapture {
   readonly message = signal('');
 
   get messageId(): string {
-    return `${this.inputId}-message`;
+    return `${this.inputId()}-message`;
   }
 
   get reassureId(): string {
-    return `${this.inputId}-reassure`;
+    return `${this.inputId()}-reassure`;
   }
 
   /**
@@ -134,11 +139,16 @@ export class EmailCapture {
       this.message.set(this.copy.errorMsg);
     };
 
-    if (this.endpoint) {
-      fetch(this.endpoint, {
+    const endpoint = this.endpoint();
+    if (endpoint) {
+      fetch(endpoint, {
         method: 'POST',
         headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: value }),
+        // A hung Worker used to leave the button on "Sending…" forever:
+        // sending() is only cleared by fail(), which a never-settling promise
+        // never reaches.
+        signal: AbortSignal.timeout(15_000),
       })
         .then((r) => { if (r.ok) succeed(); else fail(); })
         .catch(fail);

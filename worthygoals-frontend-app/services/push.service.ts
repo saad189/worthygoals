@@ -80,9 +80,10 @@ export async function syncPushToken({
 export async function unregisterPushToken(): Promise<void> {
   if (!syncedToken) return;
   try {
-    await ApiService.delete(
-      `${TOKEN_ENDPOINT}/${encodeURIComponent(syncedToken)}`,
-    );
+    // Body, not path: a token in the URL lands in every access log.
+    await ApiService.post(`${TOKEN_ENDPOINT}/unregister`, {
+      token: syncedToken,
+    });
   } catch {
     // Best-effort: a failed unregister just means the token expires naturally.
   }

@@ -21,7 +21,10 @@ const CardDetailModal = () => {
   return (
     <View style={styles.root}>
       <BlurView intensity={20} style={StyleSheet.absoluteFill} />
-      <Pressable style={StyleSheet.absoluteFill} onPress={close} />
+      <Pressable style={StyleSheet.absoluteFill}
+        onPress={close}
+        accessibilityRole="button"
+        accessibilityLabel="Close" />
 
       <View
         style={[

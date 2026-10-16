@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThanOrEqual, Repository } from 'typeorm';
-import { AiCall } from 'src/database/models/ai-call.entity';
+import { Repository } from 'typeorm';
+import { AiQuotaUsage } from 'src/database/models/ai-quota-usage.entity';
 import { UserTier } from 'src/common/constants/enums';
 
 const DAILY_LIMITS: Record<UserTier, number> = {
@@ -15,33 +15,41 @@ export class QuotaService {
   private readonly logger = new Logger(QuotaService.name);
 
   constructor(
-    @InjectRepository(AiCall)
-    private readonly aiCallRepo: Repository<AiCall>,
+    @InjectRepository(AiQuotaUsage)
+    private readonly usageRepo: Repository<AiQuotaUsage>,
   ) {}
 
+  /**
+   * Reserve one call against today's quota, or throw.
+   *
+   * One INSERT … ON CONFLICT DO UPDATE … RETURNING is atomic, so parallel
+   * requests each get a distinct count and the 21st free call is refused even
+   * when all 21 arrive together. A refused call still increments the counter;
+   * that only changes the number a later refusal reports.
+   *
+   * System calls (memory digests pass a negative sentinel id) are not user
+   * spend and are not metered — they used to share one free-tier bucket of 20,
+   * so digests silently stopped after the twentieth user.
+   */
   async checkAndEnforce(userId: number, tier: UserTier): Promise<void> {
     const limit = DAILY_LIMITS[tier];
-    if (!isFinite(limit)) return;
+    if (!isFinite(limit) || userId <= 0) return;
 
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    const [{ count }]: Array<{ count: number }> = await this.usageRepo.query(
+      `
+      INSERT INTO ai_quota_usage ("userId", day, count)
+      VALUES ($1, (now() AT TIME ZONE 'UTC')::date, 1)
+      ON CONFLICT ("userId", day)
+      DO UPDATE SET count = ai_quota_usage.count + 1
+      RETURNING count
+      `,
+      [userId],
+    );
 
-    const count = await this.aiCallRepo.count({
-      where: { userId, createdAt: MoreThanOrEqual(startOfDay) },
-    });
-
-    if (count >= limit) {
-      throw new QuotaExceededException(userId, tier, count, limit);
+    if (count > limit) {
+      this.logger.warn(`User ${userId} over daily AI quota (${tier})`);
+      throw new QuotaExceededException(userId, tier, count - 1, limit);
     }
-  }
-
-  async getUsage(userId: number): Promise<{ today: number }> {
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    const count = await this.aiCallRepo.count({
-      where: { userId, createdAt: MoreThanOrEqual(startOfDay) },
-    });
-    return { today: count };
   }
 }
 

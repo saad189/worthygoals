@@ -1,10 +1,11 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { PageShell } from '../../components/page-shell/page-shell';
 import { SeoService } from '../../shared/seo.service';
 import { BRAND, CONTACT } from '../../data/content';
 
 /** Contact page — placeholder shell; form/details to be added later. */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'wg-contact',
   standalone: true,
   imports: [PageShell],

@@ -1,16 +1,21 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
+  Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Unique,
+  UpdateDateColumn,
 } from 'typeorm';
+import { User } from './user.entity';
 
 export type PushPlatform = 'expo' | 'fcm' | 'apns';
 
 @Entity('push_tokens')
-@Index(['userId', 'token'], { unique: true })
+@Unique('uq_push_tokens_user_token', ['userId', 'token'])
+@Index('idx_push_tokens_user_active', ['userId', 'active'])
 export class PushToken {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -30,9 +35,16 @@ export class PushToken {
   @Column({ default: true })
   active: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({
+    name: 'userId',
+    foreignKeyConstraintName: 'fk_push_tokens_user',
+  })
+  user?: User;
 }

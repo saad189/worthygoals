@@ -27,7 +27,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>myapp</string>
+          <string>worthygoals</string>
           <string>com.saad189.worthygoalsfrontendapp</string>
         </array>
       </dict>

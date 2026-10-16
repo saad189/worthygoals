@@ -3,11 +3,18 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { User } from './user.entity';
 
 @Entity('memory_digests')
-@Index(['userId', 'personalityId', 'createdAt'])
+@Index('idx_memory_digests_user_personality_created', [
+  'userId',
+  'personalityId',
+  'createdAt',
+])
 export class MemoryDigest {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -27,6 +34,13 @@ export class MemoryDigest {
   @Column({ type: 'date' })
   periodEnd: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({
+    name: 'userId',
+    foreignKeyConstraintName: 'fk_memory_digests_user',
+  })
+  user?: User;
 }

@@ -9,44 +9,77 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import type { ApiCreateGoalPayload } from '@/types/api';
 
 import { Button, Card, Header, MentorAvatar, Screen, StepDots, Text } from '@/components/ui';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { PERSONALITIES, PersonalitySlug, personaBySlug } from '@/constants/Personalities';
-import mentorService from '@/services/mentor.service';
+import { useMentors } from '@/hooks/useMentors';
 import onboardingService from '@/services/onboarding.service';
 import { useCreateGoal } from '@/hooks/useCreateGoal';
 import { ROUTE_NAMES } from '@/constants/Routes';
+
+type GoalDraft = Omit<ApiCreateGoalPayload, 'mentorId'>;
+
+const optStr = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
+
+/**
+ * The draft the propose screen serialises into the route. Parsed field by
+ * field: JSON.parse returns `any`, and spreading `any` into the payload erased
+ * every constraint the generated type carries — the only write call site in
+ * the app was untyped. Returns null when there is no usable title.
+ */
+function parseGoalDraft(raw?: string): GoalDraft | null {
+  let v: unknown;
+  try {
+    v = raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+  const o = v as Record<string, unknown>;
+  const title = optStr(o.title)?.trim();
+  if (!title) return null;
+  return {
+    title,
+    description: optStr(o.description),
+    costText: optStr(o.costText),
+    benefitText: optStr(o.benefitText),
+    failureText: optStr(o.failureText),
+    deadline: optStr(o.deadline),
+    category: optStr(o.category),
+    stakeAmount:
+      typeof o.stakeAmount === 'number' && o.stakeAmount > 0 ? o.stakeAmount : undefined,
+    // The generated type says Record<string, never> because the backend DTO's
+    // @ApiPropertyOptional carried no schema (fixed there; lands here when
+    // api.gen.ts is next regenerated — tracker G4).
+    repeatRule:
+      o.repeatRule && typeof o.repeatRule === 'object' && !Array.isArray(o.repeatRule)
+        ? (o.repeatRule as GoalDraft['repeatRule'])
+        : undefined,
+  };
+}
 
 export default function TodoPersonalityScreen() {
   const { space, colors } = useAppTheme();
   const { goalData } = useLocalSearchParams<{ goalData: string }>();
 
-  const parsedGoal = useMemo(() => (goalData ? JSON.parse(goalData) : {}), [goalData]);
+  // A deep link can put anything in goalData (the scheme is public). JSON.parse
+  // used to run unguarded inside render, so a malformed value threw into the
+  // error boundary instead of just landing on an empty draft.
+  const parsedGoal = useMemo(() => parseGoalDraft(goalData), [goalData]);
 
   // Default to the mentor the user matched with during onboarding; fall back to
   // Marcus (the prototype's pre-selected personality).
   const [selected, setSelected] = useState<PersonalitySlug>('marcus');
-  // slug → backend mentor id (when the roster has been reseeded).
-  const [mentorIds, setMentorIds] = useState<Record<string, number>>({});
   const { createGoal, saving } = useCreateGoal();
+  const { resolveMentorId } = useMentors();
 
   useEffect(() => {
     let active = true;
     onboardingService.getMentor().then((saved) => {
       if (active && saved?.slug) setSelected(saved.slug);
     });
-    mentorService
-      .getMentorList()
-      .then((mentors) => {
-        if (!active) return;
-        const map: Record<string, number> = {};
-        for (const m of mentors) if (m.slug) map[m.slug] = m.id;
-        setMentorIds(map);
-      })
-      .catch(() => {
-        /* offline / not-yet-seeded — local roster still renders. */
-      });
     return () => {
       active = false;
     };
@@ -56,31 +89,16 @@ export default function TodoPersonalityScreen() {
   // The contract is confirmed in the chosen mentor's own colour (§F).
   const { accent } = useAppTheme(selected);
 
-  /**
-   * Resolve the chosen slug to a backend mentor id, retrying the roster fetch
-   * once if the initial load failed.
-   *
-   * Sending mentorId: undefined is accepted by the DTO and then silently
-   * resolves to Marcus in the weekly review — for the life of the goal. A goal
-   * signed to the wrong mentor is worse than a goal not saved, so an
-   * unresolved mentor stops the flow rather than guessing.
-   */
-  const resolveMentorId = async (): Promise<number | null> => {
-    if (mentorIds[selected] != null) return mentorIds[selected];
-
-    try {
-      const mentors = await mentorService.getMentorList();
-      const map: Record<string, number> = {};
-      for (const m of mentors) if (m.slug) map[m.slug] = m.id;
-      setMentorIds(map);
-      return map[selected] ?? null;
-    } catch {
-      return null;
-    }
-  };
-
+  // Sending mentorId: undefined is accepted by the DTO and then silently
+  // resolves to Marcus in the weekly review — for the life of the goal. A goal
+  // signed to the wrong mentor is worse than a goal not saved, so an
+  // unresolved mentor stops the flow rather than guessing.
   const handleSign = async () => {
-    const mentorId = await resolveMentorId();
+    if (!parsedGoal) {
+      Alert.alert('Nothing to sign', 'This goal draft is missing its title. Go back and try again.');
+      return;
+    }
+    const mentorId = await resolveMentorId(selected).catch(() => null);
     if (mentorId == null) {
       Alert.alert(
         'Could not reach your mentor',

@@ -34,7 +34,12 @@ export default function ProgressRing({
   const dashOffset = circumference * (1 - clamped);
 
   return (
-    <View style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}>
+    <View
+      style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}
+      // The arc is drawn, not text; announce the value it draws.
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max: 100, now: Math.round(clamped * 100) }}
+    >
       <Svg width={size} height={size} style={{ position: 'absolute' }}>
         <Circle
           cx={size / 2}

@@ -1,16 +1,30 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { NotificationVoicingService } from './notification-voicing.service';
+import { DataSource } from 'typeorm';
+import { CRON_LOCK, runExclusive } from 'src/common/cron/run-exclusive';
 
 @Injectable()
 export class NotificationCopyPregenCron {
   private readonly logger = new Logger(NotificationCopyPregenCron.name);
 
-  constructor(private readonly voicingService: NotificationVoicingService) {}
+  constructor(
+    private readonly voicingService: NotificationVoicingService,
+    private readonly dataSource: DataSource,
+  ) {}
 
   // Runs at midnight UTC — pre-generates morning + evening copy for the next day.
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async pregenNextDay(): Promise<void> {
+    await runExclusive(
+      this.dataSource,
+      CRON_LOCK.notificationCopyPregen,
+      this.logger,
+      () => this.pregen(),
+    );
+  }
+
+  private async pregen(): Promise<void> {
     this.logger.log('Starting notification copy pre-generation for next day');
     try {
       await this.voicingService.preGenerateForNextDay();

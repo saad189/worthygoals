@@ -38,7 +38,10 @@ export default function MentorImageViewerScreen() {
   return (
     <View style={styles.container}>
       <BlurView intensity={15} style={StyleSheet.absoluteFill} />
-      <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+      <Pressable style={StyleSheet.absoluteFill}
+        onPress={handleClose}
+        accessibilityRole="button"
+        accessibilityLabel="Close image" />
       <ImageViewerModalComponent
         ref={imageRef}
         imageUri={imageUri}
