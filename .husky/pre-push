@@ -5,6 +5,9 @@ export PATH="/opt/homebrew/bin:$PATH"
 
 ROOT="$(git rev-parse --show-toplevel)"
 
+# GitHub CI only runs on PRs into master, so this hook is the gate for every
+# push. Docker build, Postgres schema drift and the live eval stay in CI.
+
 echo "── Frontend: tests ──────────────────────────────"
 # --forceExit: the RN/jest setup leaks an open handle (timer/AsyncStorage mock)
 # and won't exit on its own, which hangs `git push`. Tests still run fully.
@@ -12,5 +15,24 @@ echo "── Frontend: tests ─────────────────
 
 echo "── Backend: tests ───────────────────────────────"
 (cd "$ROOT/worthygoals-backend" && npm test -- --forceExit --passWithNoTests --testPathIgnorePatterns='.*\.e2e-spec\.ts$')
+
+echo "── Backend: build + runnable artifact ───────────"
+(cd "$ROOT/worthygoals-backend" && npm run build --silent \
+  && test -f dist/main.js \
+  && test -d dist/core/personalities/data) \
+  || { echo "✗ dist/main.js or dist/core/personalities/data missing — the container would not boot"; exit 1; }
+
+echo "── Backend: API contract ────────────────────────"
+# Preview mode registers routes without providers: these only have to satisfy Joi.
+(cd "$ROOT/worthygoals-backend" && NODE_ENV=local DB_HOST=localhost DB_PORT=5432 \
+  DB_USERNAME=ci DB_PASSWORD=ci DB_NAME=ci AWS_REGION=eu-north-1 \
+  AWS_ACCESS_KEY_ID=ci AWS_SECRET_ACCESS_KEY=ci AWS_COGNITO_USER_POOL_ID=ci \
+  AWS_COGNITO_APP_CLIENT_ID=ci OPENAI_API_KEY=ci npm run spec:export --silent >/dev/null \
+  && git diff --exit-code --stat -- openapi.json) \
+  || { echo "✗ openapi.json is stale — it has been regenerated; commit it"; exit 1; }
+
+echo "── Backend: dependency audit (critical) ─────────"
+(cd "$ROOT/worthygoals-backend" && npm audit --audit-level=critical >/dev/null) \
+  || { echo "✗ critical advisory — run 'npm audit' in worthygoals-backend"; exit 1; }
 
 echo "✓ pre-push passed"
