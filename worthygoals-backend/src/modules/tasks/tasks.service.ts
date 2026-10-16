@@ -178,11 +178,11 @@ export class TasksService {
       'Task already completed today',
     );
 
-    // Mark task as completed if it is not repeating
-    if (task.repeatFrequency === TaskRepeatFrequency.NONE) {
-      task.status = TaskStatus.COMPLETED;
-      await this.taskRepo.save(task);
-    }
+    // Each occurrence of a repeating task is its own row, so it completes like
+    // any other; materializeRecurringTasks creates the next one. Leaving
+    // repeating tasks pending meant the scheduler never rolled them forward.
+    task.status = TaskStatus.COMPLETED;
+    await this.taskRepo.save(task);
 
     const result: TaskReactionResult<TaskCompletion> = { data: completion };
     await this.attachReaction(result, user.id, dto.personalityId, {
@@ -257,12 +257,9 @@ export class TasksService {
   }
 
   /**
-   * Materializes the next occurrence of all repeating tasks whose dueDate
-   * has passed. Called by a scheduled cron job daily.
-   */
-  /**
-   * Create the next occurrence of every completed, overdue recurring task
-   * that does not have one yet.
+   * Create the next occurrence of every overdue recurring task that does not
+   * have one yet — whatever its status. A missed (pending) or skipped day
+   * still rolls the habit forward; only completing used to.
    *
    * This used to load every completed task in the database, filter it in
    * JavaScript, then issue one findOne per candidate — and since a task stays
@@ -290,8 +287,7 @@ export class TasksService {
         SELECT p.id, p."goalId", p.title, p.description, p."repeatFrequency",
                p."dueDate", p."occurrenceIndex"
           FROM tasks p
-         WHERE p.status = 'completed'
-           AND p."repeatFrequency" <> 'none'
+         WHERE p."repeatFrequency" <> 'none'
            AND p."dueDate" < now()
            AND p.id > $1
            AND NOT EXISTS (
@@ -379,19 +375,37 @@ export class TasksService {
     }
   }
 
-  private nextDueDate(from: Date, freq: TaskRepeatFrequency): Date {
+  // Steps from the parent's dueDate until the result is today or later, so a
+  // missed cron run catches up instead of leaving every later occurrence due
+  // in the past (and therefore never on the today screen).
+  nextDueDate(from: Date, freq: TaskRepeatFrequency, now = new Date()): Date {
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
     const d = new Date(from);
-    switch (freq) {
-      case TaskRepeatFrequency.DAILY:
-        d.setDate(d.getDate() + 1);
-        break;
-      case TaskRepeatFrequency.WEEKLY:
-        d.setDate(d.getDate() + 7);
-        break;
-      case TaskRepeatFrequency.MONTHLY:
-        d.setMonth(d.getMonth() + 1);
-        break;
-    }
+    const day = from.getDate();
+    let months = 0;
+    do {
+      switch (freq) {
+        case TaskRepeatFrequency.DAILY:
+          d.setDate(d.getDate() + 1);
+          break;
+        case TaskRepeatFrequency.WEEKLY:
+          d.setDate(d.getDate() + 7);
+          break;
+        case TaskRepeatFrequency.MONTHLY: {
+          // Clamp to the month's last day: Jan 31 → Feb 28, not Mar 3.
+          months += 1;
+          d.setTime(from.getTime());
+          d.setDate(1);
+          d.setMonth(from.getMonth() + months);
+          const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+          d.setDate(Math.min(day, last));
+          break;
+        }
+        default:
+          return d;
+      }
+    } while (d < today);
     return d;
   }
 

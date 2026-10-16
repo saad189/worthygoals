@@ -205,6 +205,16 @@ describe('TasksService', () => {
       expect(taskRepo.save).toHaveBeenCalled();
     });
 
+    it('marks a repeating occurrence completed so the scheduler rolls it forward', async () => {
+      taskRepo.findOne.mockResolvedValue(
+        makeTask({ repeatFrequency: TaskRepeatFrequency.DAILY }),
+      );
+      await service.complete(SUB, TASK_ID, { moodScore: 3 });
+      expect(taskRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ status: TaskStatus.COMPLETED }),
+      );
+    });
+
     it('returns no reaction when personalityId is absent', async () => {
       const result = await service.complete(SUB, TASK_ID, { moodScore: 3 });
       expect(result.mentorReaction).toBeUndefined();
@@ -341,6 +351,11 @@ describe('TasksService', () => {
   });
 
   describe('materializeRecurringTasks', () => {
+    beforeEach(() =>
+      jest.useFakeTimers().setSystemTime(new Date('2026-09-27T00:30:00')),
+    );
+    afterEach(() => jest.useRealTimers());
+
     const parent = (id: string, freq: string, due: string) => ({
       id,
       goalId: 'g1',
@@ -384,10 +399,40 @@ describe('TasksService', () => {
       expect(taskRepo.query.mock.calls[1][1][0]).toBe('p499');
     });
 
+    it('selects missed and skipped parents too, not only completed ones', async () => {
+      taskRepo.query.mockResolvedValueOnce([]);
+      await service.materializeRecurringTasks();
+      expect(taskRepo.query.mock.calls[0][0]).not.toContain(
+        "status = 'completed'",
+      );
+    });
+
     it('does nothing when there is nothing to roll over', async () => {
       taskRepo.query.mockResolvedValueOnce([]);
       expect(await service.materializeRecurringTasks()).toBe(0);
       expect(taskRepo.insert).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('nextDueDate', () => {
+    const now = new Date('2026-03-01T12:00:00');
+    it('clamps monthly to the last day of a short month', () => {
+      expect(
+        service.nextDueDate(
+          new Date('2026-01-31T00:00:00'),
+          TaskRepeatFrequency.MONTHLY,
+          new Date('2026-02-01T12:00:00'),
+        ),
+      ).toEqual(new Date('2026-02-28T00:00:00'));
+    });
+    it('catches up to today after missed runs', () => {
+      expect(
+        service.nextDueDate(
+          new Date('2026-02-20T00:00:00'),
+          TaskRepeatFrequency.DAILY,
+          now,
+        ),
+      ).toEqual(new Date('2026-03-01T00:00:00'));
     });
   });
 });
