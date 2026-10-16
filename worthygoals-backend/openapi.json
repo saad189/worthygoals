@@ -1326,7 +1326,7 @@
           "email": {
             "type": "string",
             "example": "user@example.com",
-            "description": "The email address of the user"
+            "description": "Ignored — the profile takes the Cognito account's email. Accepted so existing clients don't fail validation."
           },
           "firstName": {
             "type": "string",
@@ -1368,10 +1368,7 @@
             "example": "marcus",
             "description": "The user's onboarding-matched mentor (personality slug)"
           }
-        },
-        "required": [
-          "email"
-        ]
+        }
       },
       "LoginAuthDto": {
         "type": "object",
