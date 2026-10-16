@@ -1,3 +1,4 @@
+import { safeTimeZone } from 'src/common/timezone';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,7 +7,7 @@ import { format, addHours, subDays } from 'date-fns';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { NotificationLog } from 'src/database/models/notification-log.entity';
 import { PushToken } from 'src/database/models/push-token.entity';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { RegisterTokenDto } from './dto/register-token.dto';
 import {
   NOTIFICATION_QUEUE,
@@ -48,6 +49,13 @@ export class NotificationsService {
   ) {}
 
   async registerToken(userId: number, dto: RegisterTokenDto): Promise<void> {
+    // A device token belongs to whoever signed in last. Without this, user A's
+    // row stayed active after user B signed in on the same phone, and A's
+    // pushes landed on B's device.
+    await this.tokenRepo.update(
+      { token: dto.token, userId: Not(userId) },
+      { active: false },
+    );
     await this.tokenRepo.upsert(
       {
         userId,
@@ -105,7 +113,7 @@ export class NotificationsService {
       if (!page.length) return;
       yield page.map((r) => ({
         userId: r.userId,
-        timezone: r.timezone ?? 'UTC',
+        timezone: safeTimeZone(r.timezone),
       }));
       if (page.length < USER_PAGE_SIZE) return;
       afterUserId = page[page.length - 1].userId;
@@ -252,7 +260,7 @@ export class NotificationsService {
     for (const row of lapsed) {
       if (suppressed.has(row.userId)) continue;
 
-      const tz = tzByUser.get(row.userId) ?? 'UTC';
+      const tz = safeTimeZone(tzByUser.get(row.userId));
       const daysSince = Math.floor(
         (Date.now() - new Date(row.lastTs as string).getTime()) / DAY_MS,
       );
@@ -284,12 +292,33 @@ export class NotificationsService {
     }
   }
 
+  // The cap is notifications per day, not log rows: recordSent writes one row
+  // per token, so counting rows let a user with three devices receive only the
+  // morning push.
   async checkPacingAllowed(userId: number, tz: string): Promise<boolean> {
     const todayLocal = format(toZonedTime(new Date(), tz), 'yyyy-MM-dd');
-    const count = await this.logRepo.count({
-      where: { userId, sentDate: todayLocal },
+    const row = await this.logRepo
+      .createQueryBuilder('l')
+      .select('COUNT(DISTINCT l.kind)', 'n')
+      .where('l.userId = :userId', { userId })
+      .andWhere('l.sentDate = :todayLocal', { todayLocal })
+      .andWhere("l.status = 'sent'")
+      .getRawOne<{ n: string }>();
+    return Number(row?.n ?? 0) < DAILY_CAP;
+  }
+
+  /** Tokens this kind already reached today, so a retried job doesn't re-push them. */
+  async tokensSentToday(
+    userId: number,
+    kind: NotificationJobKind,
+    tz: string,
+  ): Promise<Set<string>> {
+    const sentDate = format(toZonedTime(new Date(), tz), 'yyyy-MM-dd');
+    const rows = await this.logRepo.find({
+      select: { token: true },
+      where: { userId, kind, sentDate, status: 'sent' },
     });
-    return count < DAILY_CAP;
+    return new Set(rows.map((r) => r.token));
   }
 
   async recordSent(

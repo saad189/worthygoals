@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsIn,
+  IsOptional,
+  IsString,
+  IsTimeZone,
+  MaxLength,
+} from 'class-validator';
 import { PushPlatform } from 'src/database/models/push-token.entity';
 
 export class RegisterTokenDto {
@@ -15,7 +21,7 @@ export class RegisterTokenDto {
 
   @ApiPropertyOptional({ example: 'America/New_York' })
   @IsOptional()
-  @IsString()
+  @IsTimeZone()
   @MaxLength(64)
   timezone?: string;
 }
