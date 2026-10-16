@@ -177,8 +177,28 @@ export class MessagesService {
         lastMessageId: saved.id,
       });
 
-      if (params.dto.text) {
-        this.memoryService?.indexMessage(userId, saved.id, params.dto.text);
+      if (params.dto.text && this.memoryService) {
+        // Every memory read (short-term, digests, search) filters on the
+        // mentor's personalityId; indexed without one, chat was embedded and
+        // stored but never retrieved. Off the request path, like the index.
+        const text = params.dto.text;
+        void this.conversationRepository
+          .findOne({
+            where: { id: conversationId },
+            relations: { mentor: true },
+            select: { id: true, mentor: { id: true, personalityId: true } },
+          })
+          .then((c) =>
+            this.memoryService?.indexMessage(
+              userId,
+              saved.id,
+              text,
+              c?.mentor?.personalityId ?? undefined,
+            ),
+          )
+          .catch((err) =>
+            this.logger.warn(`indexMessage lookup failed: ${err?.message}`),
+          );
       }
 
       return saved;

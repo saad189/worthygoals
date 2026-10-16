@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { HttpException } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
+import { SendTextMessageDto } from '../dto/send-text-message.dto';
 import { MessagesGateway } from '../messages.gateway';
 import { MessagesService } from '../messages.service';
 import { AgentService } from 'src/core/ai';
@@ -83,18 +85,40 @@ describe('MessagesGateway — safety gate', () => {
     };
   });
 
-  it('throws WsException when conversationId is missing', async () => {
+  // Calling the handler directly skips its pipe, so run the pipe it declares.
+  const validate = (body: unknown) => {
+    const [pipe] = Reflect.getMetadata(
+      '__pipes__',
+      MessagesGateway.prototype.handleSendMessage,
+    );
+    return pipe.transform(body, {
+      type: 'body',
+      metatype: SendTextMessageDto,
+    });
+  };
+
+  it('rejects a payload with no conversationId', async () => {
+    await expect(validate({ text: 'hi' })).rejects.toBeInstanceOf(WsException);
+  });
+
+  const UUID = '6f1c2a3b-4d5e-4f60-8a71-92b3c4d5e6f7';
+
+  it('rejects a payload with no text', async () => {
+    await expect(validate({ conversationId: UUID })).rejects.toBeInstanceOf(
+      WsException,
+    );
+  });
+
+  it('rejects text over the REST limit', async () => {
     await expect(
-      gateway.handleSendMessage(makeSocket(), { text: 'hi' } as any),
+      validate({ conversationId: UUID, text: 'x'.repeat(8001) }),
     ).rejects.toBeInstanceOf(WsException);
   });
 
-  it('throws WsException when text is missing', async () => {
+  it('accepts a valid payload', async () => {
     await expect(
-      gateway.handleSendMessage(makeSocket(), {
-        conversationId: CONV_ID,
-      } as any),
-    ).rejects.toBeInstanceOf(WsException);
+      validate({ conversationId: UUID, text: 'hi' }),
+    ).resolves.toMatchObject({ text: 'hi' });
   });
 
   describe('normal message (no crisis)', () => {
@@ -341,10 +365,12 @@ describe('MessagesGateway — mentor reply failures', () => {
   });
 
   it('tells the user they hit the daily limit', async () => {
+    // What AiGatewayService actually throws.
     agentService.generateMentorReply.mockRejectedValue(
-      Object.assign(new Error('Daily AI quota exceeded'), {
-        code: 'quota_exceeded',
-      }),
+      new HttpException(
+        { code: 'quota_exceeded', message: 'Daily AI quota exceeded' },
+        402,
+      ),
     );
 
     await expect(

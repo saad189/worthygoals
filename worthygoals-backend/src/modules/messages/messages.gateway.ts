@@ -6,7 +6,9 @@ import {
   WebSocketServer,
   WsException,
 } from '@nestjs/websockets';
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
+import { GLOBAL_VALIDATION_PIPE_OPTIONS } from 'src/common/validation-pipe.options';
+import { SendTextMessageDto } from './dto/send-text-message.dto';
 import { Server, Socket } from 'socket.io';
 import { WsJwtAuthGuard } from 'src/common/guards/ws-jwtauth.guard';
 import { MessagesService } from './messages.service';
@@ -97,17 +99,26 @@ export class MessagesGateway {
   }
 
   @UseGuards(WsJwtAuthGuard)
+  // The same DTO the REST route validates. Without it the socket path took a
+  // text of any length (up to socket.io's 1 MB buffer), which then sat in the
+  // model's history window and failed every later call for that user.
+  @UsePipes(
+    new ValidationPipe({
+      ...GLOBAL_VALIDATION_PIPE_OPTIONS,
+      exceptionFactory: (errors) =>
+        new WsException(
+          errors
+            .flatMap((e) => Object.values(e.constraints ?? {}))
+            .join('; ') || 'Invalid message',
+        ),
+    }),
+  )
   @SubscribeMessage('send_message')
   async handleSendMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody()
-    body: { conversationId?: string; text?: string; clientMessageId?: string },
+    @MessageBody() body: SendTextMessageDto,
   ) {
-    const conversationId = body?.conversationId;
-    const text = body?.text;
-    if (!conversationId) throw new WsException('conversationId is required');
-    if (!text || typeof text !== 'string')
-      throw new WsException('text is required');
+    const { conversationId, text } = body;
 
     const sub = subOf(client);
     if (!sub) throw new WsException('Unauthorized');
@@ -169,8 +180,13 @@ export class MessagesGateway {
       this.logger.error(
         `Mentor reply failed for conversation ${conversationId}: ${error?.message}`,
       );
+      // The gateway throws HttpException(402, {code}) — there is no .code on
+      // the exception itself, so this message was never shown.
+      const quota =
+        error?.getStatus?.() === 402 ||
+        error?.getResponse?.()?.code === 'quota_exceeded';
       throw new WsException(
-        error?.code === 'quota_exceeded'
+        quota
           ? "You've reached today's message limit with your mentor. It resets tomorrow."
           : 'Your mentor could not reply just now. Please try again.',
       );

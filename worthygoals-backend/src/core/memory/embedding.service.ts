@@ -19,7 +19,11 @@ export class EmbeddingService {
     private readonly embeddingRepo?: Repository<MemoryEmbedding>,
   ) {
     const apiKey = config.get<string>('OPENAI_API_KEY');
-    this.client = apiKey ? new OpenAI({ apiKey }) : null;
+    // buildContext awaits embeddings on the chat path; the SDK's 10-minute
+    // default let one hung call stall the mentor reply.
+    this.client = apiKey
+      ? new OpenAI({ apiKey, timeout: 15_000, maxRetries: 1 })
+      : null;
     this.model =
       config.get<string>('EMBEDDING_MODEL') ?? 'text-embedding-3-small';
   }

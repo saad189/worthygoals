@@ -114,9 +114,27 @@ export class AiGatewayService {
 
     const params = {
       messages,
-      model: req.model,
       temperature: req.temperature,
       maxTokens: req.maxTokens,
+    };
+
+    // Chunks already on the client can't be taken back, so a stream that dies
+    // part-way must not fail over: the fallback would stream the whole reply
+    // again after the half one.
+    let emitted = false;
+    const trackedChunk = onChunk
+      ? (chunk: string) => {
+          emitted = true;
+          onChunk(chunk);
+        }
+      : undefined;
+    // req.model names a model of the primary's family; the fallback gets its
+    // own default (Anthropic rejects 'gpt-4o').
+    const run = (provider: IChatProvider, model?: string) => {
+      const p = { ...params, model };
+      return trackedChunk && provider.chatStream
+        ? provider.chatStream(p, trackedChunk)
+        : provider.chat(p);
     };
 
     const t0 = Date.now();
@@ -125,16 +143,19 @@ export class AiGatewayService {
 
     if (primary.available && this.breaker.isAvailable(primary.name)) {
       try {
-        result =
-          onChunk && primary.chatStream
-            ? await primary.chatStream(params, onChunk)
-            : await primary.chat(params);
+        result = await run(primary, req.model);
         this.breaker.recordSuccess(primary.name);
       } catch (err: any) {
+        if (isProviderFault(err)) this.breaker.recordFailure(primary.name);
+        if (emitted) {
+          this.logger.error(
+            `${primary.name} failed mid-stream (${err?.message}); not failing over`,
+          );
+          throw new HttpException('AI service temporarily unavailable', 503);
+        }
         this.logger.warn(
           `${primary.name} failed (${err?.message}), failing over to ${fallback.name}`,
         );
-        this.breaker.recordFailure(primary.name);
       }
     }
 
@@ -144,14 +165,11 @@ export class AiGatewayService {
       this.breaker.isAvailable(fallback.name)
     ) {
       try {
-        result =
-          onChunk && fallback.chatStream
-            ? await fallback.chatStream(params, onChunk)
-            : await fallback.chat(params);
+        result = await run(fallback);
         this.breaker.recordSuccess(fallback.name);
         usedProvider = fallback;
       } catch (err: any) {
-        this.breaker.recordFailure(fallback.name);
+        if (isProviderFault(err)) this.breaker.recordFailure(fallback.name);
         this.logger.error(`Both providers failed: ${err?.message}`);
         throw new HttpException('AI service temporarily unavailable', 503);
       }
@@ -290,4 +308,17 @@ export class AiGatewayService {
       return req.messages;
     }
   }
+}
+
+/**
+ * Whether a provider error says the provider is unhealthy (5xx, 429, timeout,
+ * network) rather than that this request was bad. Only the former may open the
+ * shared circuit breaker — a 400 such as context_length_exceeded is one user's
+ * request, and counting it let a single user trip the breaker for everyone.
+ */
+export function isProviderFault(err: any): boolean {
+  const status: number | undefined = err?.status ?? err?.response?.status;
+  return (
+    status === undefined || status >= 500 || status === 408 || status === 429
+  );
 }
