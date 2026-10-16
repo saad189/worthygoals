@@ -1,45 +1,26 @@
 name: CI
 
+# Release gate only: runs on PRs into master. Day-to-day checks run locally in
+# husky — pre-commit (lint · typecheck · hex-lint · eval dry-run) and pre-push
+# (unit tests · build · API contract · dependency audit). CI keeps only what a
+# laptop can't do well: the Docker image, real-Postgres schema drift and the
+# paid live eval. The critical audit stays too, because advisories land without
+# any code change (proxy-addr, Oct 2026).
 on:
-  push:
-    branches: [develop]
   pull_request:
-    branches: [develop]
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  # ── Frontend ─────────────────────────────────────────────────────────────
-  frontend:
-    name: Frontend — typecheck · hex-lint · test
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: worthygoals-frontend-app
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: worthygoals-frontend-app/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci --fetch-retries 5 --fetch-retry-mintimeout 20000 --fetch-retry-maxtimeout 120000
-
-      - name: Typecheck
-        run: npx tsc --noEmit
-
-      - name: Hex-lint (no raw colour literals)
-        run: bash scripts/hex-lint.sh
-
-      - name: Unit tests
-        run: npx jest --ci --passWithNoTests
-
   # ── Backend ──────────────────────────────────────────────────────────────
   backend:
-    name: Backend — lint · typecheck · test
+    name: Backend — build · docker · audit
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: worthygoals-backend
@@ -55,15 +36,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --fetch-retries 5 --fetch-retry-mintimeout 20000 --fetch-retry-maxtimeout 120000
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Typecheck
-        run: npx tsc --noEmit
-
-      - name: Unit tests
-        run: npm test -- --passWithNoTests --testPathIgnorePatterns='.*\\.e2e-spec\\.ts$'
 
       # The build was never gated, which is how the dist/main.js vs dist/src/main.js
       # mismatch (and the missing personality YAMLs) survived to Sep 2026.
@@ -85,13 +57,35 @@ jobs:
       - name: Dependency audit (critical)
         run: npm audit --audit-level=critical
 
-  # ── API contract ─────────────────────────────────────────────────────────
-  contract:
-    name: API contract — spec matches the backend
+  # ── Schema drift ─────────────────────────────────────────────────────────
+  schema:
+    name: Schema — entities match the migrations
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: worthygoals-backend
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      DB_USERNAME: ci
+      DB_PASSWORD: ci
+      DB_NAME: ci
 
     steps:
       - uses: actions/checkout@v4
@@ -105,48 +99,34 @@ jobs:
       - name: Install dependencies
         run: npm ci --fetch-retries 5 --fetch-retry-mintimeout 20000 --fetch-retry-maxtimeout 120000
 
-      # openapi.json was hand-authored and had drifted to documenting 8 of 45
-      # operations. The old `ci:check-api` only asserted that the generated
-      # client matched the committed spec — it never compared the spec to the
-      # backend, so it passed against a spec describing 17% of the API.
-      #
-      # spec:export runs in Nest preview mode, so it registers every route
-      # without instantiating a provider: no database, no Redis, no real
-      # credentials. These values only have to satisfy Joi.
-      - name: Regenerate the OpenAPI spec
-        env:
-          NODE_ENV: local
-          DB_HOST: localhost
-          DB_PORT: '5432'
-          DB_USERNAME: ci
-          DB_PASSWORD: ci
-          DB_NAME: ci
-          AWS_REGION: eu-north-1
-          AWS_ACCESS_KEY_ID: ci
-          AWS_SECRET_ACCESS_KEY: ci
-          AWS_COGNITO_USER_POOL_ID: ci
-          AWS_COGNITO_APP_CLIENT_ID: ci
-          OPENAI_API_KEY: ci
-        run: npm run spec:export
+      - name: Apply every migration to an empty database
+        run: npm run typeorm:run
 
-      - name: Fail if the committed spec is stale
-        run: |
-          if ! git diff --exit-code --stat openapi.json; then
-            echo "::error::openapi.json does not match the backend. Run 'npm run spec:export' and commit the result."
-            exit 1
-          fi
+      - name: Revert and re-apply the newest migration
+        run: npm run typeorm:revert && npm run typeorm:run
+
+      # Entity decorators disagreed with the shipped DDL on nearly every table
+      # (timestamp vs timestamptz, json vs jsonb, enum vs varchar, unnamed vs
+      # named constraints), so `typeorm:generate` — the documented workflow —
+      # emitted a destructive, table-rewriting migration. --check fails the
+      # build if the entities and the migrations disagree again.
+      - name: Fail if entities and migrations have drifted
+        run: npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate src/database/migrations-pg/SchemaDrift --check -d src/database/dataSource.ts
 
   # ── Eval harness ─────────────────────────────────────────────────────────
   eval:
     name: Eval harness — personality tone gate
     runs-on: ubuntu-latest
     needs: backend
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: worthygoals-backend
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -157,13 +137,20 @@ jobs:
       - name: Install dependencies
         run: npm ci --fetch-retries 5 --fetch-retry-mintimeout 20000 --fetch-retry-maxtimeout 120000
 
-      - name: Run eval (dry-run when no API key)
+      # Live only when the change can move a persona's voice (prompts, persona
+      # YAML, the AI gateway, the golden sets). Everything else gets the free
+      # dry run, which still validates every golden file.
+      - name: Run eval (live only for persona-touching changes)
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          BASE: ${{ github.event.pull_request.base.sha }}
         run: |
           if [ -z "$OPENAI_API_KEY" ]; then
-            echo "OPENAI_API_KEY not set — running dry-run validation"
+            echo "OPENAI_API_KEY not set — dry-run validation"
             npm run eval:dry
-          else
+          elif git diff --name-only "$BASE" HEAD -- src/core/personalities src/core/ai eval | grep -q .; then
             npm run eval
+          else
+            echo "No persona-touching changes — dry-run validation"
+            npm run eval:dry
           fi
