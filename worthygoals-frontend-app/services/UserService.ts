@@ -39,6 +39,9 @@ class UserService {
             return data;
         }
         catch (error: any) {
+            // No response at all (offline, timeout): rethrow as-is so callers
+            // can tell "can't reach the server" from "the server said no".
+            if (!error?.response) throw error;
             const statusCode = error.response?.data?.statusCode;
 
             if (statusCode === HttpStatusCode.NotFound && error.response?.data?.message?.includes('not found')) {

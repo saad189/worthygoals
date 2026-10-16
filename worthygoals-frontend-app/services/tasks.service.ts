@@ -1,4 +1,4 @@
-import ApiService from './api.service';
+import ApiService, { AI_REQUEST_TIMEOUT_MS } from './api.service';
 import { TaskItem, TaskActionResponse, TaskCompletion, TaskExplanation } from '@/models';
 import type { ApiCompleteTaskPayload, ApiCreateTaskPayload, ApiExplainTaskPayload } from '@/types/api';
 
@@ -28,9 +28,13 @@ export const tasksService = {
     taskId: string,
     payload: CompleteTaskPayload,
   ): Promise<TaskActionResponse<TaskCompletion>> => {
+    // Both routes generate the mentor's reaction before answering, so they get
+    // the AI budget; at 10s a slow reaction timed out after the server had
+    // already saved the completion.
     const { data } = await ApiService.post<TaskActionResponse<TaskCompletion>>(
       `${TASKS_BASE}/${taskId}/complete`,
       payload,
+      { timeout: AI_REQUEST_TIMEOUT_MS },
     );
     return data;
   },
@@ -42,6 +46,7 @@ export const tasksService = {
     const { data } = await ApiService.post<TaskActionResponse<TaskExplanation>>(
       `${TASKS_BASE}/${taskId}/explain`,
       payload,
+      { timeout: AI_REQUEST_TIMEOUT_MS },
     );
     return data;
   },

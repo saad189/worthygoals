@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { tasksService } from '@/services/tasks.service';
-import { enqueueComplete } from '@/helpers/taskOutbox';
+import { enqueueComplete, isAlreadyDone, isRetryable } from '@/helpers/taskOutbox';
 import { syncPushToken } from '@/services/push.service';
 import { CompleteTaskPayload } from '@/models';
 import { markTaskStatus } from '@/hooks/useTasks';
@@ -33,8 +33,17 @@ export function useCompleteTask(
       if (wasSafetyFlag) setSafetyFlag(true);
       onSuccess?.(taskId, !!reactionText || wasSafetyFlag);
     },
-    onError: async (_err, { taskId, payload }) => {
-      await enqueueComplete(taskId, payload);
+    onError: async (err, { taskId, payload }) => {
+      // Only an unanswered request or a server failure is queued for retry.
+      // A 409 means the server already has it; any other 4xx is final, so the
+      // optimistic status is rolled back to the server's truth instead of
+      // being queued (and re-sent) forever.
+      if (isRetryable(err)) {
+        await enqueueComplete(taskId, payload);
+      } else if (!isAlreadyDone(err)) {
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      }
       onSuccess?.(taskId, false);
     },
   });

@@ -86,7 +86,10 @@ const doRefreshAccessToken = async (): Promise<string | null> => {
     const { username } = decodeJwtToken(accessToken);
     const { data } = await axios.post<AuthTokens>(
       `${BASE_URL}/auth/refresh-token`,
-      { username, refreshToken }
+      { username, refreshToken },
+      // Without a timeout a hung refresh never settled, and every request
+      // waiting on refreshInFlight hung with it.
+      { timeout: DEFAULT_TIMEOUT_MS }
     );
 
     const {
@@ -105,9 +108,17 @@ const doRefreshAccessToken = async (): Promise<string | null> => {
 
     return newAccessToken;
   } catch (error) {
-    // If refresh fails, clear tokens so the app can prompt a re-login.
-    authEmitter.emit("logout");
-    return null;
+    // Only the server saying the refresh token is bad ends the session. A
+    // network failure, timeout or 5xx used to log the user out and wipe their
+    // cache the first time they opened the app offline after an hour.
+    const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+    if (status === 400 || status === 401) {
+      authEmitter.emit("logout");
+      return null;
+    }
+    // Carry on with the old token: offline, the request fails as a network
+    // error (which the outbox handles); online, a 401 retries the refresh.
+    return accessToken;
   }
 };
 

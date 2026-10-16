@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios';
 import React from 'react';
 import { renderHook, waitFor, act } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -10,6 +11,7 @@ jest.mock('@/services/tasks.service', () => ({
 }));
 
 jest.mock('@/helpers/taskOutbox', () => ({
+  ...jest.requireActual('@/helpers/taskOutbox'),
   enqueueComplete: jest.fn().mockResolvedValue(undefined),
 }));
 
@@ -57,7 +59,7 @@ describe('useCompleteTask', () => {
   });
 
   it('on error: queues the completion in the offline outbox', async () => {
-    mockedTasks.complete.mockRejectedValue(new Error('network down'));
+    mockedTasks.complete.mockRejectedValue(new AxiosError('Network Error', 'ERR_NETWORK'));
     const onSuccess = jest.fn();
 
     const { result } = renderHook(() => useCompleteTask(onSuccess), { wrapper });

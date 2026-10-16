@@ -1,5 +1,5 @@
 import { StatusPost } from "@/models";
-import ApiService from "./api.service";
+import ApiService, { AI_REQUEST_TIMEOUT_MS } from "./api.service";
 
 const STATUS_BASE = "/status";
 
@@ -17,10 +17,12 @@ export const statusApiService = {
   },
 
   create: async (text: string, mediaId?: string): Promise<StatusPost> => {
-    const { data } = await ApiService.post<StatusPost>(STATUS_BASE, {
-      text,
-      ...(mediaId ? { mediaId } : {}),
-    });
+    // Three mentor reactions are generated before the post returns.
+    const { data } = await ApiService.post<StatusPost>(
+      STATUS_BASE,
+      { text, ...(mediaId ? { mediaId } : {}) },
+      { timeout: AI_REQUEST_TIMEOUT_MS },
+    );
     return data;
   },
 };
