@@ -60,3 +60,23 @@ describe('UserService.updateProfile', () => {
     expect(mockedApi.put.mock.calls[0][1]).toEqual({ email: 'saad@example.com' });
   });
 });
+
+describe('UserService.deleteAccount', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('calls DELETE /users/me', async () => {
+    mockedApi.delete.mockResolvedValue({ status: 204 } as any);
+    await userService.deleteAccount();
+    expect(mockedApi.delete).toHaveBeenCalledWith('/users/me');
+  });
+
+  it('treats 404 as already deleted (a timed-out attempt that finished)', async () => {
+    mockedApi.delete.mockRejectedValue({ response: { status: 404, data: {} } });
+    await expect(userService.deleteAccount()).resolves.toBeUndefined();
+  });
+
+  it('rethrows any other failure', async () => {
+    mockedApi.delete.mockRejectedValue({ response: { status: 500, data: { message: 'boom' } } });
+    await expect(userService.deleteAccount()).rejects.toThrow();
+  });
+});

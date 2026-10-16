@@ -73,6 +73,21 @@ class UserService {
         }
     }
 
+    /**
+     * Permanently delete the account and everything it owns (DELETE /users/me:
+     * DB rows cascade, the Cognito identity and uploaded photos are removed).
+     * A 404 means the account is already gone — e.g. a first attempt that
+     * finished server-side after the client timed out — so it counts as done.
+     */
+    async deleteAccount(): Promise<void> {
+        try {
+            await this.apiService.delete(`${this.userEndPoint}/me`);
+        } catch (error: any) {
+            if (error?.response?.status === HttpStatusCode.NotFound) return;
+            throw new Error(formatErrorMessage(error));
+        }
+    }
+
     /** Persist the onboarding choices (tone + matched mentor) server-side so
      *  "your mentor" and the voiced-surface tone survive a reinstall and are
      *  the single source of truth — not local AsyncStorage (S47 tone, S51a

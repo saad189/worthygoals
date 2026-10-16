@@ -25,7 +25,9 @@ import { getUserInStorage } from "@/helpers/UserInStorageUtil";
 interface AuthContextProps {
   isAuthenticated: boolean;
   login: (email: string) => Promise<void>;
-  logout: () => Promise<void>;
+  /** `accountDeleted`: the account no longer exists server-side — skip the
+   *  server calls and say so instead of "Logged out!". */
+  logout: (options?: { accountDeleted?: boolean }) => Promise<void>;
   setAuthenticated: (value: boolean) => void;
   userProfile: Partial<UserModel> | null;
   userLocation?: LocationCoordinates;
@@ -129,26 +131,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
    * A failure to clear tokens is reported rather than swallowed: leaving
    * credentials on the device is exactly what sign-out is for.
    */
-  const logout = async (): Promise<void> => {
+  const logout = async (options?: { accountDeleted?: boolean }): Promise<void> => {
     // unregisterPushToken below makes a request; if its refresh fails that
     // emits "logout" again, which re-entered here and cleared twice.
     if (loggingOut.current) return;
     loggingOut.current = true;
     try {
-      await doLogout();
+      await doLogout(!!options?.accountDeleted);
     } finally {
       loggingOut.current = false;
     }
   };
 
-  const doLogout = async (): Promise<void> => {
+  const doLogout = async (accountDeleted: boolean): Promise<void> => {
     // Deactivate the token server-side while we still hold a valid access
     // token. Never blocking: the server-side row going stale is recoverable,
-    // a user stuck signed in is not.
-    try {
-      await unregisterPushToken();
-    } catch (error) {
-      console.warn("Could not unregister push token:", error);
+    // a user stuck signed in is not. A deleted account's tokens rows are
+    // already gone with it, and its refresh token is revoked — the call could
+    // only fail.
+    if (!accountDeleted) {
+      try {
+        await unregisterPushToken();
+      } catch (error) {
+        console.warn("Could not unregister push token:", error);
+      }
     }
 
     let tokensCleared = true;
@@ -190,7 +196,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsAuthenticated(false);
 
     if (tokensCleared) {
-      showInfoMessage("Logged out!");
+      showInfoMessage(accountDeleted ? "Your account has been deleted." : "Logged out!");
     } else {
       showErrorMessage(
         "Signed out, but your saved credentials could not be removed from this device.",
