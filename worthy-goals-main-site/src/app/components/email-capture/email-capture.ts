@@ -97,7 +97,12 @@ export class EmailCapture {
   readonly endpoint = input<string | null>(CAPTURE.subscribeUrl);
 
   readonly copy = CAPTURE;
-  readonly email = new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] });
+  readonly email = new FormControl('', { nonNullable: true, validators: [
+    Validators.required,
+    // The worker's rule. Validators.email accepts `a@b`, which the worker
+    // rejects — the user got the generic error, not "invalid address".
+    Validators.pattern(/^[^@\s]+@[^@\s]+\.[^@\s]+$/),
+  ] });
   readonly sending = signal(false);
   readonly message = signal('');
 
