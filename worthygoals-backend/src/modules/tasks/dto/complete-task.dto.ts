@@ -1,4 +1,12 @@
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CompleteTaskDto {
@@ -12,11 +20,12 @@ export class CompleteTaskDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(2000) // sent to the model, stored and embedded
   reflection?: string;
 
   @ApiPropertyOptional({ description: 'UUID of an uploaded media item (M06)' })
   @IsOptional()
-  @IsString()
+  @IsUUID() // a media id; the column is varchar(36)
   memoryPictureId?: string;
 
   @ApiPropertyOptional({
@@ -24,5 +33,6 @@ export class CompleteTaskDto {
   })
   @IsOptional()
   @IsString()
+  @MaxLength(64)
   personalityId?: string;
 }

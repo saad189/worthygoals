@@ -36,8 +36,9 @@ export class MessagesController {
     @Query('before') before?: string,
     @Query('beforeId') beforeId?: string,
   ): Promise<MessageResponseDto[]> {
-    if (!conversationId) {
-      throw new BadRequestException('conversationId is required');
+    // A non-uuid reached Postgres as 22P02 — a 500 and a Sentry event.
+    if (!conversationId || !isUUID(conversationId)) {
+      throw new BadRequestException('conversationId must be a conversation id');
     }
     const beforeDate = before ? new Date(before) : undefined;
     if (beforeDate && Number.isNaN(beforeDate.getTime())) {

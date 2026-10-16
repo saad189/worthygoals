@@ -7,6 +7,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -45,14 +46,17 @@ export class TasksController {
   }
 
   @Get(':id')
-  findOne(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+  findOne(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.tasksService.findOne(req.user.sub, id);
   }
 
   @Patch(':id')
   update(
     @Request() req: AuthenticatedRequest,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateTaskDto,
   ) {
     return this.tasksService.update(req.user.sub, id, dto);
@@ -60,7 +64,10 @@ export class TasksController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+  async remove(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     await this.tasksService.remove(req.user.sub, id);
   }
 
@@ -68,7 +75,7 @@ export class TasksController {
   @HttpCode(HttpStatus.CREATED)
   complete(
     @Request() req: AuthenticatedRequest,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CompleteTaskDto,
   ) {
     return this.tasksService.complete(req.user.sub, id, dto);
@@ -78,7 +85,7 @@ export class TasksController {
   @HttpCode(HttpStatus.CREATED)
   explain(
     @Request() req: AuthenticatedRequest,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ExplainTaskDto,
   ) {
     return this.tasksService.explain(req.user.sub, id, dto);

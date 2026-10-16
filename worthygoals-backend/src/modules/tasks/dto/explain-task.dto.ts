@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ExplanationReason } from 'src/common/constants';
 
@@ -10,6 +10,7 @@ export class ExplainTaskDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(2000) // sent to the model, stored and embedded
   freeText?: string;
 
   @ApiPropertyOptional({
@@ -17,5 +18,6 @@ export class ExplainTaskDto {
   })
   @IsOptional()
   @IsString()
+  @MaxLength(64)
   personalityId?: string;
 }

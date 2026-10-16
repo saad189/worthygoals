@@ -10,6 +10,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Conversation } from 'src/database/models/conversation.entity';
 import { Message } from 'src/database/models/message.entity';
+import { Mentor } from 'src/database/models/mentor.entity';
+import { MentorVisibility } from 'src/common/constants';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { UpdateConversationDto } from './dto/update-conversation.dto';
 import { UsersService } from 'src/modules/users/users.service';
@@ -181,7 +183,23 @@ export class ConversationsService {
           'User profile not found for this token. Create your user profile first.',
         );
       }
-      // Prevent duplicate conversations per user+mentor
+      // Only the catalogue the app lists: an id alone used to open a chat with
+      // a retired or private mentor, and an unknown id was an FK 500.
+      const listed = await this.conversationRepository.manager
+        .getRepository(Mentor)
+        .exist({
+          where: {
+            id: params.dto.mentorId,
+            isActive: true,
+            visibility: MentorVisibility.PUBLIC,
+          },
+        });
+      if (!listed) throw new NotFoundException('Mentor not found');
+
+      // Prevent duplicate conversations per user+mentor.
+      // ponytail: read-then-write, so a concurrent double-tap can still make
+      // two; a unique (userId, mentorId) index needs existing duplicates
+      // merged first.
       const existing = await this.conversationRepository.findOne({
         where: {
           userId: user.id,
