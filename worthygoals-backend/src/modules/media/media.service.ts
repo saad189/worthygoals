@@ -12,7 +12,8 @@ import {
   GetObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { EntityManager, Repository } from 'typeorm';
+import { randomUUID } from 'crypto';
+import { EntityManager, In, Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { CreateUploadUrlDto } from './dto/create-upload-url.dto';
 import { Media } from 'src/database/models/media.entity';
@@ -49,12 +50,14 @@ export class MediaService {
     }
 
     const user = await this.usersService.findByAccountSub(sub);
-    if (!user) throw new ServiceUnavailableException('User not found');
+    if (!user) throw new NotFoundException('User not found');
 
     const rawExt = dto.fileName.split('.').pop()?.toLowerCase() ?? 'jpg';
     // Strip anything that could break out of the drafts/<userId>/ key prefix.
     const ext = rawExt.replace(/[^a-z0-9]/g, '') || 'jpg';
-    const s3Key = `drafts/${user.id}/${Date.now()}.${ext}`;
+    // randomUUID, not Date.now(): two uploads in the same millisecond shared
+    // a key and the second overwrote the first.
+    const s3Key = `drafts/${user.id}/${randomUUID()}.${ext}`;
 
     const media = this.mediaRepo.create({
       userId: user.id,
@@ -96,18 +99,42 @@ export class MediaService {
     mediaId: string,
     userId: number,
   ): Promise<string | null> {
-    if (!this.s3) return null;
-    const media = await this.mediaRepo.findOne({
-      where: { id: mediaId, userId },
+    return (
+      (await this.getPresignedGetUrls([mediaId], userId)).get(mediaId) ?? null
+    );
+  }
+
+  /**
+   * One query for a page of media instead of one findOne per card — the
+   * board and status feed each made up to 50 on every load. Ids that aren't
+   * the user's own are simply absent from the map.
+   */
+  async getPresignedGetUrls(
+    mediaIds: string[],
+    userId: number,
+  ): Promise<Map<string, string>> {
+    const urls = new Map<string, string>();
+    const s3 = this.s3;
+    if (!s3 || !mediaIds.length) return urls;
+    const rows = await this.mediaRepo.find({
+      select: { id: true, s3Key: true },
+      where: { id: In([...new Set(mediaIds)]), userId },
     });
-    if (!media) return null;
-    const command = new GetObjectCommand({
-      Bucket: this.bucket,
-      Key: media.s3Key,
-    });
-    return getSignedUrl(this.s3, command, {
-      expiresIn: PRESIGNED_URL_TTL_SECONDS,
-    });
+    await Promise.all(
+      rows.map(async (m) => {
+        const command = new GetObjectCommand({
+          Bucket: this.bucket,
+          Key: m.s3Key,
+        });
+        urls.set(
+          m.id,
+          await getSignedUrl(s3, command, {
+            expiresIn: PRESIGNED_URL_TTL_SECONDS,
+          }),
+        );
+      }),
+    );
+    return urls;
   }
 
   /**

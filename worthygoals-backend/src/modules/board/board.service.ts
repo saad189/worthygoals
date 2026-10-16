@@ -62,34 +62,31 @@ export class BoardService {
       .limit(WIN_CARD_LIMIT)
       .getRawMany<RawWinRow>();
 
-    return Promise.all(
-      rows.map(async (row) => {
-        let mediaUrl: string | undefined;
-        if (row.c_memoryPictureId) {
-          mediaUrl =
-            (await this.mediaService.getPresignedGetUrl(
-              row.c_memoryPictureId,
-              userId,
-            )) ?? undefined;
-        }
-        const createdAt =
-          row.c_createdAt instanceof Date
-            ? row.c_createdAt
-            : new Date(row.c_createdAt);
-        return {
-          id: row.c_id,
-          type: 'win' as const,
-          taskTitle: row.taskTitle,
-          goalTitle: row.goalTitle,
-          goalCategory: row.goalCategory,
-          moodScore: Number(row.c_moodScore),
-          reflection: row.c_reflection ?? undefined,
-          mentorReaction: row.c_mentorReaction ?? undefined,
-          mediaUrl,
-          createdAt,
-        };
-      }),
+    const mediaUrls = await this.mediaService.getPresignedGetUrls(
+      rows.flatMap((r) => (r.c_memoryPictureId ? [r.c_memoryPictureId] : [])),
+      userId,
     );
+    return rows.map((row) => {
+      const mediaUrl = row.c_memoryPictureId
+        ? mediaUrls.get(row.c_memoryPictureId)
+        : undefined;
+      const createdAt =
+        row.c_createdAt instanceof Date
+          ? row.c_createdAt
+          : new Date(row.c_createdAt);
+      return {
+        id: row.c_id,
+        type: 'win' as const,
+        taskTitle: row.taskTitle,
+        goalTitle: row.goalTitle,
+        goalCategory: row.goalCategory,
+        moodScore: Number(row.c_moodScore),
+        reflection: row.c_reflection ?? undefined,
+        mentorReaction: row.c_mentorReaction ?? undefined,
+        mediaUrl,
+        createdAt,
+      };
+    });
   }
 
   private async fetchMilestoneCards(userId: number): Promise<BoardItemDto[]> {

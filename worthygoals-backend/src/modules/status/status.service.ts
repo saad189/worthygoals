@@ -125,9 +125,13 @@ export class StatusService {
       }),
     });
 
+    const imageUrls = await this.mediaService.getPresignedGetUrls(
+      posts.flatMap((p) => (p.mediaId ? [p.mediaId] : [])),
+      user.id,
+    );
     return Promise.all(
       posts.map((post) =>
-        this.toDto(post, this.orderReactions(post.reactions ?? [])),
+        this.toDto(post, this.orderReactions(post.reactions ?? []), imageUrls),
       ),
     );
   }
@@ -169,12 +173,16 @@ export class StatusService {
   private async toDto(
     post: StatusPost,
     reactions: StatusReaction[],
+    imageUrls?: Map<string, string>,
   ): Promise<StatusPostDto> {
     // Same pattern as the board: resolve the media draft to a presigned GET
-    // url on read; null when there's no photo or S3 isn't configured.
-    const imageUrl = post.mediaId
-      ? await this.mediaService.getPresignedGetUrl(post.mediaId, post.userId)
-      : null;
+    // url on read; null when there's no photo or S3 isn't configured. The feed
+    // passes a batch-resolved map; a single post resolves its own.
+    const imageUrl = !post.mediaId
+      ? null
+      : imageUrls
+        ? (imageUrls.get(post.mediaId) ?? null)
+        : await this.mediaService.getPresignedGetUrl(post.mediaId, post.userId);
 
     return {
       id: post.id,
