@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-custom';
-import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { createRemoteJWKSet, errors as joseErrors, jwtVerify } from 'jose';
 import { ConfigService } from '@nestjs/config';
 import { JWT } from 'src/common/constants';
 import { Request } from 'express';
@@ -34,10 +34,24 @@ export class CognitoJwtStrategy extends PassportStrategy(Strategy, JWT) {
     }
 
     const token = auth.slice(7);
-    const { payload } = await jwtVerify(token, this.jwks, {
-      issuer: this.issuer,
-      algorithms: ['RS256'],
-    });
+    let payload: Awaited<ReturnType<typeof jwtVerify>>['payload'];
+    try {
+      ({ payload } = await jwtVerify(token, this.jwks, {
+        issuer: this.issuer,
+        algorithms: ['RS256'],
+      }));
+    } catch (err) {
+      // jose's errors aren't HttpExceptions, so an expired or garbage token
+      // reached the client as a 500 — and the app only refreshes on 401. A
+      // JWKS timeout is our outage, not a bad token, so it stays a 5xx.
+      if (
+        err instanceof joseErrors.JOSEError &&
+        !(err instanceof joseErrors.JWKSTimeout)
+      ) {
+        throw new UnauthorizedException();
+      }
+      throw err;
+    }
 
     // Cognito signs ID and access tokens with the same keys under the same
     // issuer, and every app client in the pool shares the JWKS. Signature and

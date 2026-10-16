@@ -2,11 +2,13 @@ const mockJwtVerify = jest.fn();
 jest.mock('jose', () => ({
   createRemoteJWKSet: () => ({}),
   jwtVerify: (...args: unknown[]) => mockJwtVerify(...args),
+  errors: jest.requireActual('jose').errors,
 }));
 
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
+import { errors as joseErrors } from 'jose';
 import { CognitoJwtStrategy } from '../strategies/jwt.strategy';
 
 const CLIENT_ID = 'app-client';
@@ -40,5 +42,19 @@ describe('CognitoJwtStrategy', () => {
   it('rejects an access token minted for another app client', async () => {
     mockJwtVerify.mockResolvedValue(claims({ client_id: 'other-client' }));
     await expect(strategy.validate(req)).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('turns an expired token into 401, not a 500', async () => {
+    mockJwtVerify.mockRejectedValue(
+      new joseErrors.JWTExpired('"exp" claim timestamp check failed', {}),
+    );
+    await expect(strategy.validate(req)).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('keeps a JWKS outage a server error', async () => {
+    mockJwtVerify.mockRejectedValue(new joseErrors.JWKSTimeout());
+    await expect(strategy.validate(req)).rejects.not.toThrow(
+      UnauthorizedException,
+    );
   });
 });

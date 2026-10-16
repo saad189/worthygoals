@@ -146,11 +146,12 @@ export class UsersService {
 
   async createForAccount(params: {
     accountSub: string;
+    email: string;
     dto: CreateUserDto;
   }): Promise<ResponseUserDto> {
     try {
-      const { accountSub, dto } = params;
-      const { email } = dto;
+      const { accountSub, email } = params;
+      const { email: _bodyEmail, ...dto } = params.dto; // eslint-disable-line @typescript-eslint/no-unused-vars
 
       const account = await this.getOrCreateAccount({ accountSub, email });
 
@@ -173,7 +174,7 @@ export class UsersService {
       }
 
       // Create the user entity from DTO.
-      const user = this.userRepository.create(dto);
+      const user = this.userRepository.create({ ...dto, email });
       user.account = account;
 
       // Set the user's role based on its properties.
@@ -195,7 +196,11 @@ export class UsersService {
     try {
       const user = await this.findUserByIdentity(sub);
 
-      this.userRepository.merge(user, updateUserDto);
+      // email is the Cognito account's, not a profile field: changing it here
+      // could take an address that isn't yours, or 500 on accounts.email's
+      // unique index. The app still sends it, so it is accepted and dropped.
+      const { email: _bodyEmail, ...patch } = updateUserDto; // eslint-disable-line @typescript-eslint/no-unused-vars
+      this.userRepository.merge(user, patch);
       const updatedUser = await this.userRepository.save(user);
 
       return await this.getResponseDto(updatedUser);
