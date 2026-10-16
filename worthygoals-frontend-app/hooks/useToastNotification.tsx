@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Snackbar } from 'react-native-paper';
-import { Colors } from '@/constants';
+import { Colors, Palette } from '@/constants';
 import { useColorScheme } from 'react-native';
 
 // 🟢 Create Context
@@ -19,14 +19,17 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
 
     const [visible, setVisible] = useState(false);
     const [message, setMessage] = useState('');
-    const [backgroundColor, setBackgroundColor] = useState<string>(colors.notificationInfo);
+    // Opaque status colours with white text (all ≥ 5:1). The app mounts no
+    // PaperProvider, so Snackbar's text was MD3's near-white inverseOnSurface —
+    // drawn on the 12%-alpha "subtle" tints, every toast was near-invisible.
+    const [backgroundColor, setBackgroundColor] = useState<string>(Palette.infoBase);
 
     const showToast = (msg: string, type: 'info' | 'success' | 'error' = 'info') => {
         setMessage(msg);
         setBackgroundColor(
-            type === 'success' ? colors.notificationSuccess :
-                type === 'error' ? colors.notificationError :
-                    colors.notificationInfo
+            type === 'success' ? Palette.successBase :
+                type === 'error' ? Palette.errorBase :
+                    Palette.infoBase
         );
         setVisible(true);
     };
@@ -45,6 +48,8 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
                 onDismiss={() => setVisible(false)}
                 duration={3000}
                 style={{ backgroundColor, borderRadius: 12, alignSelf: 'center', width: '60%', alignItems: 'center' }}
+                theme={{ colors: { inverseOnSurface: colors.textWhite } }}
+                accessibilityLiveRegion="polite"
             >
                 {message}
             </Snackbar>

@@ -47,7 +47,14 @@ export default function ChatViewScreen() {
   const chatListRef = useRef<FlatList<ConversationMessage>>(null);
   const shouldScrollToBottomRef = useRef(false);
 
-  const { messages: apiMessages, sendText, loading: messagesLoading, isMentorTyping } = useMessages(chatDetail?.id);
+  const {
+    messages: apiMessages,
+    sendText,
+    loading: messagesLoading,
+    isMentorTyping,
+    error: chatError,
+  } = useMessages(chatDetail?.id);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const messages: ConversationMessage[] = (apiMessages ?? []).map((m) => ({
     id: m.id,
@@ -274,14 +281,19 @@ export default function ChatViewScreen() {
     if (!text) return;
 
     setInputText("");
+    setSendError(null);
     shouldScrollToBottomRef.current = true;
 
     try {
       await sendText(text);
     } catch (e) {
-      // send failure is surfaced by existing error patterns
+      // Nothing surfaced this before: the typed message vanished with no
+      // error. Put it back so the user can retry, and say what happened.
+      setInputText((current) => current || text);
+      setSendError((e as Error)?.message || "Couldn't send. Try again.");
     }
   };
+  const bannerMessage = sendError ?? chatError;
 
   const insets = useSafeAreaInsets();
   return (
@@ -348,6 +360,17 @@ export default function ChatViewScreen() {
           ListFooterComponent={isMentorTyping ? <TypingIndicator color={accent} /> : null}
         />
       )}
+      {bannerMessage ? (
+        <UIText
+          variant="muted"
+          color="textAccent"
+          accessibilityLiveRegion="polite"
+          accessibilityRole="alert"
+          style={{ paddingHorizontal: 16, paddingTop: 8 }}
+        >
+          {bannerMessage}
+        </UIText>
+      ) : null}
       <View style={{ marginBottom: 30 }} />
       <View style={dynamicStyles.inputContainer}>
         <TextInput
