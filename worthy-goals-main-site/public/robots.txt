@@ -2,7 +2,8 @@
 User-agent: *
 Allow: /
 
-# Post-signup confirmation; also noindex via meta.
-Disallow: /thank-you
+# /thank-you is kept out of the index by its noindex meta. It is not
+# Disallowed here: a blocked page is never fetched, so crawlers would never
+# see the noindex and could still index the bare URL from links.
 
 Sitemap: https://worthygoals.web.app/sitemap.xml

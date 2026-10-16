@@ -45,7 +45,13 @@ describe('BoardService milestones', () => {
             findByAccountSub: jest.fn().mockResolvedValue({ id: 1 }),
           },
         },
-        { provide: MediaService, useValue: { getPresignedGetUrl: jest.fn() } },
+        {
+          provide: MediaService,
+          useValue: {
+            getPresignedGetUrl: jest.fn(),
+            getPresignedGetUrls: jest.fn().mockResolvedValue(new Map()),
+          },
+        },
       ],
     }).compile();
     service = module.get(BoardService);

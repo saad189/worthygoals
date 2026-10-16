@@ -152,9 +152,10 @@ function DeadlineField({ value, onChange }: { value: string; onChange: (v: strin
           mode="date"
           display="calendar"
           minimumDate={today}
-          onChange={(_e, picked) => {
+          onChange={(e, picked) => {
             setOpen(false);
-            if (picked) onChange(toYmd(picked));
+            // Dismissing also passes a Date; only 'set' is a choice.
+            if (e.type === 'set' && picked) onChange(toYmd(picked));
           }}
         />
       )}

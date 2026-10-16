@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios';
 /**
  * Guards D2(b): a failed onboarding sync must be queued for retry, not
  * swallowed. It previously claimed it would be "re-synced next time the
@@ -33,7 +34,7 @@ describe('onboarding outbox', () => {
   });
 
   it('keeps the entry queued while the sync keeps failing', async () => {
-    mockUserService.updateOnboarding.mockRejectedValue(new Error('offline'));
+    mockUserService.updateOnboarding.mockRejectedValue(new AxiosError('Network Error', 'ERR_NETWORK'));
 
     await enqueueOnboarding(CHOICE);
     expect(await drainOutbox()).toBe(0);

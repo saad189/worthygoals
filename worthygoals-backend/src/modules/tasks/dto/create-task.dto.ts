@@ -3,6 +3,7 @@ import {
   IsOptional,
   IsEnum,
   IsDateString,
+  IsUUID,
   MaxLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -15,12 +16,13 @@ export class CreateTaskDto {
   title: string;
 
   @ApiProperty({ example: 'goal-uuid-here' })
-  @IsString()
+  @IsUUID()
   goalId: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(2000)
   description?: string;
 
   @ApiPropertyOptional({ example: '2026-06-01T07:00:00.000Z' })

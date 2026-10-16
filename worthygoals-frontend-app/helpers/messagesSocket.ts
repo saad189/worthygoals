@@ -8,6 +8,7 @@ export type MessagesSocketHandlers = {
   onMessageCreated?: (msg: ApiMessage) => void;
   onMentorTyping?: (conversationId: string) => void;
   onConnectError?: (err: any) => void;
+  onConnect?: () => void;
   /** A server-side error on this socket (see the `exception` listener below). */
   onServerException?: (message: string) => void;
 };
@@ -16,18 +17,25 @@ export async function connectMessagesSocket(params: {
   conversationId: string;
   handlers?: MessagesSocketHandlers;
 }): Promise<Socket> {
-  const token = await Storage.getItem(ACCESS_TOKEN);
-  if (!token) {
+  if (!(await Storage.getItem(ACCESS_TOKEN))) {
     throw new Error("Missing access token");
   }
 
   const socket = io(`${config.apiUrl}/messages`, {
     transports: ["websocket"],
-    auth: { token },
+    // A function, so every reconnect reads the current token. A fixed object
+    // replayed the token from first connect, which expires within the hour;
+    // every later reconnect was rejected and the mentor never answered.
+    auth: (cb) => {
+      Storage.getItem(ACCESS_TOKEN)
+        .then((token) => cb({ token }))
+        .catch(() => cb({}));
+    },
   });
 
   socket.on("connect", () => {
     socket.emit("joinConversation", { conversationId: params.conversationId });
+    params.handlers?.onConnect?.();
   });
 
   socket.on("messageCreated", (msg: ApiMessage) => {

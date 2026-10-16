@@ -22,7 +22,11 @@ describe('StatusService', () => {
   let reactionRepo: { create: jest.Mock; save: jest.Mock };
   let usersService: { findByAccountSub: jest.Mock };
   let gateway: { chat: jest.Mock };
-  let mediaService: { getPresignedGetUrl: jest.Mock; markAttached: jest.Mock };
+  let mediaService: {
+    getPresignedGetUrl: jest.Mock;
+    getPresignedGetUrls: jest.Mock;
+    markAttached: jest.Mock;
+  };
 
   beforeEach(async () => {
     statusRepo = {
@@ -62,6 +66,7 @@ describe('StatusService', () => {
 
     mediaService = {
       getPresignedGetUrl: jest.fn().mockResolvedValue('https://signed/img.jpg'),
+      getPresignedGetUrls: jest.fn().mockResolvedValue(new Map()),
       markAttached: jest.fn().mockResolvedValue(undefined),
     };
 
@@ -159,6 +164,9 @@ describe('StatusService', () => {
     ]);
     const feed = await service.findAllForUser(USER_SUB);
     expect(feed).toHaveLength(1);
+    // One batched media lookup for the page, never one per post.
+    expect(mediaService.getPresignedGetUrls).toHaveBeenCalledTimes(1);
+    expect(mediaService.getPresignedGetUrl).not.toHaveBeenCalled();
     expect(feed[0].reactions.map((r) => r.personalityId)).toEqual([
       'marcus',
       'lyra',

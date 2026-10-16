@@ -14,7 +14,9 @@ export function useTasks(goalId: string | null) {
 
   return {
     tasks: query.data ?? [],
-    loading: query.isLoading,
+    // isLoading is never true with placeholderData (the query is "success"
+    // from the first render); "showing the placeholder while fetching" is.
+    loading: query.isPlaceholderData && query.isFetching,
     error: query.isError ? 'Failed to load tasks' : null,
     refetch: () => { query.refetch(); },
   };

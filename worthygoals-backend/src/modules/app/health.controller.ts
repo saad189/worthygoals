@@ -1,4 +1,9 @@
-import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
@@ -23,6 +28,8 @@ import { DataSource } from 'typeorm';
 @ApiExcludeController()
 @Controller()
 export class HealthController {
+  private readonly logger = new Logger(HealthController.name);
+
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
   /** Liveness: the process is up. Deliberately touches nothing. */
@@ -37,9 +44,12 @@ export class HealthController {
     try {
       await this.dataSource.query('SELECT 1');
     } catch (error: any) {
+      // The driver's message names the internal host and port; this route is
+      // unauthenticated, so the detail goes to the log, not the response.
+      this.logger.error(`Readiness: postgres unreachable: ${error?.message}`);
       throw new ServiceUnavailableException({
         status: 'error',
-        postgres: `unreachable: ${error?.message ?? 'unknown error'}`,
+        postgres: 'unreachable',
       });
     }
 

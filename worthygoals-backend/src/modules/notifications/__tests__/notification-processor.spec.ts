@@ -61,6 +61,7 @@ describe('NotificationProcessor', () => {
   const notifService = {
     getTokens: jest.fn(),
     checkPacingAllowed: jest.fn().mockResolvedValue(true),
+    tokensSentToday: jest.fn().mockResolvedValue(new Set()),
     recordSent: jest.fn(),
     deactivateToken: jest.fn(),
   };
@@ -71,6 +72,7 @@ describe('NotificationProcessor', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     notifService.checkPacingAllowed.mockResolvedValue(true);
+    notifService.tokensSentToday.mockResolvedValue(new Set());
     mockSend.mockResolvedValue([{ status: 'ok', id: 'ticket-1' }]);
 
     const module: TestingModule = await Test.createTestingModule({
@@ -149,6 +151,14 @@ describe('NotificationProcessor', () => {
         { tickets: [{ id: 'ticket-1', token: 'ExponentPushToken[xxx]' }] },
         expect.objectContaining({ delay: expect.any(Number) }),
       );
+    });
+
+    it('does not re-push a token a retried job already reached', async () => {
+      notifService.tokensSentToday.mockResolvedValue(
+        new Set(['ExponentPushToken[xxx]']),
+      );
+      await processor.process(job());
+      expect(mockSend).not.toHaveBeenCalled();
     });
 
     it('rethrows a failed send so BullMQ retries it', async () => {

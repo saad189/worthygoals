@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 import { tasksService } from '@/services/tasks.service';
 import userService from '@/services/UserService';
 import { CompleteTaskPayload, ExplainTaskPayload } from '@/models';
@@ -17,6 +18,38 @@ type OutboxEntry =
       queuedAt: number;
     };
 
+/**
+ * Worth queueing for later: the request never got an answer, or the server
+ * failed. A 4xx is an answer — replaying it can only get the same one, and
+ * used to sit in the queue forever, re-sent on every foreground.
+ */
+export function isRetryable(err: unknown): boolean {
+  if (!axios.isAxiosError(err)) return false;
+  const status = err.response?.status;
+  return status === undefined || status >= 500;
+}
+
+/** 409 "already completed/explained today": the server has it. */
+export function isAlreadyDone(err: unknown): boolean {
+  return axios.isAxiosError(err) && err.response?.status === 409;
+}
+
+// Every read-modify-write of the queue runs through this chain. drainOutbox
+// read the queue, awaited the network, then wrote back what was left — so an
+// entry enqueued meanwhile was overwritten and lost.
+let lock: Promise<unknown> = Promise.resolve();
+function withLock<T>(fn: () => Promise<T>): Promise<T> {
+  const run = lock.then(fn, fn);
+  lock = run.catch(() => undefined);
+  return run;
+}
+
+/** Called on sign-out: the queue holds the previous user's reflections and
+ * onboarding choice, and would otherwise replay them under the next user. */
+export function clearOutbox(): Promise<void> {
+  return withLock(() => AsyncStorage.removeItem(OUTBOX_KEY));
+}
+
 async function readQueue(): Promise<OutboxEntry[]> {
   try {
     const raw = await AsyncStorage.getItem(OUTBOX_KEY);
@@ -30,22 +63,26 @@ async function writeQueue(queue: OutboxEntry[]): Promise<void> {
   await AsyncStorage.setItem(OUTBOX_KEY, JSON.stringify(queue));
 }
 
-export async function enqueueComplete(
+export function enqueueComplete(
   taskId: string,
   payload: CompleteTaskPayload,
 ): Promise<void> {
-  const queue = await readQueue();
-  queue.push({ type: 'complete', taskId, payload, queuedAt: Date.now() });
-  await writeQueue(queue);
+  return withLock(async () => {
+    const queue = await readQueue();
+    queue.push({ type: 'complete', taskId, payload, queuedAt: Date.now() });
+    await writeQueue(queue);
+  });
 }
 
-export async function enqueueExplain(
+export function enqueueExplain(
   taskId: string,
   payload: ExplainTaskPayload,
 ): Promise<void> {
-  const queue = await readQueue();
-  queue.push({ type: 'explain', taskId, payload, queuedAt: Date.now() });
-  await writeQueue(queue);
+  return withLock(async () => {
+    const queue = await readQueue();
+    queue.push({ type: 'explain', taskId, payload, queuedAt: Date.now() });
+    await writeQueue(queue);
+  });
 }
 
 /**
@@ -57,17 +94,19 @@ export async function enqueueExplain(
  * user's tone and matched mentor silently never reached the backend, and the
  * weekly review fell back to Marcus for the life of the goal.
  */
-export async function enqueueOnboarding(choice: {
+export function enqueueOnboarding(choice: {
   tone?: string;
   personalityId?: string;
 }): Promise<void> {
-  const queue = await readQueue();
-  // Only the latest choice matters.
-  const withoutPrior: OutboxEntry[] = queue.filter(
-    (e) => e.type !== 'onboarding',
-  );
-  withoutPrior.push({ type: 'onboarding', choice, queuedAt: Date.now() });
-  await writeQueue(withoutPrior);
+  return withLock(async () => {
+    const queue = await readQueue();
+    // Only the latest choice matters.
+    const withoutPrior: OutboxEntry[] = queue.filter(
+      (e) => e.type !== 'onboarding',
+    );
+    withoutPrior.push({ type: 'onboarding', choice, queuedAt: Date.now() });
+    await writeQueue(withoutPrior);
+  });
 }
 
 /**
@@ -76,23 +115,30 @@ export async function enqueueOnboarding(choice: {
  * invalidate stale queries only when something actually changed.
  */
 export async function drainOutbox(): Promise<number> {
-  const queue = await readQueue();
-  if (!queue.length) return 0;
+  // Held for the whole drain: enqueues wait for it rather than racing it.
+  return withLock(async () => {
+    const queue = await readQueue();
+    if (!queue.length) return 0;
 
-  const remaining: OutboxEntry[] = [];
-  for (const entry of queue) {
-    try {
-      if (entry.type === 'complete') {
-        await tasksService.complete(entry.taskId, entry.payload);
-      } else if (entry.type === 'explain') {
-        await tasksService.explain(entry.taskId, entry.payload);
-      } else {
-        await userService.updateOnboarding(entry.choice);
+    const remaining: OutboxEntry[] = [];
+    let synced = 0;
+    for (const entry of queue) {
+      try {
+        if (entry.type === 'complete') {
+          await tasksService.complete(entry.taskId, entry.payload);
+        } else if (entry.type === 'explain') {
+          await tasksService.explain(entry.taskId, entry.payload);
+        } else {
+          await userService.updateOnboarding(entry.choice);
+        }
+        synced += 1;
+      } catch (err) {
+        if (isAlreadyDone(err)) synced += 1;
+        else if (isRetryable(err)) remaining.push(entry);
+        // any other 4xx: the server rejected it for good — drop it
       }
-    } catch {
-      remaining.push(entry);
     }
-  }
-  await writeQueue(remaining);
-  return queue.length - remaining.length;
+    await writeQueue(remaining);
+    return synced;
+  });
 }

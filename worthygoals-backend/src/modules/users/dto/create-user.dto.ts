@@ -6,15 +6,19 @@ import {
   IsString,
   IsDateString,
   IsNumber,
+  MaxLength,
 } from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty({
     example: 'user@example.com',
-    description: 'The email address of the user',
+    description:
+      "Ignored — the profile takes the Cognito account's email. Accepted so existing clients don't fail validation.",
+    required: false,
   })
+  @IsOptional()
   @IsEmail()
-  readonly email: string;
+  readonly email?: string;
 
   @ApiProperty({
     example: 'John',
@@ -50,6 +54,7 @@ export class CreateUserDto {
   })
   @IsOptional()
   @IsString()
+  @MaxLength(1) // users.gender is char(1); a longer value was a 500
   readonly gender?: string;
 
   @ApiProperty({

@@ -44,6 +44,7 @@ describe('GoalsService', () => {
     findOne: jest.Mock;
     merge: jest.Mock;
     remove: jest.Mock;
+    manager: { transaction: jest.Mock };
   };
   let taskRepo: { create: jest.Mock; save: jest.Mock };
   let usersService: { findByAccountSub: jest.Mock };
@@ -57,6 +58,18 @@ describe('GoalsService', () => {
       findOne: jest.fn(),
       merge: jest.fn(),
       remove: jest.fn(),
+      // create() runs inside a transaction; route the manager back to the
+      // repo mocks so the assertions below still see each write.
+      manager: {
+        transaction: jest.fn((cb: (em: unknown) => unknown) =>
+          cb({
+            create: (entity: unknown, x: unknown) =>
+              entity === Goal ? repo.create(x) : taskRepo.create(x),
+            save: (x: Record<string, unknown>) =>
+              'goalId' in x ? taskRepo.save(x) : repo.save(x),
+          }),
+        ),
+      },
     };
     taskRepo = {
       create: jest.fn((x) => x),

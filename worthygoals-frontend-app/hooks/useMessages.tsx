@@ -160,10 +160,15 @@ export function useMessages(conversationId?: string) {
                 setIsMentorTyping(false);
               }, TYPING_TIMEOUT_MS);
             },
-            onConnectError: (err) => {
+            onConnectError: () => {
               if (cancelled) return;
-              // Don't hard-fail the UI; REST still works.
-              setError(err?.message ?? "Realtime connection failed");
+              // REST still saves messages, but only the socket path generates
+              // the mentor's reply — so say so rather than go quiet.
+              setError("Reconnecting to your mentor…");
+            },
+            onConnect: () => {
+              if (cancelled) return;
+              setError(null);
             },
             onServerException: (message) => {
               if (cancelled) return;

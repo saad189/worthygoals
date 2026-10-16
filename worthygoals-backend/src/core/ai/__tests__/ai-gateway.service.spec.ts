@@ -184,7 +184,55 @@ describe('AiGatewayService', () => {
     ).rejects.toBeInstanceOf(HttpException);
   });
 
+  it('does not let request errors (4xx) open the shared breaker', async () => {
+    await build('openai');
+    const badRequest = Object.assign(new Error('context_length_exceeded'), {
+      status: 400,
+    });
+    (mockOpenai.chat as jest.Mock).mockRejectedValue(badRequest);
+    for (let i = 0; i < 5; i++) {
+      await service.chat({ userId: 1, feature: 'chat', messages: MESSAGES });
+    }
+    // Still tried on the sixth call: four 400s did not open the breaker.
+    (mockOpenai.chat as jest.Mock).mockClear();
+    await service.chat({ userId: 1, feature: 'chat', messages: MESSAGES });
+    expect(mockOpenai.chat).toHaveBeenCalled();
+  });
+
+  it('gives the fallback its own default model, not the primary one', async () => {
+    await build('openai');
+    (mockOpenai.chat as jest.Mock).mockRejectedValue(new Error('down'));
+    await service.chat({
+      userId: 1,
+      feature: 'chat',
+      model: 'gpt-4o',
+      messages: MESSAGES,
+    });
+    expect((mockAnthropic.chat as jest.Mock).mock.calls[0][0].model).toBe(
+      undefined,
+    );
+  });
+
   describe('chatStream — token streaming (S19)', () => {
+    it('does not fail over after chunks already reached the client', async () => {
+      await build('openai');
+      mockOpenai.chatStream.mockImplementation(
+        async (_p: any, onChunk: (c: string) => void) => {
+          onChunk('half a rep');
+          throw new Error('stream reset');
+        },
+      );
+      const chunks: string[] = [];
+      await expect(
+        service.chatStream(
+          { userId: 1, feature: 'chat', messages: MESSAGES },
+          (c) => chunks.push(c),
+        ),
+      ).rejects.toBeInstanceOf(HttpException);
+      expect(mockAnthropic.chatStream).not.toHaveBeenCalled();
+      expect(chunks).toEqual(['half a rep']);
+    });
+
     it('calls provider.chatStream and forwards chunks via onChunk', async () => {
       await build('openai');
       const chunks: string[] = [];

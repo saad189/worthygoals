@@ -203,11 +203,10 @@ function Stacks() {
       {!isAuthenticated &&
         segments.length > 0 &&
         !allowedRoutes.includes(segments[0]) && (
+          // A concrete route. `/auth` resolved to app/auth/index.ts, a barrel
+          // with no default export, so every sign-out rendered the error screen.
           <Redirect
-            href={{
-              pathname: ROUTE_NAMES.AUTH.self as any,
-              params: { screen: ROUTE_NAMES.AUTH.START_AUTH },
-            }}
+            href={`/${ROUTE_NAMES.AUTH.self}/${ROUTE_NAMES.AUTH.START_AUTH}` as any}
           />
         )}
       <Routes />

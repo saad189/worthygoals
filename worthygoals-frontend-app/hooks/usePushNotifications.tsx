@@ -25,7 +25,9 @@ export function usePushNotifications(): void {
     const data = response.notification.request.content.data as
       | { kind?: string }
       | undefined;
-    router.push(routeForNotification(data as any) as never);
+    // navigate, not push: each tap stacked another (tabs) navigator, and
+    // Back cycled through the copies.
+    router.navigate(routeForNotification(data as any) as never);
   }, []);
 
   const handle = useCallback(

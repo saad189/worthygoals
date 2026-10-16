@@ -22,8 +22,16 @@ describe('NotificationsService', () => {
       // activeUserPages: first call returns the page, the next an empty one.
       manager: { query: jest.fn().mockResolvedValue([]) } as any,
     };
+    const qb: Record<string, jest.Mock> = {};
+    for (const m of ['select', 'where', 'andWhere']) {
+      qb[m] = jest.fn(() => qb);
+    }
+    qb.getRawOne = jest.fn().mockResolvedValue({ n: '0' });
     logRepo = {
       count: jest.fn().mockResolvedValue(0),
+      find: jest.fn().mockResolvedValue([]),
+      createQueryBuilder: jest.fn(() => qb),
+      qb: qb as any,
       save: jest.fn().mockResolvedValue(undefined),
       manager: { query: jest.fn().mockResolvedValue([]) } as any,
     };
@@ -59,6 +67,14 @@ describe('NotificationsService', () => {
         ['userId', 'token'],
       );
     });
+
+    it("retires the same device token on another user's account", async () => {
+      await service.registerToken(USER_ID, { token: 'ExponentPushToken[abc]' });
+      const [where, patch] = tokenRepo.update.mock.calls[0];
+      expect(where.token).toBe('ExponentPushToken[abc]');
+      expect(where.userId).toBeDefined(); // Not(USER_ID)
+      expect(patch).toEqual({ active: false });
+    });
   });
 
   describe('unregisterToken', () => {
@@ -73,15 +89,23 @@ describe('NotificationsService', () => {
 
   describe('checkPacingAllowed', () => {
     it('allows when under daily cap', async () => {
-      logRepo.count.mockResolvedValue(2);
+      (logRepo.qb as any).getRawOne.mockResolvedValue({ n: '2' });
       const allowed = await service.checkPacingAllowed(USER_ID, 'UTC');
       expect(allowed).toBe(true);
     });
 
     it('blocks when at daily cap', async () => {
-      logRepo.count.mockResolvedValue(3);
+      (logRepo.qb as any).getRawOne.mockResolvedValue({ n: '3' });
       const allowed = await service.checkPacingAllowed(USER_ID, 'UTC');
       expect(allowed).toBe(false);
+    });
+
+    it('counts notifications, not per-token rows', async () => {
+      await service.checkPacingAllowed(USER_ID, 'UTC');
+      expect((logRepo.qb as any).select).toHaveBeenCalledWith(
+        'COUNT(DISTINCT l.kind)',
+        'n',
+      );
     });
   });
 

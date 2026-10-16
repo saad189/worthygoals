@@ -1,9 +1,6 @@
-import {
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { ExecutionContext, HttpException, Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { WsException } from '@nestjs/websockets';
 import { JWT } from 'src/common/constants';
 
 @Injectable()
@@ -28,10 +25,12 @@ export class WsJwtAuthGuard extends AuthGuard(JWT) {
     return handshake;
   }
 
+  // Over a socket only a WsException reaches the client as itself; an
+  // UnauthorizedException became a generic "Internal server error", so the app
+  // couldn't tell an expired token from a crash.
   handleRequest(err: any, user: any) {
-    if (err || !user) {
-      throw err || new UnauthorizedException('Unauthorized, Invalid token!');
-    }
+    if (err && !(err instanceof HttpException)) throw err;
+    if (err || !user) throw new WsException('Unauthorized');
     return user;
   }
 }

@@ -44,13 +44,23 @@ async function ensureAndroidChannel(): Promise<void> {
  * (re-sync silently only if already granted) and `prompt: true` after a value
  * moment — the first task completion — so new users aren't asked cold.
  */
-export async function syncPushToken({
-  prompt,
-}: {
-  prompt: boolean;
-}): Promise<void> {
+export async function syncPushToken(opts: { prompt: boolean }): Promise<void> {
+  // Every caller fires and forgets (`void syncPushToken(...)`), so a failure —
+  // no FCM config, offline — was an unhandled rejection. Push is best-effort.
+  try {
+    await doSyncPushToken(opts);
+  } catch (error) {
+    if (__DEV__) console.warn('Push token sync failed:', error);
+  }
+}
+
+async function doSyncPushToken({ prompt }: { prompt: boolean }): Promise<void> {
   // Simulators/emulators can't mint a real push token.
   if (!Device.isDevice) return;
+
+  // Before the permission request: on Android 13+ the system prompt is only
+  // shown once a notification channel exists.
+  await ensureAndroidChannel();
 
   const current = await Notifications.getPermissionsAsync();
   let status = current.status;
@@ -58,8 +68,6 @@ export async function syncPushToken({
     status = (await Notifications.requestPermissionsAsync()).status;
   }
   if (status !== 'granted') return;
-
-  await ensureAndroidChannel();
 
   const projectId =
     Constants.expoConfig?.extra?.eas?.projectId ??

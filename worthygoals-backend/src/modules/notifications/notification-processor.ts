@@ -1,3 +1,4 @@
+import { safeTimeZone } from 'src/common/timezone';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger, Optional } from '@nestjs/common';
 import { Job } from 'bullmq';
@@ -61,7 +62,7 @@ export class NotificationProcessor extends WorkerHost {
       return;
     }
 
-    const tz = tokens[0].timezone ?? 'UTC';
+    const tz = safeTimeZone(tokens[0].timezone);
     const allowed = await this.notifService.checkPacingAllowed(userId, tz);
     if (!allowed) {
       this.logger.debug(`User ${userId} hit daily cap — dropping ${kind}`);
@@ -70,8 +71,16 @@ export class NotificationProcessor extends WorkerHost {
 
     const body = await this.resolveBody(userId, kind, job.data.payload);
 
+    // A job that throws after a send is retried by BullMQ; skip the tokens the
+    // earlier attempt already reached rather than pushing them twice.
+    const alreadySent = await this.notifService.tokensSentToday(
+      userId,
+      kind,
+      tz,
+    );
     const messages = tokens
       .filter((t) => Expo.isExpoPushToken(t.token))
+      .filter((t) => !alreadySent.has(t.token))
       .map((t) => ({
         to: t.token,
         title: 'Worthy Goals',

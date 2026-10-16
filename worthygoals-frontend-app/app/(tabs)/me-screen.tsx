@@ -113,9 +113,13 @@ export default function MeScreen() {
   const toneLabel = tone ? TONE_LABEL[tone as ToneKey] ?? tone : "not set";
   const version = Constants.expoConfig?.version ?? "1.0.0";
 
+  // With no mentor this card says "Finish onboarding" — so it goes there. A
+  // user who quit after the profile step had no other way back into it.
   const goToTeam = () =>
     router.push(
-      `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.MENTORS_LIST_SCREEN}` as never,
+      (persona
+        ? `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.MENTORS_LIST_SCREEN}`
+        : `/${ROUTE_NAMES.JOURNEY.self}/${ROUTE_NAMES.JOURNEY.INTRO_SCREEN}`) as never,
     );
 
   // The motivational board — memory pictures land here (PRD V1). The Hi-Fi IA

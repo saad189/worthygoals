@@ -21,7 +21,9 @@ export class AnthropicProvider implements IChatProvider {
     const apiKey = config.get<string>('ANTHROPIC_API_KEY');
 
     if (apiKey) {
-      this.client = new Anthropic({ apiKey });
+      // The SDK default is a 10-minute timeout with two retries; a hung call
+      // stalled the whole mentor reply. Matches the OpenAI provider's budget.
+      this.client = new Anthropic({ apiKey, timeout: 45_000, maxRetries: 1 });
       this.available = true;
     } else {
       this.logger.warn(
@@ -113,6 +115,9 @@ export class AnthropicProvider implements IChatProvider {
         role: m.role as 'user' | 'assistant',
         content: m.content,
       }));
+    // Anthropic rejects a conversation that opens with an assistant turn, and
+    // the 30-message history window can start on one.
+    while (chatMessages[0]?.role === 'assistant') chatMessages.shift();
 
     return { system, chatMessages };
   }

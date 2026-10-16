@@ -25,8 +25,10 @@ export default function useDashboard(): UseDashboardResult {
 
   return {
     data: query.data ?? null,
-    loading: query.isLoading,
-    refreshing: query.isFetching && !query.isLoading,
+    // isLoading is never true with placeholderData (the query is "success"
+    // from the first render); "showing the placeholder while fetching" is.
+    loading: query.isPlaceholderData && query.isFetching,
+    refreshing: query.isFetching && !query.isPlaceholderData,
     error: query.isError ? 'Could not load dashboard' : null,
     refresh: () => { query.refetch(); },
   };

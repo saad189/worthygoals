@@ -24,6 +24,7 @@ import { JwtAuthGuard } from 'src/common/guards';
 import { UsersController } from '../users.controller';
 import { UsersService } from '../users.service';
 import { GdprService } from '../gdpr.service';
+import { AWSCognitoService } from '../../auth/aws-cognito.service';
 
 const ATTACKER_SUB = 'cognito-sub-attacker';
 
@@ -45,6 +46,14 @@ describe('POST /users (request level)', () => {
       providers: [
         { provide: UsersService, useValue: { createForAccount } },
         { provide: GdprService, useValue: {} },
+        {
+          provide: AWSCognitoService,
+          useValue: {
+            getUserByToken: jest.fn().mockResolvedValue({
+              UserAttributes: [{ Name: 'email', Value: 'cognito@example.com' }],
+            }),
+          },
+        },
         // The real global pipe, from the same options object AppModule uses.
         {
           provide: APP_PIPE,
@@ -77,6 +86,8 @@ describe('POST /users (request level)', () => {
 
     expect(createForAccount).toHaveBeenCalledWith({
       accountSub: ATTACKER_SUB,
+      // The Cognito account's email, whatever the body claimed.
+      email: 'cognito@example.com',
       dto: VALID_BODY,
     });
   });

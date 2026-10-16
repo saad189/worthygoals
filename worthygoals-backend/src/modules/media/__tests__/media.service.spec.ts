@@ -1,4 +1,4 @@
-import { ServiceUnavailableException } from '@nestjs/common';
+import { NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -78,7 +78,7 @@ describe('MediaService', () => {
       ).rejects.toThrow(ServiceUnavailableException);
     });
 
-    it('throws ServiceUnavailableException when user is not found', async () => {
+    it('throws NotFoundException when user is not found', async () => {
       usersService.findByAccountSub.mockResolvedValue(null);
       await expect(
         service.createUploadUrl('sub', {
@@ -86,7 +86,7 @@ describe('MediaService', () => {
           contentType: 'image/jpeg',
           byteSize: 1000,
         }),
-      ).rejects.toThrow(ServiceUnavailableException);
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('signs the declared size into the upload URL', async () => {

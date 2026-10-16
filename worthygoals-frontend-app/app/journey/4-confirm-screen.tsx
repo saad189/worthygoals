@@ -49,10 +49,15 @@ export default function ConfirmScreen() {
       });
   }, [persona, queryClient]);
 
-  const enter = () =>
+  // replace() alone swapped only the journey route: the root stack kept
+  // register-profile underneath, so Back from Home reopened the (already
+  // submitted) profile form. Clear the stack first.
+  const enter = () => {
+    if (router.canDismiss()) router.dismissAll();
     router.replace(
       `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.HOME_SCREEN}` as never,
     );
+  };
 
   const displayName = persona?.name ?? 'Your mentor';
   const line = persona ? CONFIRM_LINE[persona.slug] : "Let's get to work.";

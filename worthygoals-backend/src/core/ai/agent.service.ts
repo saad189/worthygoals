@@ -209,9 +209,25 @@ ${traitLine}
       if (param) messages.push(param);
     }
 
-    const model = mentor.promptBlocks?.model;
-    const temperature = mentor.promptBlocks?.temperature;
-    const maxTokens = mentor.promptBlocks?.maxOutputTokens;
+    // promptBlocks never carries these for seeded mentors; the seeder writes
+    // them to mentors.modelConfig, and the persona YAML has `routing`. Reading
+    // only promptBlocks sent every reply with no max_tokens (Goggs is meant to
+    // stop at 120) at the provider's default temperature.
+    const routing = mentor.personalityId
+      ? this.personalityService?.getRoutingConfig(mentor.personalityId)
+      : undefined;
+    const model =
+      mentor.promptBlocks?.model ??
+      mentor.modelConfig?.model ??
+      routing?.preferred_model;
+    const temperature =
+      mentor.promptBlocks?.temperature ??
+      mentor.modelConfig?.temperature ??
+      routing?.temperature;
+    const maxTokens =
+      mentor.promptBlocks?.maxOutputTokens ??
+      mentor.modelConfig?.maxOutputTokens ??
+      routing?.max_tokens;
 
     const gatewayReq = {
       userId: params.userId,

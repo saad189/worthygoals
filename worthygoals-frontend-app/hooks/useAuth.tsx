@@ -1,7 +1,13 @@
 // AuthContext.tsx
-import React, { createContext, useState, useEffect, useContext } from "react";
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  useRef,
+} from "react";
 import Storage from "@/helpers/SecureStorageUtil";
-import { ID_TOKEN, ROUTE_NAMES } from "@/constants";
+import { ID_TOKEN, ROUTE_NAMES, USER_LOCATION } from "@/constants";
 import { clearTokens, decodeJwtToken } from "@/helpers";
 
 import { authEmitter } from "@/core";
@@ -12,6 +18,9 @@ import { router } from "expo-router";
 import userService from "@/services/UserService";
 import { syncPushToken, unregisterPushToken } from "@/services/push.service";
 import { useToast } from "./useToastNotification";
+import { clearOutbox } from "@/helpers/taskOutbox";
+import { removeCachedData } from "@/helpers/CacheUtil";
+import { getUserInStorage } from "@/helpers/UserInStorageUtil";
 
 interface AuthContextProps {
   isAuthenticated: boolean;
@@ -34,6 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     null
   );
   const { showInfoMessage, showErrorMessage } = useToast();
+  const loggingOut = useRef(false);
 
   // Create a custom Navigator that will be used throughout the app, so that it checks for routes and roles
   // On app start, check if tokens exist
@@ -75,7 +85,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     // the Stacks() guard never corrects that direction, and login.tsx
     // suppresses its remembered-email prefill whenever isAuthenticated is
     // true, so the sign-in screen read as a first launch.
-    const profile = await userService.getProfile();
+    let profile: Partial<UserModel> | null;
+    try {
+      profile = await userService.getProfile();
+    } catch (error: any) {
+      // Unreachable server, valid session: open the app on the cached data
+      // instead of bouncing to sign-in. A user with tokens has a profile (it
+      // is created before they can leave the profile step).
+      if (error?.response || !error?.isAxiosError) throw error;
+      profile = (await getUserInStorage().catch(() => null)) ?? { email };
+    }
 
     if (profile) setUserProfile(profile);
 
@@ -111,6 +130,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
    * credentials on the device is exactly what sign-out is for.
    */
   const logout = async (): Promise<void> => {
+    // unregisterPushToken below makes a request; if its refresh fails that
+    // emits "logout" again, which re-entered here and cleared twice.
+    if (loggingOut.current) return;
+    loggingOut.current = true;
+    try {
+      await doLogout();
+    } finally {
+      loggingOut.current = false;
+    }
+  };
+
+  const doLogout = async (): Promise<void> => {
     // Deactivate the token server-side while we still hold a valid access
     // token. Never blocking: the server-side row going stale is recoverable,
     // a user stuck signed in is not.
@@ -147,6 +178,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error) {
       console.warn("Could not reset onboarding state:", error);
     }
+    // The outbox holds this user's queued reflections and onboarding choice;
+    // left in place it replayed them under the next account to sign in. The
+    // cached location is precise lat/long.
+    await Promise.all([
+      clearOutbox().catch((e) => console.warn("Could not clear outbox:", e)),
+      removeCachedData(USER_LOCATION).catch(() => undefined),
+    ]);
 
     setUserProfile(null);
     setIsAuthenticated(false);

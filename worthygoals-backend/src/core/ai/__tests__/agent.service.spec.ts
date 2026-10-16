@@ -50,7 +50,10 @@ describe('AgentService', () => {
   let messageRepo: Record<string, jest.Mock>;
   let summaryRepo: Record<string, jest.Mock>;
   let gateway: { chat: jest.Mock };
-  let personalityService: { hasPersonality: jest.Mock };
+  let personalityService: {
+    hasPersonality: jest.Mock;
+    getRoutingConfig: jest.Mock;
+  };
 
   beforeEach(async () => {
     mentorRepo = {
@@ -84,6 +87,9 @@ describe('AgentService', () => {
 
     personalityService = {
       hasPersonality: jest.fn().mockReturnValue(true),
+      getRoutingConfig: jest
+        .fn()
+        .mockReturnValue({ temperature: 0.5, max_tokens: 120 }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -173,6 +179,16 @@ describe('AgentService', () => {
 
       expect(gateway.chat).toHaveBeenCalledWith(
         expect.objectContaining({ personalityId: 'goggs', event: 'chat' }),
+      );
+    });
+
+    it("applies the persona's length and temperature to the reply", async () => {
+      await service.generateMentorReply({
+        conversationId: CONV_ID,
+        userId: USER_ID,
+      });
+      expect(gateway.chat).toHaveBeenCalledWith(
+        expect.objectContaining({ maxTokens: 120, temperature: 0.5 }),
       );
     });
 

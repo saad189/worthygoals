@@ -19,6 +19,7 @@ import { GdprService } from './gdpr.service';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ResponseUserDto } from './dto/response-user.dto';
 import { JwtAuthGuard } from 'src/common/guards';
+import { AWSCognitoService } from '../auth/aws-cognito.service';
 
 @ApiTags('User')
 @Controller('users')
@@ -28,6 +29,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly gdprService: GdprService,
+    private readonly cognito: AWSCognitoService,
   ) {}
 
   @Get('profile')
@@ -72,8 +74,18 @@ export class UsersController {
     @Request() req: AuthenticatedRequest,
     @Body() createUserDto: CreateUserDto,
   ) {
+    // The email comes from Cognito, never the body: a body email let anyone
+    // claim another person's address before they signed up, locking them out
+    // with a permanent 409. GetUser also rejects the token of an account that
+    // was deleted, which otherwise could re-create its profile for an hour.
+    const token = req.headers.authorization?.slice('Bearer '.length) ?? '';
+    const cognitoUser = await this.cognito.getUserByToken(token);
+    const email = cognitoUser.UserAttributes?.find(
+      (a) => a.Name === 'email',
+    )?.Value;
     return this.usersService.createForAccount({
       accountSub: req.user.sub,
+      email: email ?? '',
       dto: createUserDto,
     });
   }
