@@ -3,7 +3,7 @@
  * Field input. Verification logic unchanged; native stack header keeps
  * the back affordance.
  */
-import React, { useReducer } from 'react';
+import React, { useReducer, useState } from 'react';
 import { Keyboard, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import {
     ParamListBase,
@@ -73,6 +73,21 @@ export default function VerifyEmailScreen() {
         }
     };
 
+    // Nothing called resendConfirmationCodeForVerification: a code that never
+    // arrived, or expired, left no way to finish signing up in the app.
+    const [resending, setResending] = useState(false);
+    const onResendPressed = async () => {
+        try {
+            setResending(true);
+            await authService.resendConfirmationCodeForVerification(email);
+            showSuccessMessage('A new code is on its way.');
+        } catch (error: any) {
+            showErrorMessage(error.message);
+        } finally {
+            setResending(false);
+        }
+    };
+
     return (
         <Screen scroll edges={['bottom']}>
             <KeyboardAvoidingView
@@ -98,6 +113,13 @@ export default function VerifyEmailScreen() {
                         onPress={onSubmitPressed}
                         loading={isLoading}
                         disabled={isLoading}
+                    />
+                    <Button
+                        label="Resend code"
+                        variant="link"
+                        onPress={onResendPressed}
+                        loading={resending}
+                        disabled={resending}
                     />
                 </View>
             </KeyboardAvoidingView>

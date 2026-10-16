@@ -32,9 +32,8 @@ import Skeleton from "@/components/Common/Skeleton";
 const { height, width } = Dimensions.get("window");
 
 export default function ChatViewScreen() {
-  const {
-    params: { chatData },
-  } = useRoute() as any;
+  // `?? {}`: a worthygoals:// deep link with no params threw on destructure.
+  const { chatData } = ((useRoute() as any).params ?? {}) as any;
 
   // Recover the personality from the conversation name → its identity colour +
   // bubble shape tint the whole thread (§F per-mentor theming / Hi-Fi §1).

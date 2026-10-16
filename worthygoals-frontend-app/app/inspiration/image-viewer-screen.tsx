@@ -1,3 +1,4 @@
+import { Redirect } from 'expo-router';
 import React, { useCallback } from 'react';
 import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -12,11 +13,13 @@ const MOOD_EMOJI: Record<number, string> = { 1: '😣', 2: '😐', 3: '🙂', 4:
 
 const CardDetailModal = () => {
   const { colors, space, radius } = useAppTheme();
-  const { params } = useRoute() as { params: { item: BoardItem } };
+  const { params } = useRoute() as { params?: { item?: BoardItem } };
   const navigation = useNavigation();
-  const { item } = params;
+  const item = params?.item;
 
   const close = useCallback(() => navigation.goBack(), [navigation]);
+  // Opened by a worthygoals:// deep link with no card: nothing to show.
+  if (!item) return <Redirect href="/" />;
 
   return (
     <View style={styles.root}>

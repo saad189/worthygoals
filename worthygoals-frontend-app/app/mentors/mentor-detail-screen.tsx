@@ -42,9 +42,14 @@ export default function MentorDetailScreen() {
     useCallback(() => {
       if (!mentorId) return;
       let active = true;
-      mentorService.getMentorById(mentorId).then((data: Mentor | null) => {
-        if (active && data) setMentor(data);
-      });
+      mentorService
+        .getMentorById(mentorId)
+        .then((data: Mentor | null) => {
+          if (active && data) setMentor(data);
+        })
+        // Falls back to the local persona copy below; just don't leave the
+        // rejection unhandled.
+        .catch(() => undefined);
       return () => {
         active = false;
       };

@@ -169,7 +169,9 @@ export default function RegisterProfileScreen() {
         firstName: firstName.value.trim(),
         lastName: lastName.value.trim(),
         gender: gender.value,
-        dateOfBirth: dateOfBirth.value as Date,
+        // A calendar date, not an instant: the local-midnight Date serialised
+        // to UTC, which is the previous day for anyone east of UTC.
+        dateOfBirth: toLocalYmd(dateOfBirth.value as Date) as unknown as Date,
         ...(coords ?? {}),
       });
 
@@ -355,3 +357,8 @@ const staticStyles = StyleSheet.create({
     paddingHorizontal: 10,
   },
 });
+
+function toLocalYmd(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}

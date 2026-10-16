@@ -6,7 +6,7 @@
  * renders on-brand even before the backend mentor table is reseeded; the real
  * backend mentorId is merged in by slug when available (U2 handoff). U5 reskin.
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import type { ApiCreateGoalPayload } from '@/types/api';
@@ -93,7 +93,24 @@ export default function TodoPersonalityScreen() {
   // resolves to Marcus in the weekly review — for the life of the goal. A goal
   // signed to the wrong mentor is worse than a goal not saved, so an
   // unresolved mentor stops the flow rather than guessing.
+  // The button was disabled by the mutation's pending flag, which is still
+  // false while resolveMentorId() fetches — a second tap there made a second
+  // identical goal. A ref closes that window synchronously.
+  const signing = useRef(false);
+  const [submitting, setSubmitting] = useState(false);
   const handleSign = async () => {
+    if (signing.current) return;
+    signing.current = true;
+    setSubmitting(true);
+    try {
+      await signGoal();
+    } finally {
+      signing.current = false;
+      setSubmitting(false);
+    }
+  };
+
+  const signGoal = async () => {
     if (!parsedGoal) {
       Alert.alert('Nothing to sign', 'This goal draft is missing its title. Go back and try again.');
       return;
@@ -172,7 +189,7 @@ export default function TodoPersonalityScreen() {
       </Card>
 
       <View style={{ marginTop: space['8'], paddingBottom: space['4'], gap: space['1'] }}>
-        <Button label="Sign me up" onPress={handleSign} loading={saving} disabled={saving} />
+        <Button label="Sign me up" onPress={handleSign} loading={saving || submitting} disabled={saving || submitting} />
         <Text variant="muted" style={{ textAlign: 'center' }}>
           One tap = a verbal contract.
         </Text>

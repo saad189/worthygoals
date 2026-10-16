@@ -15,9 +15,8 @@ const styles = StyleSheet.create({
 });
 
 const ImageViewerModal = () => {
-  const {
-    params: { imageUri, tag },
-  } = useRoute() as any;
+  // `?? {}`: a worthygoals:// deep link with no params threw on destructure.
+  const { imageUri, tag } = ((useRoute() as any).params ?? {}) as any;
 
   const { colors } = useAppTheme();
   const navigation = useNavigation();

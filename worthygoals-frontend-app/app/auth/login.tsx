@@ -95,7 +95,7 @@ export default function LoginScreen() {
         rememberSignIn({
           email: rememberMe ? loginInfo.email : "",
           rememberMe,
-        });
+        }).catch(() => undefined); // prefill is a convenience; never block sign-in
         await login(email.value);
       } else {
         showInfoMessage("The email is not verified yet!");

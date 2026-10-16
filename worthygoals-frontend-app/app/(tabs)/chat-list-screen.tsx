@@ -17,6 +17,7 @@ import { ROUTE_NAMES } from "@/constants";
 import { personaByName } from "@/constants/Personalities";
 import { Header, MentorAvatar, Screen, Text } from "@/components/ui";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { useToast } from "@/hooks";
 
 const ChatItem = ({ chat }: { chat: ConversationListItem }) => {
   const { colors } = useAppTheme();
@@ -26,6 +27,7 @@ const ChatItem = ({ chat }: { chat: ConversationListItem }) => {
 
   const messagePreview = (lastMessage ?? "").trim() || "No messages yet";
 
+  const { showErrorMessage } = useToast();
   const openChatDetail = () => {
     conversationsService
       .getConversationShellByConversationId(id)
@@ -34,7 +36,9 @@ const ChatItem = ({ chat }: { chat: ConversationListItem }) => {
           screen: ROUTE_NAMES.CHAT.CHAT_VIEW_SCREEN,
           params: { chatData: data },
         });
-      });
+      })
+      // A failed tap used to do nothing at all.
+      .catch(() => showErrorMessage("Couldn't open this chat. Try again."));
   };
 
   return (

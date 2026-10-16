@@ -1,6 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
+import Constants from 'expo-constants';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +43,9 @@ const PERSISTED_QUERY_KEYS = ['dashboard', 'tasks', 'goals', 'mentors'];
 
 export const persistOptions = {
   persister: asyncStoragePersister,
+  // A new app version discards the persisted cache instead of restoring up to
+  // 24h of data in the previous version's response shapes.
+  buster: Constants.expoConfig?.version ?? '',
   dehydrateOptions: {
     shouldDehydrateQuery: (query: { queryKey: readonly unknown[] }) =>
       PERSISTED_QUERY_KEYS.includes(String(query.queryKey[0])),
