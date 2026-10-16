@@ -21,8 +21,10 @@ export default function useBoard(): UseBoardResult {
 
   return {
     items: query.data ?? [],
-    loading: query.isLoading,
-    refreshing: query.isFetching && !query.isLoading,
+    // isLoading is never true with placeholderData (the query is "success"
+    // from the first render); "showing the placeholder while fetching" is.
+    loading: query.isPlaceholderData && query.isFetching,
+    refreshing: query.isFetching && !query.isPlaceholderData,
     error: query.isError ? 'Could not load your board' : null,
     refresh: () => { query.refetch(); },
   };

@@ -60,7 +60,7 @@ function narrationLine(remaining: number, total: number): string {
 
 const DashboardScreen = () => {
   const { colors, space } = useAppTheme();
-  const { data, loading, refreshing, refresh } = useDashboard();
+  const { data, loading, refreshing, refresh, error } = useDashboard();
 
   // The mentor pacing the day comes from the global profile (derived from the
   // user's goals), so it's the real matched mentor and survives a reinstall.
@@ -198,9 +198,16 @@ const DashboardScreen = () => {
         <Text variant="eyebrow" style={styles.sectionLabel}>
           UP NEXT
         </Text>
-        {loading && !data ? (
+        {loading ? (
           <Card style={styles.taskCard}>
             <Text variant="muted">Loading your day…</Text>
+          </Card>
+        ) : error && upNext.length === 0 ? (
+          // A failed fetch used to read as "Nothing scheduled".
+          <Card style={styles.taskCard}>
+            <Pressable onPress={refresh} accessibilityRole="button">
+              <Text variant="muted">Couldn't load your day. Tap to retry.</Text>
+            </Pressable>
           </Card>
         ) : upNext.length === 0 ? (
           <Card style={styles.taskCard}>

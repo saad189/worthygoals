@@ -13,7 +13,9 @@ export function useGoals() {
 
   return {
     goals: query.data ?? [],
-    loading: query.isLoading,
+    // isLoading is never true with placeholderData (the query is "success"
+    // from the first render); "showing the placeholder while fetching" is.
+    loading: query.isPlaceholderData && query.isFetching,
     error: query.isError ? 'Failed to load goals' : null,
     refetch: () => {
       query.refetch();

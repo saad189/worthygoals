@@ -102,7 +102,7 @@ function GoalReviewRow({ row }: { row: GoalWeekRow }) {
 
 const ReviewScreen = () => {
   const { colors, space } = useAppTheme();
-  const { review, loading, refreshing, refetch } = useWeeklyReview();
+  const { review, loading, refreshing, refetch, error } = useWeeklyReview();
 
   const goals = review?.goals ?? [];
   const eyebrow = review
@@ -137,6 +137,15 @@ const ReviewScreen = () => {
         {loading && !review ? (
           <Card>
             <Text variant="muted">Pulling your week together…</Text>
+          </Card>
+        ) : error ? (
+          // retry:false on this query, so a timeout or 500 landed here as "No
+          // goals yet" and read as if the user's goals were gone.
+          <Card>
+            <Text variant="muted">Couldn't load your week.</Text>
+            <View style={{ marginTop: space["3"] }}>
+              <Button label="Try again" onPress={refetch} />
+            </View>
           </Card>
         ) : goals.length === 0 ? (
           <Card>
