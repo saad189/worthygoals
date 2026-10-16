@@ -45,6 +45,7 @@ export class AuthController {
     return this.authService.loginUser(auth);
   }
 
+  @Throttle(AUTH_THROTTLE)
   @Post('refresh-token')
   async refresh(@Body() refreshDto: RefreshTokenDto) {
     return this.authService.refreshTokens(refreshDto);

@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { Goal, Task } from 'src/database/models';
 import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
 import { GoalCategory, TaskRepeatFrequency } from 'src/common/constants';
@@ -130,9 +130,13 @@ export class GoalsService {
   async create(sub: string, dto: CreateGoalDto): Promise<ResponseGoalDto> {
     const user = await this.usersService.findByAccountSub(sub);
     if (!user) throw new NotFoundException('User not found');
-    const goal = this.goalRepository.create({ ...dto, userId: user.id });
-    const saved = await this.goalRepository.save(goal);
-    await this.seedFirstTask(saved);
+    // One transaction: a failed seed used to leave the goal saved behind a
+    // 500, and the user's retry created it twice.
+    const saved = await this.goalRepository.manager.transaction(async (em) => {
+      const goal = await em.save(em.create(Goal, { ...dto, userId: user.id }));
+      await this.seedFirstTask(goal, em);
+      return goal;
+    });
     return this.toDto(saved);
   }
 
@@ -143,14 +147,14 @@ export class GoalsService {
   // one-off goals (no repeatRule) and multi-step decomposition are left for a
   // future second-AI pass that would break a goal into a concrete task list.
   // See progress-report.html "Goal→task seeding" note for the upgrade path.
-  private async seedFirstTask(goal: Goal): Promise<void> {
+  private async seedFirstTask(goal: Goal, em: EntityManager): Promise<void> {
     const frequency = this.mapRepeatFrequency(goal.repeatRule);
     if (!frequency) return; // no recognisable cadence → no auto-task (yet)
 
     const dueDate = new Date();
     dueDate.setHours(0, 0, 0, 0); // due today so it lands on the today screen
-    await this.taskRepository.save(
-      this.taskRepository.create({
+    await em.save(
+      em.create(Task, {
         goalId: goal.id,
         title: goal.title,
         description: goal.description,

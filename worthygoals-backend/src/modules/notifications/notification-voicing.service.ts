@@ -179,7 +179,8 @@ export class NotificationVoicingService {
         maxTokens: 100,
       });
 
-      return result.text.trim();
+      // A blank completion was cached and pushed as an empty notification.
+      return result.text.trim() || FALLBACK_BODIES[kind];
     } catch (err: any) {
       this.logger.warn(
         `Failed to generate copy for ${personalityId}/${event}: ${err?.message}. Using fallback.`,
