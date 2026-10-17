@@ -122,7 +122,13 @@ export class DashboardService {
         .andWhere('t.dueDate >= :today', { today })
         .andWhere('t.dueDate < :tomorrow', { tomorrow })
         .select('t.goalId', 'goalId')
-        .addSelect('COUNT(*)', 'total')
+        // A skipped task was answered ("Not today" + a reason), so it isn't
+        // left to do. Counting it kept the ring at "1 of 2 · One left" while
+        // Up next (pending only) said "Everything done".
+        .addSelect(
+          `COUNT(*) FILTER (WHERE t.status <> '${TaskStatus.SKIPPED}')`,
+          'total',
+        )
         .addSelect(
           `COUNT(*) FILTER (WHERE t.status = '${TaskStatus.COMPLETED}')`,
           'completed',
