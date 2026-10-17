@@ -7,6 +7,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import {
   ExplanationReason,
+  GoalStatus,
   TaskRepeatFrequency,
   TaskStatus,
 } from 'src/common/constants';
@@ -27,7 +28,13 @@ const TASK_ID = '22222222-2222-4222-8222-222222222222';
 const SUB = 'cognito-sub';
 
 const makeGoal = (o: Partial<Goal> = {}) =>
-  ({ id: GOAL_ID, userId: USER_ID, title: 'My Goal', ...o }) as Goal;
+  ({
+    id: GOAL_ID,
+    userId: USER_ID,
+    title: 'My Goal',
+    status: GoalStatus.ACTIVE,
+    ...o,
+  }) as Goal;
 
 const makeTask = (o: Partial<Task> = {}) =>
   ({
@@ -327,6 +334,42 @@ describe('TasksService', () => {
       await expect(
         service.explain(SUB, TASK_ID, { reason: ExplanationReason.COULDNT }),
       ).rejects.toThrow(ConflictException);
+    });
+
+    // The sheet tells the user a missed one-off comes back tomorrow.
+    it('schedules a one-off task again for tomorrow', async () => {
+      await service.explain(SUB, TASK_ID, {
+        reason: ExplanationReason.COULDNT,
+      });
+
+      const retry = taskRepo.create.mock.calls.at(-1)[0];
+      expect(retry).toMatchObject({
+        goalId: GOAL_ID,
+        title: 'Run',
+        repeatFrequency: TaskRepeatFrequency.NONE,
+        occurrenceIndex: 1,
+        parentTaskId: TASK_ID,
+      });
+      const tomorrow = new Date();
+      tomorrow.setHours(0, 0, 0, 0);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      expect(retry.dueDate).toEqual(tomorrow);
+    });
+
+    it('leaves recurring tasks to the roll-forward job', async () => {
+      taskRepo.findOne.mockResolvedValue(
+        makeTask({ repeatFrequency: TaskRepeatFrequency.DAILY }),
+      );
+      await service.explain(SUB, TASK_ID, { reason: ExplanationReason.FORGOT });
+      expect(taskRepo.create).not.toHaveBeenCalled();
+    });
+
+    it('does not reschedule on a goal that is no longer active', async () => {
+      goalRepo.findOne.mockResolvedValue(
+        makeGoal({ status: GoalStatus.PAUSED }),
+      );
+      await service.explain(SUB, TASK_ID, { reason: ExplanationReason.FORGOT });
+      expect(taskRepo.create).not.toHaveBeenCalled();
     });
   });
 
