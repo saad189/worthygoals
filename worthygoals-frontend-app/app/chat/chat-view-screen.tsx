@@ -54,6 +54,9 @@ export default function ChatViewScreen() {
     error: chatError,
   } = useMessages(chatDetail?.id);
   const [sendError, setSendError] = useState<string | null>(null);
+  // The input bar is absolutely positioned; the list pads by its real height
+  // so an error banner or a multi-line message never covers the last bubble.
+  const [inputBarHeight, setInputBarHeight] = useState(60);
 
   const messages: ConversationMessage[] = (apiMessages ?? []).map((m) => ({
     id: m.id,
@@ -160,8 +163,6 @@ export default function ChatViewScreen() {
       backgroundColor: colors.surface,
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: colors.border,
-      flexDirection: "row",
-      alignItems: "center",
       marginLeft: 8,
       paddingHorizontal: 8,
       paddingVertical: 6,
@@ -350,7 +351,7 @@ export default function ChatViewScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderMessage}
           style={staticStyles.chatList}
-          contentContainerStyle={staticStyles.chatContentContainer}
+          contentContainerStyle={[staticStyles.chatContentContainer, { paddingBottom: inputBarHeight }]}
           onContentSizeChange={() => {
             if (!shouldScrollToBottomRef.current) return;
             shouldScrollToBottomRef.current = false;
@@ -359,19 +360,26 @@ export default function ChatViewScreen() {
           ListFooterComponent={isMentorTyping ? <TypingIndicator color={accent} /> : null}
         />
       )}
-      {bannerMessage ? (
-        <UIText
-          variant="muted"
-          color="textAccent"
-          accessibilityLiveRegion="polite"
-          accessibilityRole="alert"
-          style={{ paddingHorizontal: 16, paddingTop: 8 }}
-        >
-          {bannerMessage}
-        </UIText>
-      ) : null}
       <View style={{ marginBottom: 30 }} />
-      <View style={dynamicStyles.inputContainer}>
+      <View
+        style={dynamicStyles.inputContainer}
+        onLayout={(e) => setInputBarHeight(e.nativeEvent.layout.height)}
+      >
+        {/* Inside the input bar, not above it: the bar is absolutely
+            positioned, so a banner in the normal flow sat underneath it and
+            the quota / send errors were set but never visible. */}
+        {bannerMessage ? (
+          <UIText
+            variant="muted"
+            color="textAccent"
+            accessibilityLiveRegion="polite"
+            accessibilityRole="alert"
+            style={{ paddingHorizontal: 8, paddingBottom: 6 }}
+          >
+            {bannerMessage}
+          </UIText>
+        ) : null}
+        <View style={staticStyles.inputRow}>
         <TextInput
           style={dynamicStyles.input}
           value={inputText}
@@ -396,6 +404,7 @@ export default function ChatViewScreen() {
             style={{ marginLeft: 4 }}
           />
         </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -404,6 +413,10 @@ export default function ChatViewScreen() {
 const staticStyles = StyleSheet.create({
   keyboardAvoiding: {
     flex: 1,
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   messageLeft: {
     alignSelf: "flex-start",
