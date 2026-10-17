@@ -33,6 +33,13 @@ const buildProposalPrompt = (today: string) =>
 
 Return ONLY valid JSON — no prose, no markdown fences.`;
 
+/**
+ * The outermost {...} of a reply. Claude tends to wrap JSON in ```json fences
+ * despite the prompt, which JSON.parse rejects.
+ */
+export const extractJsonObject = (text: string): string =>
+  text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1) || text;
+
 const str = (v: unknown, max: number): string | undefined =>
   typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : undefined;
 
@@ -89,7 +96,7 @@ export class GoalsService {
     const response = await this.gateway.chat({
       userId: user.id,
       feature: 'goal_propose',
-      model: 'gpt-4o',
+      quality: 'high',
       maxTokens: 512,
       temperature: 0.4,
       messages: [
@@ -100,7 +107,7 @@ export class GoalsService {
 
     let raw: unknown;
     try {
-      raw = JSON.parse(response.text);
+      raw = JSON.parse(extractJsonObject(response.text));
     } catch {
       this.logger.warn(
         'Goal proposal JSON parse failed, returning minimal proposal',

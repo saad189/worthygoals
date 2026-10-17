@@ -41,6 +41,9 @@ export const envValidationSchema = Joi.object({
   // ── AI ───────────────────────────────────────────────────────────────────
   OPENAI_API_KEY: Joi.string().required(),
   OPENAI_MODEL: Joi.string().default('gpt-4o-mini'),
+  // Model for `quality: 'high'` gateway calls, per provider.
+  OPENAI_HIGH_MODEL: Joi.string().default('gpt-4o'),
+  ANTHROPIC_HIGH_MODEL: Joi.string().default('claude-sonnet-4-6'),
   EMBEDDING_MODEL: Joi.string().default('text-embedding-3-small'),
   ANTHROPIC_API_KEY: Joi.string().optional(), // Tier 2: graceful no-op if absent
   AI_ACTIVE_PROVIDER: Joi.string()

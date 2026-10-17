@@ -25,6 +25,7 @@ const makeMockProvider = (name: string, available = true, impl?: any) => ({
   name,
   available,
   defaultModel: name === 'openai' ? 'gpt-4o-mini' : 'claude-3-5-haiku-20241022',
+  highQualityModel: name === 'openai' ? 'gpt-4o' : 'claude-sonnet-4-6',
   chat: impl ?? jest.fn().mockResolvedValue(fakeResponse),
   chatStream: jest
     .fn()
@@ -199,19 +200,44 @@ describe('AiGatewayService', () => {
     expect(mockOpenai.chat).toHaveBeenCalled();
   });
 
-  it('gives the fallback its own default model, not the primary one', async () => {
+  it('leaves the model to each provider when no quality tier is asked for', async () => {
     await build('openai');
     (mockOpenai.chat as jest.Mock).mockRejectedValue(new Error('down'));
-    await service.chat({
-      userId: 1,
-      feature: 'chat',
-      model: 'gpt-4o',
-      messages: MESSAGES,
-    });
+    await service.chat({ userId: 1, feature: 'chat', messages: MESSAGES });
+    expect((mockOpenai.chat as jest.Mock).mock.calls[0][0].model).toBe(
+      undefined,
+    );
     expect((mockAnthropic.chat as jest.Mock).mock.calls[0][0].model).toBe(
       undefined,
     );
   });
+
+  it.each([
+    ['anthropic', 'claude-sonnet-4-6', 'gpt-4o'],
+    ['openai', 'gpt-4o', 'claude-sonnet-4-6'],
+  ])(
+    "maps quality 'high' to each provider's own model (primary %s)",
+    async (active, primaryModel, fallbackModel) => {
+      await build(active);
+      const [primary, fallback] =
+        active === 'anthropic'
+          ? [mockAnthropic, mockOpenai]
+          : [mockOpenai, mockAnthropic];
+      (primary.chat as jest.Mock).mockRejectedValue(new Error('down'));
+      await service.chat({
+        userId: 1,
+        feature: 'goal_propose',
+        quality: 'high',
+        messages: MESSAGES,
+      });
+      expect((primary.chat as jest.Mock).mock.calls[0][0].model).toBe(
+        primaryModel,
+      );
+      expect((fallback.chat as jest.Mock).mock.calls[0][0].model).toBe(
+        fallbackModel,
+      );
+    },
+  );
 
   describe('chatStream — token streaming (S19)', () => {
     it('does not fail over after chunks already reached the client', async () => {

@@ -7,7 +7,12 @@ export interface GatewayChatRequest {
   userId: number;
   feature: string;
   messages: ChatMessage[];
-  model?: string;
+  /**
+   * Provider-neutral model tier. 'high' runs on each provider's stronger
+   * model; omit for its default. Callers never name a model id: the gateway
+   * may fail over to the other provider, which would reject it.
+   */
+  quality?: 'high';
   temperature?: number;
   maxTokens?: number;
   personalityId?: string;
@@ -40,6 +45,7 @@ export interface ChatProviderParams {
 export interface IChatProvider {
   readonly name: string;
   readonly defaultModel: string;
+  readonly highQualityModel: string;
   readonly available: boolean;
   chat(params: ChatProviderParams): Promise<ChatProviderResult>;
   chatStream?(
