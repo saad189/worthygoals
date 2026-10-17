@@ -98,11 +98,12 @@ export default function TodoCreateScreen() {
             />
             <Button label="Next →" onPress={() => goPropose()} disabled={!canProceed} style={{ flex: 1 }} />
           </View>
+          {/* Never disabled: "fill it in myself" is the way past the AI step,
+              so gating it on the AI step's own input made it look dead. */}
           <Button
             label="Skip — fill it in myself"
             variant="link"
             onPress={() => goPropose(true)}
-            disabled={!canProceed}
           />
         </View>
       </KeyboardAvoidingView>

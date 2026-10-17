@@ -201,8 +201,10 @@ export default function TodoProposeScreen() {
   const { raw, skip } = useLocalSearchParams<{ raw: string; skip?: string }>();
   const { proposal, loading, error, propose } = useGoalProposal();
 
+  const isSkip = skip === 'true';
   const [fields, setFields] = useState<Record<FieldKey, string>>({
-    title: '',
+    // Skipping the AI draft still keeps what was typed on step 1.
+    title: isSkip ? raw ?? '' : '',
     description: '',
     costText: '',
     benefitText: '',
@@ -212,7 +214,6 @@ export default function TodoProposeScreen() {
   const [stakeOn, setStakeOn] = useState(false);
   const [stake, setStake] = useState('');
 
-  const isSkip = skip === 'true';
   const set = (key: FieldKey) => (v: string) => setFields((f) => ({ ...f, [key]: v }));
 
   useEffect(() => {
