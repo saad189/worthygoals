@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import userService from '@/services/UserService';
+import { getUserInStorage } from '@/helpers/UserInStorageUtil';
 import { useGoals } from './useGoals';
 import { useMentors } from './useMentors';
 import { personaBySlug, PersonalitySlug } from '@/constants/Personalities';
@@ -20,7 +21,19 @@ import { ApiGoal, Mentor, UserModel } from '@/models';
 export function useProfile() {
   const profileQuery = useQuery({
     queryKey: ['profile'],
-    queryFn: () => userService.getProfile(),
+    queryFn: async () => {
+      try {
+        return await userService.getProfile();
+      } catch (e: any) {
+        // Offline or a 5xx (getProfile rethrows only those as AxiosErrors):
+        // show the last profile this device saw rather than no mentor/tone —
+        // the same cache login() opens the app on.
+        if (!e?.isAxiosError) throw e;
+        const cached = await getUserInStorage().catch(() => null);
+        if (cached) return cached;
+        throw e;
+      }
+    },
     staleTime: 1000 * 60 * 5,
   });
   const { goals } = useGoals();

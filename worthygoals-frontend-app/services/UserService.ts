@@ -39,9 +39,11 @@ class UserService {
             return data;
         }
         catch (error: any) {
-            // No response at all (offline, timeout): rethrow as-is so callers
-            // can tell "can't reach the server" from "the server said no".
-            if (!error?.response) throw error;
+            // No response at all (offline, timeout) or a 5xx (server down):
+            // rethrow as-is so callers can tell "can't reach a working server"
+            // from "the server said no". Wrapping a 5xx in a plain Error made
+            // login() drop signed-in users on the sign-in screen during outages.
+            if (!error?.response || error.response.status >= 500) throw error;
             const statusCode = error.response?.data?.statusCode;
 
             if (statusCode === HttpStatusCode.NotFound && error.response?.data?.message?.includes('not found')) {

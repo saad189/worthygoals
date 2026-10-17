@@ -80,3 +80,24 @@ describe('UserService.deleteAccount', () => {
     await expect(userService.deleteAccount()).rejects.toThrow();
   });
 });
+
+// login() opens the app on cached data when the server is down, but only if it
+// can see the status — a 5xx wrapped in a plain Error looked like "the server
+// said no" and dropped signed-in users on the sign-in screen.
+describe('UserService.getProfile', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('rethrows a 5xx untouched so callers can see the server is down', async () => {
+    const serverError = { isAxiosError: true, response: { status: 500, data: { statusCode: 500 } } };
+    mockedApi.get.mockRejectedValue(serverError);
+    await expect(userService.getProfile()).rejects.toBe(serverError);
+  });
+
+  it('still wraps a 4xx as a plain error', async () => {
+    mockedApi.get.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 401, data: { statusCode: 401, message: 'Unauthorized' } },
+    });
+    await expect(userService.getProfile()).rejects.not.toHaveProperty('response');
+  });
+});
