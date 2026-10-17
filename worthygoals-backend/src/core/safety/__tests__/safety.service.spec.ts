@@ -36,6 +36,22 @@ describe('SafetyService', () => {
       expect(svc.isCrisisSignal('CANT GO ON WITH THIS')).toBe(true);
     });
 
+    it('detects phrases typed with iOS curly apostrophes', () => {
+      expect(svc.isCrisisSignal('I’m not okay')).toBe(true);
+      expect(svc.isCrisisSignal('I can’t go on like this')).toBe(true);
+    });
+
+    it('detects "don\'t want to be alive" (QA-30, Oct 17)', () => {
+      expect(
+        svc.isCrisisSignal('honestly I don’t want to be alive anymore'),
+      ).toBe(true);
+      expect(svc.isCrisisSignal('I want to end my life')).toBe(true);
+    });
+
+    it('matches across line breaks', () => {
+      expect(svc.isCrisisSignal('I want\nto die')).toBe(true);
+    });
+
     it('detects "self-harm"', () => {
       expect(svc.isCrisisSignal('been thinking about self-harm again')).toBe(
         true,
