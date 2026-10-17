@@ -2,8 +2,10 @@ import { DataSource, DataSourceOptions } from 'typeorm';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
 
+// Same order as CustomConfigModule: the NODE_ENV file, then .env.local as the
+// laptop fallback (start:dev sets NODE_ENV=dev, with no .env.dev locally).
 dotenv.config({
-  path: process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : '.env.local',
+  path: [`.env.${process.env.NODE_ENV || 'local'}`, '.env.local'],
 });
 
 const connectionOptions: DataSourceOptions = {
