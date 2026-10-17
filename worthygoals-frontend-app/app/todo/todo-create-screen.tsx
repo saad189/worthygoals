@@ -12,7 +12,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useNavigation } from 'expo-router';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { ParamListBase } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
@@ -26,6 +26,7 @@ export default function TodoCreateScreen() {
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
   const inputRef = useRef<TextInput>(null);
   const [raw, setRaw] = useState('');
+  const { mentor } = useLocalSearchParams<{ mentor?: string }>();
 
   const canProceed = raw.trim().length >= 5;
 
@@ -33,6 +34,7 @@ export default function TodoCreateScreen() {
     navigation.navigate(ROUTE_NAMES.TODO.TODO_PROPOSE_SCREEN, {
       raw: raw.trim(),
       ...(skip ? { skip: 'true' } : {}),
+      ...(mentor ? { mentor } : {}),
     } as never);
 
   return (

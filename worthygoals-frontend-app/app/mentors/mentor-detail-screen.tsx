@@ -66,6 +66,8 @@ export default function MentorDetailScreen() {
   const setGoal = () =>
     navigation.navigate(ROUTE_NAMES.TODO.self as any, {
       screen: ROUTE_NAMES.TODO.TODO_CREATE_SCREEN,
+      // "Set a goal with X" pre-selects X on the wizard's last step.
+      params: mentor?.slug ? { mentor: mentor.slug } : undefined,
     });
 
   const startChat = async () => {
