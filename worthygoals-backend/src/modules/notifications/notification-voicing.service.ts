@@ -5,8 +5,11 @@ import { Repository } from 'typeorm';
 import { format } from 'date-fns';
 import { NotificationCopyCache } from 'src/database/models/notification-copy-cache.entity';
 import { PersonalityService } from 'src/core/personalities/personality.service';
-import { OpenAiProvider } from 'src/core/ai/gateway/openai.provider';
+import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
 import { NotificationJobKind } from './types/notification-job.types';
+
+/** Copy is cached per personality/day, shared by every user — not one user's call. */
+const SYSTEM_USER_ID = -1;
 
 const KIND_TO_EVENT: Record<NotificationJobKind, string> = {
   morning_setup: 'notification.morning_setup',
@@ -46,7 +49,7 @@ export class NotificationVoicingService {
     @InjectRepository(NotificationCopyCache)
     private readonly cacheRepo: Repository<NotificationCopyCache>,
     private readonly personalityService: PersonalityService,
-    @Optional() private readonly openAiProvider?: OpenAiProvider,
+    @Optional() private readonly gateway?: AiGatewayService,
   ) {}
 
   async getOrGenerateCopy(
@@ -146,17 +149,16 @@ export class NotificationVoicingService {
     context: Record<string, unknown>,
     kind: NotificationJobKind,
   ): Promise<string> {
-    if (!this.openAiProvider?.available) {
+    // The gateway would answer an unknown persona in a generic voice and that
+    // copy would be cached for the day; the template line is better.
+    if (
+      !this.gateway ||
+      !this.personalityService.hasPersonality(personalityId)
+    ) {
       return FALLBACK_BODIES[kind];
     }
 
     try {
-      const systemPrompt = this.personalityService.renderSystemPrompt(
-        personalityId,
-        event,
-        context,
-      );
-
       const contextLine = Object.keys(context).length
         ? ` Context: ${Object.entries(context)
             .map(
@@ -166,15 +168,22 @@ export class NotificationVoicingService {
             .join(', ')}.`
         : '';
 
-      const result = await this.openAiProvider.chat({
+      // Through the gateway, not a provider: Anthropic failover, the circuit
+      // breaker and ai_calls cost logging all apply. The gateway renders the
+      // persona prompt for (personalityId, event, context).
+      const result = await this.gateway.chat({
+        userId: SYSTEM_USER_ID,
+        feature: 'notification',
+        personalityId,
+        event,
+        context,
         messages: [
-          { role: 'system', content: systemPrompt },
           {
             role: 'user',
             content: `Generate the push notification body.${contextLine}`,
           },
         ],
-        model: 'gpt-4o-mini',
+        // Higher than any persona's chat temperature: day-to-day variety.
         temperature: 0.9,
         maxTokens: 100,
       });

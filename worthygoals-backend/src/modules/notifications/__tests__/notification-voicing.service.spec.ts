@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotificationCopyCache } from 'src/database/models/notification-copy-cache.entity';
 import { PersonalityService } from 'src/core/personalities/personality.service';
-import { OpenAiProvider } from 'src/core/ai/gateway/openai.provider';
+import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
 import { NotificationVoicingService } from '../notification-voicing.service';
 
 const PERSONALITY_ID = 'marcus';
@@ -23,7 +23,7 @@ describe('NotificationVoicingService', () => {
   let service: NotificationVoicingService;
   let cacheRepo: Record<string, jest.Mock>;
   let personalityService: Partial<PersonalityService>;
-  let openAiProvider: Partial<OpenAiProvider>;
+  let gateway: { chat: jest.Mock };
 
   beforeEach(async () => {
     cacheRepo = {
@@ -32,19 +32,17 @@ describe('NotificationVoicingService', () => {
     };
 
     personalityService = {
-      renderSystemPrompt: jest
-        .fn()
-        .mockReturnValue('You are Marcus Aurelius...'),
+      hasPersonality: jest.fn().mockReturnValue(true),
       listAll: jest
         .fn()
         .mockReturnValue([{ id: 'marcus' }, { id: 'lyra' }, { id: 'goggs' }]),
     };
 
-    openAiProvider = {
-      available: true,
+    gateway = {
       chat: jest.fn().mockResolvedValue({
         text: 'Up. The work awaits.',
         model: 'gpt-4o-mini',
+        provider: 'openai',
         tokensIn: 10,
         tokensOut: 8,
       }),
@@ -58,7 +56,7 @@ describe('NotificationVoicingService', () => {
           useValue: cacheRepo,
         },
         { provide: PersonalityService, useValue: personalityService },
-        { provide: OpenAiProvider, useValue: openAiProvider },
+        { provide: AiGatewayService, useValue: gateway },
       ],
     }).compile();
 
@@ -79,7 +77,7 @@ describe('NotificationVoicingService', () => {
 
       expect(result.body).toBe('The work waits — move.');
       expect(result.abVariant).toBe('A');
-      expect(openAiProvider.chat).not.toHaveBeenCalled();
+      expect(gateway.chat).not.toHaveBeenCalled();
     });
 
     it('calls AI on cache miss and saves result', async () => {
@@ -91,13 +89,22 @@ describe('NotificationVoicingService', () => {
         {},
       );
 
-      expect(openAiProvider.chat).toHaveBeenCalled();
+      // Through the gateway (failover, cost logging), as a system call that
+      // the gateway voices with the persona for this event.
+      expect(gateway.chat).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: -1,
+          feature: 'notification',
+          personalityId: PERSONALITY_ID,
+          event: 'notification.morning_setup',
+        }),
+      );
       expect(result.body).toBe('Up. The work awaits.');
       expect(cacheRepo.save).toHaveBeenCalled();
     });
 
-    it('uses fallback body when OpenAI provider unavailable', async () => {
-      (openAiProvider as any).available = false;
+    it('uses fallback body for an unknown personality', async () => {
+      (personalityService.hasPersonality as jest.Mock).mockReturnValue(false);
 
       const result = await service.getOrGenerateCopy(
         PERSONALITY_ID,
@@ -105,14 +112,12 @@ describe('NotificationVoicingService', () => {
         {},
       );
 
-      expect(openAiProvider.chat).not.toHaveBeenCalled();
+      expect(gateway.chat).not.toHaveBeenCalled();
       expect(result.body).toBe('Good morning — your goals are waiting.');
     });
 
     it('uses fallback body when AI call throws', async () => {
-      (openAiProvider.chat as jest.Mock).mockRejectedValue(
-        new Error('API timeout'),
-      );
+      gateway.chat.mockRejectedValue(new Error('API timeout'));
 
       const result = await service.getOrGenerateCopy(
         PERSONALITY_ID,
@@ -128,8 +133,9 @@ describe('NotificationVoicingService', () => {
         daysSince: 7,
       });
 
-      const call = (openAiProvider.chat as jest.Mock).mock.calls[0][0];
-      expect(call.messages[1].content).toContain('daysSince=7');
+      const call = gateway.chat.mock.calls[0][0];
+      expect(call.context).toEqual({ daysSince: 7 });
+      expect(call.messages[0].content).toContain('daysSince=7');
     });
 
     it('uses different cache entries for different context hashes', async () => {
@@ -159,7 +165,7 @@ describe('NotificationVoicingService', () => {
       await service.preGenerateForNextDay();
 
       // 3 personalities × 2 kinds = 6 AI calls
-      expect(openAiProvider.chat).toHaveBeenCalledTimes(6);
+      expect(gateway.chat).toHaveBeenCalledTimes(6);
       expect(cacheRepo.save).toHaveBeenCalledTimes(6);
     });
 
@@ -168,7 +174,7 @@ describe('NotificationVoicingService', () => {
 
       await service.preGenerateForNextDay();
 
-      expect(openAiProvider.chat).not.toHaveBeenCalled();
+      expect(gateway.chat).not.toHaveBeenCalled();
     });
   });
 });
