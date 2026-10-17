@@ -112,10 +112,15 @@ export class AiGatewayService {
     const primary = this.resolveActiveProvider();
     const fallback = primary === this.openai ? this.anthropic : this.openai;
 
+    // The persona's routing is the default for every caller (chat, reactions,
+    // notifications); an explicit request value still wins.
+    const routing = req.personalityId
+      ? this.personalityService?.getRoutingConfig(req.personalityId)
+      : undefined;
     const params = {
       messages,
-      temperature: req.temperature,
-      maxTokens: req.maxTokens,
+      temperature: req.temperature ?? routing?.temperature,
+      maxTokens: req.maxTokens ?? routing?.max_tokens,
     };
 
     // Chunks already on the client can't be taken back, so a stream that dies
@@ -279,28 +284,39 @@ export class AiGatewayService {
     }
 
     try {
-      let systemPrompt = this.personalityService.renderSystemPrompt(
+      const personaPrompt = this.personalityService.renderSystemPrompt(
         req.personalityId,
         req.event ?? 'default',
         req.context ?? {},
       );
 
+      let memCtx: string | null = null;
       if (this.memoryService && req.userId > 0) {
         const lastUserMsg =
           [...req.messages].reverse().find((m) => m.role === 'user')?.content ??
           '';
-        const memCtx = await this.memoryService.buildContext(
+        memCtx = await this.memoryService.buildContext(
           req.userId,
           req.personalityId,
           lastUserMsg,
         );
-        if (memCtx) {
-          systemPrompt = `${memCtx}\n\n${systemPrompt}`;
-        }
       }
 
-      const withoutSystem = req.messages.filter((m) => m.role !== 'system');
-      return [{ role: 'system', content: systemPrompt }, ...withoutSystem];
+      // Persona first: it is the instruction. Memory (derived from the user's
+      // own words) and the caller's system messages (e.g. the conversation
+      // summary) follow as context. Callers' system messages used to be
+      // dropped here, so chat never saw its summary.
+      const system = [
+        personaPrompt,
+        memCtx,
+        ...req.messages
+          .filter((m) => m.role === 'system')
+          .map((m) => m.content),
+      ].filter((s): s is string => !!s);
+      return [
+        ...system.map((content) => ({ role: 'system' as const, content })),
+        ...req.messages.filter((m) => m.role !== 'system'),
+      ];
     } catch (err: any) {
       this.logger.warn(
         `Personality injection failed for "${req.personalityId}": ${err?.message}. Proceeding without.`,

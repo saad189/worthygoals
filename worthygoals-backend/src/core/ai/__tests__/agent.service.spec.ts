@@ -182,14 +182,38 @@ describe('AgentService', () => {
       );
     });
 
-    it("applies the persona's length and temperature to the reply", async () => {
+    it('leaves voice and routing to the gateway for a personality mentor', async () => {
+      summaryRepo.findOne.mockResolvedValue({ summaryText: 'Ran 3x.' });
+
       await service.generateMentorReply({
         conversationId: CONV_ID,
         userId: USER_ID,
       });
-      expect(gateway.chat).toHaveBeenCalledWith(
-        expect.objectContaining({ maxTokens: 120, temperature: 0.5 }),
-      );
+
+      const req = gateway.chat.mock.calls[0][0];
+      // No DB prompt competing with the YAML persona, and no model id: an
+      // OpenAI id here was sent to Anthropic whenever it was the primary.
+      expect(req.messages.filter((m: any) => m.role === 'system')).toEqual([
+        {
+          role: 'system',
+          content: 'Conversation summary (may be partial/outdated):\nRan 3x.',
+        },
+      ]);
+      expect(req).not.toHaveProperty('model');
+      expect(req).toMatchObject({ personalityId: 'goggs', event: 'chat' });
+    });
+
+    it('sends the DB instructions for a legacy mentor with no personality', async () => {
+      mentorRepo.findOne.mockResolvedValue(makeMentor({ personalityId: null }));
+
+      await service.generateMentorReply({
+        conversationId: CONV_ID,
+        userId: USER_ID,
+      });
+
+      const req = gateway.chat.mock.calls[0][0];
+      expect(req.messages[0].role).toBe('system');
+      expect(req.messages[0].content).toContain('You are a fitness coach.');
     });
 
     it('passes undefined personalityId to gateway when mentor has no mapping', async () => {

@@ -44,10 +44,7 @@ export class PersonalityLoader implements OnModuleInit {
     const ctx = `[${file}]`;
     if (!p.id) throw new Error(`${ctx} missing required field: id`);
     if (!p.name) throw new Error(`${ctx} missing required field: name`);
-    if (!p.voice) throw new Error(`${ctx} missing required field: voice`);
-    if (!p.voice.tone) throw new Error(`${ctx} voice.tone is required`);
-    if (!Array.isArray(p.voice.vocabulary))
-      throw new Error(`${ctx} voice.vocabulary must be an array`);
+    if (!p.persona) throw new Error(`${ctx} missing required field: persona`);
     if (!p.events) throw new Error(`${ctx} missing required field: events`);
     if (!p.routing) throw new Error(`${ctx} missing required field: routing`);
 
@@ -57,8 +54,22 @@ export class PersonalityLoader implements OnModuleInit {
           `${ctx} personality "${p.id}" missing required event: ${event}`,
         );
       }
-      if (!p.events[event].system_prompt) {
-        throw new Error(`${ctx} event "${event}" missing system_prompt`);
+    }
+
+    // Every event, not just the required ones: a leftover `system_prompt`
+    // from the old format would otherwise render as an empty instruction.
+    for (const [name, def] of Object.entries(p.events)) {
+      if (!def?.instruction) {
+        throw new Error(`${ctx} event "${name}" missing instruction`);
+      }
+      const examples = def.examples ?? [];
+      if (
+        !Array.isArray(examples) ||
+        examples.some((e) => !e?.user || !e?.assistant)
+      ) {
+        throw new Error(
+          `${ctx} event "${name}" examples must be {user, assistant} pairs`,
+        );
       }
     }
   }

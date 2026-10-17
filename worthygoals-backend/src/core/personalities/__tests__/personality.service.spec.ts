@@ -8,20 +8,20 @@ function buildMockPersonality(id: string): PersonalitySchema {
     id,
     name: `${id} Name`,
     description: 'Test personality',
-    voice: { tone: 'test', vocabulary: ['a'], escalation_curve: 'firm' },
+    persona: `You are ${id}.`,
     events: {
       default: {
-        system_prompt: 'Default prompt for {{context}}.',
+        instruction: 'Default prompt for {{context}}.',
       },
       'task.completed': {
-        system_prompt: 'Completed {{goalName}} with streak {{streak}}.',
+        instruction: 'Completed {{goalName}} with streak {{streak}}.',
+        examples: [{ user: 'Done.', assistant: 'Next.' }],
       },
-      'task.failed.couldnt': { system_prompt: 'Couldnt prompt.' },
-      'task.failed.forgot': { system_prompt: 'Forgot prompt.' },
-      'task.failed.chose_not_to': { system_prompt: 'Chose not to prompt.' },
+      'task.failed.couldnt': { instruction: 'Couldnt prompt.' },
+      'task.failed.forgot': { instruction: 'Forgot prompt.' },
+      'task.failed.chose_not_to': { instruction: 'Chose not to prompt.' },
     },
     routing: {
-      preferred_model: 'gpt-4o-mini',
       temperature: 0.7,
       max_tokens: 150,
     },
@@ -43,13 +43,18 @@ function buildService(personalities: PersonalitySchema[]): PersonalityService {
 
 describe('PersonalityService', () => {
   describe('renderSystemPrompt', () => {
-    it('renders the correct event prompt for a known personality and event', () => {
+    it('composes persona, event instruction and examples, in that order', () => {
       const svc = buildService([buildMockPersonality('marcus')]);
       const result = svc.renderSystemPrompt('marcus', 'task.completed', {
         goalName: 'Morning Run',
         streak: '7',
       });
-      expect(result).toBe('Completed Morning Run with streak 7.');
+      expect(result).toBe(
+        'You are marcus.\n\n' +
+          'Completed Morning Run with streak 7.\n\n' +
+          'Examples of your voice (match the register, never repeat them verbatim):\n\n' +
+          'User: Done.\nYou: Next.',
+      );
     });
 
     it('falls back to default event when the requested event is missing', () => {
@@ -57,7 +62,7 @@ describe('PersonalityService', () => {
       const result = svc.renderSystemPrompt('lyra', 'unknown.event', {
         context: 'some ctx',
       });
-      expect(result).toBe('Default prompt for some ctx.');
+      expect(result).toBe('You are lyra.\n\nDefault prompt for some ctx.');
     });
 
     it('interpolates context variables into the prompt', () => {
@@ -68,10 +73,21 @@ describe('PersonalityService', () => {
       expect(result).toContain('test-context-value');
     });
 
-    it('leaves unmatched placeholders as empty strings', () => {
+    it('renders unmatched placeholders empty and warns about each', () => {
       const svc = buildService([buildMockPersonality('marcus')]);
-      const result = svc.renderSystemPrompt('marcus', 'task.completed', {});
-      expect(result).toBe('Completed  with streak .');
+      const warn = jest
+        .spyOn((svc as any).logger, 'warn')
+        .mockImplementation(() => undefined);
+      const result = svc.renderSystemPrompt('marcus', 'task.completed', {
+        streak: '',
+      });
+      expect(result).toContain('Completed  with streak .');
+      expect(warn).toHaveBeenCalledWith(
+        'marcus/task.completed: no value for {{goalName}}',
+      );
+      expect(warn).toHaveBeenCalledWith(
+        'marcus/task.completed: no value for {{streak}}',
+      );
     });
 
     it('throws NotFoundException for an unknown personality', () => {
@@ -86,8 +102,7 @@ describe('PersonalityService', () => {
     it('returns routing config for a known personality', () => {
       const svc = buildService([buildMockPersonality('marcus')]);
       const routing = svc.getRoutingConfig('marcus');
-      expect(routing.preferred_model).toBe('gpt-4o-mini');
-      expect(routing.temperature).toBe(0.7);
+      expect(routing).toEqual({ temperature: 0.7, max_tokens: 150 });
     });
 
     it('returns empty object for an unknown personality', () => {

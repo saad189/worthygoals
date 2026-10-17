@@ -266,7 +266,10 @@ describe('AiGatewayService', () => {
     const MEMORY_BLOCK =
       '[Memory Context]\n--- Recent interactions ---\nRan 5km yesterday.\n[End Memory Context]';
 
-    let mockPersonalityService: { renderSystemPrompt: jest.Mock };
+    let mockPersonalityService: {
+      renderSystemPrompt: jest.Mock;
+      getRoutingConfig: jest.Mock;
+    };
     let mockMemoryService: { buildContext: jest.Mock };
 
     const buildWithPersonality = async () => {
@@ -286,6 +289,9 @@ describe('AiGatewayService', () => {
       };
       mockPersonalityService = {
         renderSystemPrompt: jest.fn().mockReturnValue(PERSONA_BLOCK),
+        getRoutingConfig: jest
+          .fn()
+          .mockReturnValue({ temperature: 0.5, max_tokens: 120 }),
       };
       mockMemoryService = {
         buildContext: jest.fn().mockResolvedValue(MEMORY_BLOCK),
@@ -315,33 +321,34 @@ describe('AiGatewayService', () => {
       service = module.get(AiGatewayService);
     };
 
-    it('replaces system messages with the YAML persona block when personalityId is set', async () => {
+    it('puts the persona first and keeps the caller system messages (summary) after it', async () => {
       await buildWithPersonality();
-
-      const messagesWithSystem = [
-        { role: 'system' as const, content: 'old-promptBlocks-prompt' },
-        { role: 'user' as const, content: 'I need help with my goal.' },
-      ];
 
       await service.chat({
         userId: 1,
         feature: 'chat',
-        messages: messagesWithSystem,
+        messages: [
+          { role: 'system' as const, content: 'Conversation summary: ran 3x.' },
+          { role: 'user' as const, content: 'I need help with my goal.' },
+        ],
         personalityId: 'marcus',
         event: 'chat',
       });
 
       const calledWith = (mockOpenai.chat as jest.Mock).mock.calls[0][0];
-      const systemMsg = calledWith.messages.find(
-        (m: { role: string }) => m.role === 'system',
-      );
-
-      expect(systemMsg?.content).toContain(PERSONA_BLOCK);
-      expect(systemMsg?.content).not.toContain('old-promptBlocks-prompt');
+      // Persona is the instruction; memory and the summary follow as context.
+      // The summary used to be dropped here, so chat never saw it.
+      expect(calledWith.messages).toEqual([
+        { role: 'system', content: PERSONA_BLOCK },
+        { role: 'system', content: MEMORY_BLOCK },
+        { role: 'system', content: 'Conversation summary: ran 3x.' },
+        { role: 'user', content: 'I need help with my goal.' },
+      ]);
     });
 
-    it('prepends [Memory Context] block before the persona system prompt', async () => {
+    it('omits the memory block when memory has nothing for the user', async () => {
       await buildWithPersonality();
+      mockMemoryService.buildContext.mockResolvedValue('');
 
       await service.chat({
         userId: 1,
@@ -352,15 +359,32 @@ describe('AiGatewayService', () => {
       });
 
       const calledWith = (mockOpenai.chat as jest.Mock).mock.calls[0][0];
-      const systemMsg = calledWith.messages.find(
-        (m: { role: string }) => m.role === 'system',
-      );
+      expect(calledWith.messages.map((m: { role: string }) => m.role)).toEqual([
+        'system',
+        'user',
+      ]);
+    });
 
-      expect(systemMsg?.content).toContain('[Memory Context]');
-      expect(systemMsg?.content).toContain(PERSONA_BLOCK);
-      expect(systemMsg?.content.indexOf('[Memory Context]')).toBeLessThan(
-        systemMsg?.content.indexOf(PERSONA_BLOCK),
-      );
+    it("applies the persona's routing unless the request sets its own", async () => {
+      await buildWithPersonality();
+
+      await service.chat({
+        userId: 1,
+        feature: 'chat',
+        messages: [{ role: 'user' as const, content: 'hi' }],
+        personalityId: 'goggs',
+      });
+      await service.chat({
+        userId: 1,
+        feature: 'notification',
+        messages: [{ role: 'user' as const, content: 'hi' }],
+        personalityId: 'goggs',
+        temperature: 0.9,
+      });
+
+      const [first, second] = (mockOpenai.chat as jest.Mock).mock.calls;
+      expect(first[0]).toMatchObject({ temperature: 0.5, maxTokens: 120 });
+      expect(second[0]).toMatchObject({ temperature: 0.9, maxTokens: 120 });
     });
 
     it('passes through messages unchanged when no personalityId is provided', async () => {
@@ -401,7 +425,13 @@ describe('AiGatewayService', () => {
 
       const calledWith = (mockOpenai.chat as jest.Mock).mock.calls[0][0];
       const roles = calledWith.messages.map((m: { role: string }) => m.role);
-      expect(roles).toEqual(['system', 'user', 'assistant']);
+      expect(roles).toEqual([
+        'system',
+        'system',
+        'system',
+        'user',
+        'assistant',
+      ]);
     });
   });
 });

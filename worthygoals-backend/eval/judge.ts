@@ -3,9 +3,8 @@ import OpenAI from 'openai';
 export interface JudgeInput {
   openai: OpenAI;
   personalityName: string;
-  voiceTone: string;
-  personalityDescription?: string;
-  vocabulary?: string[];
+  /** The YAML persona block — the same identity text the model was given. */
+  persona: string;
   reference: string;
   actual: string;
   userMessage: string;
@@ -18,18 +17,10 @@ export interface JudgeResult {
 }
 
 export async function judgeOutput(input: JudgeInput): Promise<JudgeResult> {
-  const personaLine = input.personalityDescription
-    ? `Persona: ${input.personalityDescription}`
-    : '';
-  const vocabLine = input.vocabulary?.length
-    ? `Vocabulary register: ${input.vocabulary.join(', ')}`
-    : '';
-
   const prompt = `You are evaluating an AI mentor's response for tone fidelity and factual continuity.
 
-Personality: ${input.personalityName} (voice tone: ${input.voiceTone})
-${personaLine}
-${vocabLine}
+Personality: ${input.personalityName}
+Persona: ${input.persona.trim()}
 User said: "${input.userMessage}"
 Reference (golden) response: "${input.reference}"
 Actual response: "${input.actual}"

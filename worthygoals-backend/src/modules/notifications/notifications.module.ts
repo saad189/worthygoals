@@ -7,7 +7,7 @@ import { NotificationLog } from 'src/database/models/notification-log.entity';
 import { PushToken } from 'src/database/models/push-token.entity';
 import { NotificationCopyCache } from 'src/database/models/notification-copy-cache.entity';
 import { PersonalityModule } from 'src/core/personalities/personality.module';
-import { OpenAiProvider } from 'src/core/ai/gateway/openai.provider';
+import { AiModule } from 'src/core/ai/ai.module';
 import { NotificationCopyPregenCron } from './notification-copy-pregen.cron';
 import { NotificationProcessor } from './notification-processor';
 import { NotificationScheduler } from './notification-scheduler.cron';
@@ -47,6 +47,7 @@ import { NOTIFICATION_QUEUE } from './types/notification-job.types';
     }),
     ScheduleModule.forRoot(),
     PersonalityModule,
+    AiModule,
     UsersModule,
   ],
 
@@ -57,7 +58,6 @@ import { NOTIFICATION_QUEUE } from './types/notification-job.types';
     NotificationScheduler,
     NotificationVoicingService,
     NotificationCopyPregenCron,
-    OpenAiProvider,
   ],
   exports: [NotificationsService],
 })

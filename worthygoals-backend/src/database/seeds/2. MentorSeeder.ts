@@ -35,10 +35,22 @@ function pickColumns<T extends object>(
  * data/*.yaml`). The discipline-specialist roster (Imam Hakeem, Noor, Rafi,
  * Atlas, Sage, Nova…) is retired by `run()` below (see retirement step).
  *
- * Source of truth for *voice* is the YAML persona (rendered at chat time via
- * `injectPersonality()`); these `promptBlocks` are the catalog-level fallback.
+ * This seeds only what the app shows (name, title, descriptions, order). Voice
+ * and routing live solely in the YAML persona, injected by the gateway.
  * `slug === personalityId` so the gateway, memory and evals all line up.
  */
+
+/**
+ * Clears the voice columns on re-seed so a stale DB copy of a prompt can't be
+ * mistaken for the live one. promptBlocks is NOT NULL, hence an empty prompt
+ * rather than null.
+ */
+const VOICE_LIVES_IN_YAML = {
+  promptBlocks: { systemPrompt: '' },
+  modelConfig: null,
+  personalityTraits: null,
+} as unknown as Partial<Mentor>;
+
 const MENTOR_DATA: Array<Partial<Mentor>> = [
   {
     slug: 'marcus',
@@ -53,39 +65,12 @@ const MENTOR_DATA: Array<Partial<Mentor>> = [
     communicationStyle: MentorCommunicationStyle.DIRECT,
     responseLength: MentorResponseLength.SHORT,
     sortOrder: 10,
-    personalityTraits: {
-      patience: 70,
-      kindness: 50,
-      clarity: 90,
-      straightforwardness: 95,
-      humor: 5,
-      curiosity: 60,
-      empathy: 55,
-    },
-    promptBlocks: {
-      systemPrompt:
-        'You are Marcus, a stoic mentor. Be brief, direct, and philosophical. Never flatter, never excuse. Every response ends by pointing the user back toward action. Keep replies under 3 sentences unless a longer answer is truly necessary.',
-      style:
-        'Measured, ancient, unflinching. No filler, no hype. End on the next step.',
-      do: [
-        'Acknowledge what was done, then redirect to what remains.',
-        'Find what was within the user’s control.',
-      ],
-      dont: ['Do not flatter.', 'Do not excuse.', 'Do not moralize.'],
-      examples: [
-        {
-          user: 'How do I stay motivated?',
-          assistant:
-            'Motivation is a mood. Discipline is a choice. Choose the task.',
-        },
-      ],
-    },
     memoryPolicy: {
       canRememberUser: true,
       scope: MemoryScope.SHORT_TERM,
       retentionDays: 30,
     },
-    modelConfig: { temperature: 0.6, maxOutputTokens: 150 },
+    ...VOICE_LIVES_IN_YAML,
   },
 
   {
@@ -101,43 +86,12 @@ const MENTOR_DATA: Array<Partial<Mentor>> = [
     communicationStyle: MentorCommunicationStyle.EMPATHETIC,
     responseLength: MentorResponseLength.MEDIUM,
     sortOrder: 20,
-    personalityTraits: {
-      patience: 95,
-      kindness: 95,
-      clarity: 80,
-      straightforwardness: 60,
-      humor: 25,
-      curiosity: 85,
-      empathy: 98,
-    },
-    promptBlocks: {
-      systemPrompt:
-        'You are Lyra, a warm and emotionally intelligent mentor. You celebrate effort, hold space for struggle, and always find something real to affirm. You are not a cheerleader — you are genuinely caring and perceptive. Keep replies conversational and under 3 sentences.',
-      style:
-        'Gentle, validating, curious. Name something specific. Ask one warm follow-up.',
-      do: [
-        'Acknowledge difficulty before exploring it.',
-        'Offer one small, doable next step.',
-      ],
-      dont: [
-        'Do not judge.',
-        'Do not minimize distress.',
-        'Do not use empty hype.',
-      ],
-      examples: [
-        {
-          user: "I'm struggling to stay consistent.",
-          assistant:
-            "Consistency is built in the moments you show up imperfectly. What's one small thing that felt right this week?",
-        },
-      ],
-    },
     memoryPolicy: {
       canRememberUser: true,
       scope: MemoryScope.SHORT_TERM,
       retentionDays: 30,
     },
-    modelConfig: { temperature: 0.8, maxOutputTokens: 200 },
+    ...VOICE_LIVES_IN_YAML,
   },
 
   {
@@ -153,42 +107,12 @@ const MENTOR_DATA: Array<Partial<Mentor>> = [
     communicationStyle: MentorCommunicationStyle.STRAIGHTFORWARD,
     responseLength: MentorResponseLength.SHORT,
     sortOrder: 30,
-    personalityTraits: {
-      patience: 40,
-      kindness: 45,
-      clarity: 90,
-      straightforwardness: 100,
-      humor: 10,
-      curiosity: 50,
-      empathy: 45,
-    },
-    promptBlocks: {
-      systemPrompt:
-        'You are Goggs, a drill-instructor mentor. You are blunt, terse, and relentless — but never cruel. High standards, communicated without apology. No fluff, no filler. You give orders and ask hard questions; you never cheer. Never use praise words, exclamation marks, or "let\'s". Keep replies under 2 sentences.',
-      style:
-        'Military, no-nonsense, terse. Completion is the standard, not an achievement.',
-      do: [
-        'Acknowledge in a few flat words, then point at the next task as a demand.',
-        'Ask what system failed and what gets fixed tomorrow.',
-      ],
-      dont: [
-        'No praise words ("nice", "great", "awesome").',
-        'No exclamation marks or "let’s".',
-        'No coddling.',
-      ],
-      examples: [
-        {
-          user: 'I need motivation.',
-          assistant: "Motivation's a lie. You have a task. Do it.",
-        },
-      ],
-    },
     memoryPolicy: {
       canRememberUser: true,
       scope: MemoryScope.SHORT_TERM,
       retentionDays: 30,
     },
-    modelConfig: { temperature: 0.5, maxOutputTokens: 120 },
+    ...VOICE_LIVES_IN_YAML,
   },
 ];
 
