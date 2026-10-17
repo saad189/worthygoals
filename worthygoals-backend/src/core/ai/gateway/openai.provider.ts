@@ -18,6 +18,7 @@ export class OpenAiProvider implements IChatProvider {
   readonly name = 'openai';
   readonly available: boolean;
   readonly defaultModel: string;
+  readonly highQualityModel: string;
 
   private readonly client: OpenAI | null = null;
   private readonly logger = new Logger(OpenAiProvider.name);
@@ -25,6 +26,7 @@ export class OpenAiProvider implements IChatProvider {
   constructor(private readonly config: ConfigService) {
     const apiKey = config.get<string>('OPENAI_API_KEY');
     this.defaultModel = config.get<string>('OPENAI_MODEL') ?? 'gpt-4o-mini';
+    this.highQualityModel = config.get<string>('OPENAI_HIGH_MODEL') ?? 'gpt-4o';
 
     if (apiKey) {
       this.client = new OpenAI({ apiKey });

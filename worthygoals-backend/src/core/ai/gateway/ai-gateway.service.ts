@@ -25,6 +25,7 @@ const DEFAULT_COST_PER_MILLION: Record<string, { in: number; out: number }> = {
   'claude-3-5-haiku-20241022': { in: 0.8, out: 4.0 },
   'claude-3-5-sonnet-20241022': { in: 3.0, out: 15.0 },
   'claude-3-haiku-20240307': { in: 0.25, out: 1.25 },
+  'claude-sonnet-4-6': { in: 3.0, out: 15.0 },
 };
 
 @Injectable()
@@ -133,10 +134,13 @@ export class AiGatewayService {
           onChunk(chunk);
         }
       : undefined;
-    // req.model names a model of the primary's family; the fallback gets its
-    // own default (Anthropic rejects 'gpt-4o').
-    const run = (provider: IChatProvider, model?: string) => {
-      const p = { ...params, model };
+    // The tier resolves per provider, so the fallback gets its own model for
+    // it (Anthropic rejects 'gpt-4o').
+    const run = (provider: IChatProvider) => {
+      const p = {
+        ...params,
+        model: req.quality === 'high' ? provider.highQualityModel : undefined,
+      };
       return trackedChunk && provider.chatStream
         ? provider.chatStream(p, trackedChunk)
         : provider.chat(p);
@@ -148,7 +152,7 @@ export class AiGatewayService {
 
     if (primary.available && this.breaker.isAvailable(primary.name)) {
       try {
-        result = await run(primary, req.model);
+        result = await run(primary);
         this.breaker.recordSuccess(primary.name);
       } catch (err: any) {
         if (isProviderFault(err)) this.breaker.recordFailure(primary.name);
@@ -208,7 +212,7 @@ export class AiGatewayService {
       this.logger.error(`Failed to log ai_call: ${err.message}`);
     });
 
-    this.maybeSampleDrift(req, result.text);
+    this.maybeSampleDrift(req, result.text, result.model);
 
     return {
       text: result.text,
@@ -245,7 +249,11 @@ export class AiGatewayService {
     return this.openai;
   }
 
-  private maybeSampleDrift(req: GatewayChatRequest, output: string): void {
+  private maybeSampleDrift(
+    req: GatewayChatRequest,
+    output: string,
+    model: string,
+  ): void {
     if (Math.random() >= 0.001) return;
     const userMessage =
       [...req.messages].reverse().find((m) => m.role === 'user')?.content ??
@@ -258,7 +266,7 @@ export class AiGatewayService {
           event: req.event ?? null,
           userMessage,
           output,
-          model: req.model ?? null,
+          model,
           // System callers pass a negative sentinel id; only real users link.
           userId: req.userId > 0 ? req.userId : null,
         }),

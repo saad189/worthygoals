@@ -13,12 +13,18 @@ export class AnthropicProvider implements IChatProvider {
   readonly name = 'anthropic';
   readonly available: boolean;
   readonly defaultModel = 'claude-3-5-haiku-20241022';
+  readonly highQualityModel: string;
 
   private readonly client: Anthropic | null = null;
   private readonly logger = new Logger(AnthropicProvider.name);
 
   constructor(private readonly config: ConfigService) {
     const apiKey = config.get<string>('ANTHROPIC_API_KEY');
+    // ponytail: Sonnet 4.6, not 5.5 — 5.5 rejects a non-default temperature
+    // and thinks by default, which eats small maxTokens budgets. Moving up
+    // means dropping temperature and setting effort for that model here.
+    this.highQualityModel =
+      config.get<string>('ANTHROPIC_HIGH_MODEL') ?? 'claude-sonnet-4-6';
 
     if (apiKey) {
       // The SDK default is a 10-minute timeout with two retries; a hung call

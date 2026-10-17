@@ -115,10 +115,20 @@ describe('GoalsService', () => {
       });
 
       expect(gateway.chat).toHaveBeenCalledWith(
-        expect.objectContaining({ feature: 'goal_propose', model: 'gpt-4o' }),
+        expect.objectContaining({ feature: 'goal_propose', quality: 'high' }),
       );
       expect(result.title).toBe('Run a half-marathon');
       expect(result.category).toBe(GoalCategory.POWER);
+    });
+
+    it('parses JSON wrapped in markdown fences (Claude does this)', async () => {
+      gateway.chat.mockResolvedValue({
+        text: '```json\n{"title": "Read 12 books"}\n```',
+      });
+
+      const result = await service.propose(USER_SUB, { raw: 'Read more' });
+
+      expect(result.title).toBe('Read 12 books');
     });
 
     it('falls back to raw text as title when JSON is malformed', async () => {
