@@ -171,7 +171,6 @@ export default function FeedScreen() {
         <Text variant="muted">
           Post a win, a miss, or both — Marcus, Lyra and Goggs each react in their own voice.
         </Text>
-        <Button label="+ status" onPress={compose} />
       </View>
     );
 
