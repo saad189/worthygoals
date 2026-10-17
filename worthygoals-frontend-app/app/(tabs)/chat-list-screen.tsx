@@ -15,7 +15,7 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { ParamListBase } from "@react-navigation/native";
 import { ROUTE_NAMES } from "@/constants";
 import { personaByName } from "@/constants/Personalities";
-import { Header, MentorAvatar, Screen, Text } from "@/components/ui";
+import { Button, Header, MentorAvatar, Screen, Text } from "@/components/ui";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useToast } from "@/hooks";
 
@@ -81,6 +81,8 @@ export default function ChatListScreen() {
   const [chatData, setChatData] = React.useState<ConversationListItem[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  // Bumped by "Try again" to re-run the focus fetch.
+  const [attempt, setAttempt] = React.useState(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -110,7 +112,7 @@ export default function ChatListScreen() {
       return () => {
         isMounted = false;
       };
-    }, [])
+    }, [attempt])
   );
 
   const renderItem = ({ item }: { item: ConversationListItem }) => (
@@ -139,12 +141,15 @@ export default function ChatListScreen() {
           <View style={staticStyles.emptyContainer}>
             {loading ? (
               <ActivityIndicator size="small" color={colors.text} />
+            ) : error ? (
+              <View style={{ alignSelf: "stretch", gap: space["4"] }}>
+                <Text variant="muted" color="dangerColor">
+                  {error}
+                </Text>
+                <Button label="Try again" variant="secondary" onPress={() => setAttempt((a) => a + 1)} />
+              </View>
             ) : (
-              <Text variant="muted">
-                {error
-                  ? error
-                  : "No conversations yet. Open the Team tab to start a chat."}
-              </Text>
+              <Text variant="muted">No conversations yet. Open the Team tab to start a chat.</Text>
             )}
           </View>
         )}

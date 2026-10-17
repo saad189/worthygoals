@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
 
-import { Header, Screen, Text } from "@/components/ui";
+import { Button, Header, Screen, Text } from "@/components/ui";
 import MentorCard from "@/components/Mentors/MentorCard";
 import mentorService from "@/services/mentor.service";
 import conversationsService from "@/services/conversations.service";
@@ -18,6 +18,8 @@ export default function MentorsListScreen() {
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  // Bumped by "Try again" to re-run the focus fetch.
+  const [attempt, setAttempt] = useState(0);
   const [startingChatMentorId, setStartingChatMentorId] = useState<
     number | null
   >(null);
@@ -46,7 +48,7 @@ export default function MentorsListScreen() {
       return () => {
         isMounted = false;
       };
-    }, [])
+    }, [attempt])
   );
 
   return (
@@ -74,10 +76,11 @@ export default function MentorsListScreen() {
       />
 
       {!!error && (
-        <View style={[staticStyles.errorContainer, { paddingHorizontal: space["5"] }]}>
+        <View style={[staticStyles.errorContainer, { paddingHorizontal: space["5"], gap: space["4"] }]}>
           <Text variant="muted" color="dangerColor">
             {error}
           </Text>
+          <Button label="Try again" variant="secondary" onPress={() => setAttempt((a) => a + 1)} />
         </View>
       )}
 

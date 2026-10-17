@@ -38,6 +38,8 @@ export default function UserAvatar({ name, size = 40, style }: Props) {
       <Text
         variant="title"
         color="textWhite"
+        // Sized to the box, not the reader: scaling would clip the initials.
+        maxFontSizeMultiplier={1}
         style={{ fontSize: size * 0.4, lineHeight: size * 0.5 }}
       >
         {initialsOf(name ?? '')}
