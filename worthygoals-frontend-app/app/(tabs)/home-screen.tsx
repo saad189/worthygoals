@@ -188,8 +188,9 @@ const DashboardScreen = () => {
               {narrationLine(remaining, todayProgress.total)}
             </Text>
             <ProgressRing progress={progress} size={68} style={{ marginLeft: space["4"] }}>
-              <Text variant="title">{todayProgress.completed}</Text>
-              <Text variant="eyebrow">of {todayProgress.total}</Text>
+              {/* Fixed 68pt ring: scaling would push the label into the stroke. */}
+              <Text variant="title" maxFontSizeMultiplier={1}>{todayProgress.completed}</Text>
+              <Text variant="eyebrow" maxFontSizeMultiplier={1}>of {todayProgress.total}</Text>
             </ProgressRing>
           </View>
         </Card>

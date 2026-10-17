@@ -80,6 +80,22 @@ function variantStyle(variant: TextVariant, t: AppTheme): { style: TextStyle; co
 }
 
 /**
+ * How far each role may grow with the system text size. Uncapped, the largest
+ * accessibility size broke "today" mid-word and clipped avatar initials (QA-43,
+ * Oct 17). Reading copy keeps most of the scale; display headlines, already
+ * 30pt+, keep the least. Callers can still pass maxFontSizeMultiplier.
+ */
+const MAX_SCALE: Record<TextVariant, number> = {
+  display: 1.3,
+  title: 1.5,
+  body: 2,
+  muted: 2,
+  label: 1.6,
+  eyebrow: 1.5,
+  mono: 1.5,
+};
+
+/**
  * `primary` and `tint` are the brand rust, which is a fill colour — white on it
  * is 5.22:1. As *text* it only reaches 4.30:1 on canvas and 3.42:1 in dark
  * mode. Callers write `color="primary"` meaning "the accent one", so the
@@ -96,5 +112,11 @@ export default function Text({ variant = 'body', color, style, ...rest }: AppTex
   const v = variantStyle(variant, theme);
   const requested = color ?? v.color;
   const resolved = theme.colors[TEXT_SAFE[requested] ?? requested] as string;
-  return <RNText style={[v.style, { color: resolved }, style]} {...rest} />;
+  return (
+    <RNText
+      maxFontSizeMultiplier={MAX_SCALE[variant]}
+      style={[v.style, { color: resolved }, style]}
+      {...rest}
+    />
+  );
 }

@@ -59,7 +59,13 @@ export default function MentorAvatar({ mentor, size = 40, style }: Props) {
         style,
       ]}
     >
-      <Text variant="title" color="white" style={{ fontSize: size * 0.42, lineHeight: size * 0.5 }}>
+      {/* Sized to the box, not the reader: scaling would clip the letter. */}
+      <Text
+        variant="title"
+        color="white"
+        maxFontSizeMultiplier={1}
+        style={{ fontSize: size * 0.42, lineHeight: size * 0.5 }}
+      >
         {v.letter}
       </Text>
     </View>
