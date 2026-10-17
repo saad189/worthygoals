@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import userService from '@/services/UserService';
+import { getUserInStorage } from '@/helpers/UserInStorageUtil';
 import { useGoals } from './useGoals';
 import { useMentors } from './useMentors';
 import { personaBySlug, PersonalitySlug } from '@/constants/Personalities';
@@ -20,7 +21,19 @@ import { ApiGoal, Mentor, UserModel } from '@/models';
 export function useProfile() {
   const profileQuery = useQuery({
     queryKey: ['profile'],
-    queryFn: () => userService.getProfile(),
+    queryFn: async () => {
+      try {
+        return await userService.getProfile();
+      } catch (e: any) {
+        // Offline or a 5xx (getProfile rethrows only those as AxiosErrors):
+        // show the last profile this device saw rather than no mentor/tone —
+        // the same cache login() opens the app on.
+        if (!e?.isAxiosError) throw e;
+        const cached = await getUserInStorage().catch(() => null);
+        if (cached) return cached;
+        throw e;
+      }
+    },
     staleTime: 1000 * 60 * 5,
   });
   const { goals } = useGoals();
@@ -31,6 +44,10 @@ export function useProfile() {
   const mentorSlug = useMemo<PersonalitySlug | null>(() => {
     // Authoritative: the mentor the user picked at onboarding.
     if (user?.personalityId) return user.personalityId as PersonalitySlug;
+    // No profile (still loading, or the request failed) is not "no mentor":
+    // guessing from goals here showed the wrong mentor and "tone: not set" as
+    // if they were the user's real settings whenever /users/profile failed.
+    if (!user) return null;
     // Back-compat: derive from the most-recent goal for users who onboarded
     // before users.personalityId existed.
     const recent = [...goals].sort(
@@ -40,7 +57,7 @@ export function useProfile() {
     if (!recent?.mentorId) return null;
     const slug = mentors.find((m: Mentor) => m.id === recent.mentorId)?.slug;
     return (slug as PersonalitySlug) ?? null;
-  }, [user?.personalityId, goals, mentors]);
+  }, [user, goals, mentors]);
 
   return {
     user,

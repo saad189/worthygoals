@@ -7,7 +7,14 @@ import { envValidationSchema } from './env.validation';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [`.env.${process.env.NODE_ENV || 'local'}`, '.env'],
+      // `npm run start:dev` sets NODE_ENV=dev, so a laptop with only the
+      // documented .env.local failed validation on boot. .env.local is the
+      // fallback; .dockerignore excludes .env*, so it never reaches an image.
+      envFilePath: [
+        `.env.${process.env.NODE_ENV || 'local'}`,
+        '.env.local',
+        '.env',
+      ],
       validationSchema: envValidationSchema,
     }),
   ],

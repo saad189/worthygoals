@@ -94,7 +94,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       // Unreachable server, valid session: open the app on the cached data
       // instead of bouncing to sign-in. A user with tokens has a profile (it
       // is created before they can leave the profile step).
-      if (error?.response || !error?.isAxiosError) throw error;
+      // A 5xx is the same situation as no network: the server is down, the
+      // session is fine. Treating it as fatal bounced signed-in users to the
+      // sign-in screen whenever the API or its database had a bad moment.
+      const status: number | undefined = error?.response?.status;
+      const serverDown = !error?.response || (status !== undefined && status >= 500);
+      if (!error?.isAxiosError || !serverDown) throw error;
       profile = (await getUserInStorage().catch(() => null)) ?? { email };
     }
 

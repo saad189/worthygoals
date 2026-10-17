@@ -85,6 +85,38 @@ describe('useAuth.login', () => {
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
+  it('opens the app on cached data when the server returns a 5xx', async () => {
+    mockUserService.getProfile.mockRejectedValue(
+      Object.assign(new Error('Internal Server Error'), {
+        isAxiosError: true,
+        response: { status: 500 },
+      }),
+    );
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await act(async () => {
+      await result.current.login('user@example.com');
+    });
+
+    await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
+  });
+
+  it('still rejects a 4xx — the session itself is the problem', async () => {
+    mockUserService.getProfile.mockRejectedValue(
+      Object.assign(new Error('Unauthorized'), {
+        isAxiosError: true,
+        response: { status: 401 },
+      }),
+    );
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await act(async () => {
+      await result.current.login('user@example.com').catch(() => undefined);
+    });
+
+    expect(result.current.isAuthenticated).toBe(false);
+  });
+
   it('routes a user with no profile to the profile step, still authenticated', async () => {
     mockUserService.getProfile.mockResolvedValue(null as never);
 
