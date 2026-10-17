@@ -8,7 +8,7 @@ import {
 } from "react-native";
 
 import { ConversationListItem } from "@/models";
-import { useFocusEffect, useNavigation } from "expo-router";
+import { router, useFocusEffect, useNavigation } from "expo-router";
 import conversationsService from "@/services/conversations.service";
 import { mapTime } from "@/helpers/TimeMapper";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -122,6 +122,11 @@ export default function ChatListScreen() {
       <Header
         title="messages"
         eyebrow="your conversations"
+        // A hidden tab: reached only from the team tab's header, so back goes
+        // there rather than to the tab navigator's first route (today).
+        onBack={() =>
+          router.navigate(`/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.MENTORS_LIST_SCREEN}` as never)
+        }
         style={{ paddingHorizontal: space["5"], marginBottom: space["3"] }}
       />
 

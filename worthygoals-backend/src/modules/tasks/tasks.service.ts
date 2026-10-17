@@ -16,7 +16,11 @@ import {
   TaskExplanation,
   Goal,
 } from 'src/database/models';
-import { TaskRepeatFrequency, TaskStatus } from 'src/common/constants';
+import {
+  GoalStatus,
+  TaskRepeatFrequency,
+  TaskStatus,
+} from 'src/common/constants';
 import { UsersService } from '../users/users.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -234,6 +238,31 @@ export class TasksService {
     // Mark task skipped
     task.status = TaskStatus.SKIPPED;
     await this.taskRepo.save(task);
+
+    // A recurring task's next occurrence rolls forward on its own; a one-off
+    // had nothing after it, so its goal was left with no task at all and the
+    // sheet's promise ("it comes back tomorrow") wasn't true. One retry per
+    // explanation (explanations are unique per task-day); the seriousness
+    // check on the 3rd miss is what stops the chain.
+    if (
+      task.repeatFrequency === TaskRepeatFrequency.NONE &&
+      goal.status === GoalStatus.ACTIVE
+    ) {
+      const dueDate = new Date();
+      dueDate.setHours(0, 0, 0, 0);
+      dueDate.setDate(dueDate.getDate() + 1);
+      await this.taskRepo.save(
+        this.taskRepo.create({
+          goalId: task.goalId,
+          title: task.title,
+          description: task.description,
+          repeatFrequency: TaskRepeatFrequency.NONE,
+          occurrenceIndex: task.occurrenceIndex + 1,
+          parentTaskId: task.id,
+          dueDate,
+        }),
+      );
+    }
 
     const result: TaskReactionResult<TaskExplanation> = { data: explanation };
     await this.attachReaction(result, user.id, dto.personalityId, {

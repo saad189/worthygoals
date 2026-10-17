@@ -23,10 +23,6 @@ export default function TodoLayout() {
         name={ROUTE_NAMES.TODO.TODO_EDIT_SCREEN}
         options={{ headerShown: false, animation: slide('slide_from_right') }}
       />
-      <Stack.Screen
-        name={ROUTE_NAMES.TODO.TODO_DETAIL_SCREEN}
-        options={{ headerShown: false, animation: slide('slide_from_right') }}
-      />
     </Stack>
   );
 }

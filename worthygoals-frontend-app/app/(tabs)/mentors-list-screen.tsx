@@ -1,12 +1,12 @@
 import React, { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { Header, Screen, Text } from "@/components/ui";
 import MentorCard from "@/components/Mentors/MentorCard";
 import mentorService from "@/services/mentor.service";
 import conversationsService from "@/services/conversations.service";
 import { Mentor } from "@/models";
-import { useFocusEffect, useNavigation } from "expo-router";
+import { router, useFocusEffect, useNavigation } from "expo-router";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { ParamListBase } from "@react-navigation/native";
 import { ROUTE_NAMES } from "@/constants";
@@ -54,6 +54,22 @@ export default function MentorsListScreen() {
       <Header
         title="team"
         eyebrow="your mentors"
+        // The inbox (last message per mentor) was built but had no way in —
+        // its tab is hidden. It belongs with the mentors it lists.
+        right={
+          <TouchableOpacity
+            onPress={() =>
+              router.navigate(`/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.CHAT_LIST_SCREEN}` as never)
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Messages"
+            hitSlop={12}
+          >
+            <Text variant="label" color="textMuted">
+              messages ›
+            </Text>
+          </TouchableOpacity>
+        }
         style={{ paddingHorizontal: space["5"], marginBottom: space["3"] }}
       />
 

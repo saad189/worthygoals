@@ -38,7 +38,6 @@ export const ROUTE_NAMES = {
   CHAT: {
     self: "chat",
     CHAT_VIEW_SCREEN: "chat-view-screen",
-    CHAT_SETTINGS_SCREEN: "chat-settings-screen",
     IMAGE_VIEWER: "image-viewer-screen",
   },
 
@@ -69,7 +68,6 @@ export const ROUTE_NAMES = {
     TODO_PROPOSE_SCREEN: "todo-propose-screen",
     TODO_PERSONALITY_SCREEN: "todo-personality-screen",
     TODO_EDIT_SCREEN: "todo-edit-screen",
-    TODO_DETAIL_SCREEN: "todo-detail-screen",
   },
 
   ABOUT: "about",

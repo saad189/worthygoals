@@ -18,8 +18,10 @@ import { personaBySlug, PersonalitySlug } from '@/constants/Personalities';
 import { triggerPersonalityHaptic, triggerSelectionHaptic } from '@/helpers/haptics';
 import { ordinal } from '@/helpers/Ordinal';
 
-// Hi-Fi flow ④ · screen 10 (FAILURE → WHICH ONE?). Three verbs, three downstream
-// behaviours; "chose not to" is the honest one — it's accent-only (the same rust
+// Hi-Fi flow ④ · screen 10 (FAILURE → WHICH ONE?). Each note says only what the
+// app actually does: a missed one-off returns tomorrow (tasks.service explain),
+// a recurring one rolls forward, and the task can be edited from goal detail.
+// Three verbs, three tones; "chose not to" is the honest one — it's accent-only (the same rust
 // as the stake in goal creation) and it triggers the seriousness check (screen 11).
 const REASONS: {
   value: ExplanationReason;
@@ -27,8 +29,8 @@ const REASONS: {
   note: string;
   accent?: boolean;
 }[] = [
-  { value: 'couldnt', label: "Couldn't", note: 'Body said no. A smaller version shows up next.' },
-  { value: 'forgot', label: 'Forgot', note: 'We move the reminder. Light ribbing.' },
+  { value: 'couldnt', label: "Couldn't", note: "Body said no. It's back tomorrow — edit it smaller if you need to." },
+  { value: 'forgot', label: 'Forgot', note: "It's on tomorrow's list. Light ribbing." },
   { value: 'chose_not_to', label: 'Chose not to', note: 'The honest one.', accent: true },
 ];
 

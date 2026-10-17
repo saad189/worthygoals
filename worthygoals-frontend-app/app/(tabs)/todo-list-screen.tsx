@@ -34,7 +34,13 @@ export default function TodoListScreen() {
   // Drill from the goals list into a single goal's task list. Tasks (and the
   // completion sheets) are scoped to whichever goal is selected — `useTasks`
   // stays disabled until one is.
-  const [selectedGoal, setSelectedGoal] = useState<ApiGoal | null>(null);
+  // Held by id and read from the goals list, so an edit shows up here at once
+  // and a deleted goal drops back to the list instead of a stale copy.
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
+  const selectedGoal = useMemo(
+    () => goals.find((g: ApiGoal) => g.id === selectedGoalId) ?? null,
+    [goals, selectedGoalId],
+  );
   const { tasks, loading, error, refetch } = useTasks(
     selectedGoal?.id ?? null,
   );
@@ -60,6 +66,12 @@ export default function TodoListScreen() {
       (t: TaskItem) => t.status === 'skipped' && new Date(t.updatedAt) >= weekStart,
     ).length;
   }, [tasks]);
+
+  const openEdit = (kind: 'goal' | 'task', id: string, goalId?: string) =>
+    navigation.navigate(ROUTE_NAMES.TODO.self as any, {
+      screen: ROUTE_NAMES.TODO.TODO_EDIT_SCREEN,
+      params: { kind, id, goalId },
+    });
 
   const startNewGoal = () =>
     navigation.navigate(ROUTE_NAMES.TODO.self as any, {
@@ -175,6 +187,11 @@ export default function TodoListScreen() {
       gap: space['3'],
     },
     chevron: { marginLeft: 'auto' },
+    cardFooter: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
     statusBadge: {
       alignSelf: 'flex-start',
       paddingHorizontal: space['2'],
@@ -213,7 +230,7 @@ export default function TodoListScreen() {
   const renderGoal = useCallback(({ item }: { item: ApiGoal }) => (
     <TouchableOpacity
       style={[s.card, s.goalCard]}
-      onPress={() => setSelectedGoal(item)}
+      onPress={() => setSelectedGoalId(item.id)}
       accessibilityRole="button"
       accessibilityLabel={`Open goal ${item.title}`}
     >
@@ -269,11 +286,25 @@ export default function TodoListScreen() {
           </Text>
         </View>
 
-        {isPending && (
-          <Text variant="eyebrow" color="textMuted">
-            tap to answer ›
-          </Text>
-        )}
+        <View style={s.cardFooter}>
+          {isPending ? (
+            <Text variant="eyebrow" color="textMuted">
+              tap to answer ›
+            </Text>
+          ) : (
+            <View />
+          )}
+          <TouchableOpacity
+            onPress={() => openEdit('task', item.id, item.goalId)}
+            accessibilityRole="button"
+            accessibilityLabel={`Edit ${item.title}`}
+            hitSlop={12}
+          >
+            <Text variant="eyebrow" color="textMuted">
+              edit
+            </Text>
+          </TouchableOpacity>
+        </View>
       </TouchableOpacity>
     );
   }, [s, space, colors]);
@@ -284,7 +315,7 @@ export default function TodoListScreen() {
       <Screen padded={false} edges={['top']}>
         <View style={s.backRow}>
           <TouchableOpacity
-            onPress={() => setSelectedGoal(null)}
+            onPress={() => setSelectedGoalId(null)}
             accessibilityRole="button"
             accessibilityLabel="Back to goals"
           >
@@ -296,6 +327,18 @@ export default function TodoListScreen() {
         <Header
           title={selectedGoal.title}
           eyebrow="your goal"
+          right={
+            <TouchableOpacity
+              onPress={() => openEdit('goal', selectedGoal.id)}
+              accessibilityRole="button"
+              accessibilityLabel="Edit this goal"
+              hitSlop={12}
+            >
+              <Text variant="label" color="textMuted">
+                edit
+              </Text>
+            </TouchableOpacity>
+          }
           style={{ paddingHorizontal: space['5'], marginBottom: space['3'] }}
         />
 

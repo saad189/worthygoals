@@ -50,4 +50,16 @@ export const tasksService = {
     );
     return data;
   },
+
+  update: async (
+    taskId: string,
+    payload: { title?: string; description?: string },
+  ): Promise<TaskItem> => {
+    const { data } = await ApiService.patch<TaskItem>(`${TASKS_BASE}/${taskId}`, payload);
+    return data;
+  },
+
+  remove: async (taskId: string): Promise<void> => {
+    await ApiService.delete(`${TASKS_BASE}/${taskId}`);
+  },
 };
