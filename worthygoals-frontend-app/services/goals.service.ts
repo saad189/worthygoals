@@ -23,4 +23,17 @@ export const goalsApiService = {
     const { data } = await ApiService.post<ApiCreateGoalResponse>(GOALS_BASE, payload);
     return data;
   },
+
+  update: async (
+    goalId: string,
+    payload: { title?: string; description?: string },
+  ): Promise<ApiGoal> => {
+    const { data } = await ApiService.patch<ApiGoal>(`${GOALS_BASE}/${goalId}`, payload);
+    return data;
+  },
+
+  /** Cascades server-side to the goal's tasks, completions and explanations. */
+  remove: async (goalId: string): Promise<void> => {
+    await ApiService.delete(`${GOALS_BASE}/${goalId}`);
+  },
 };
