@@ -13,11 +13,17 @@ const VERBOSE = process.argv.includes('--verbose');
 const personalityFlagIdx = process.argv.indexOf('--personality');
 const PERSONALITY_FILTER =
   personalityFlagIdx !== -1 ? process.argv[personalityFlagIdx + 1] : null;
+// --event <name>: only golden files for that event (e.g. default, task.completed)
+const eventFlagIdx = process.argv.indexOf('--event');
+const EVENT_FILTER =
+  eventFlagIdx !== -1 ? process.argv[eventFlagIdx + 1] : null;
 
 interface GoldenCase {
   id: string;
   user: string;
   reference: string;
+  /** What memory would hold for this user; continuity cases depend on it. */
+  memory_seed?: string;
 }
 
 interface GoldenFile {
@@ -25,6 +31,8 @@ interface GoldenFile {
   event: string;
   context: Record<string, string>;
   cases: GoldenCase[];
+  /** Golden file name without extension — `default` and `continuity` share an event. */
+  file: string;
 }
 
 interface FileResult {
@@ -48,9 +56,10 @@ function loadGoldenFiles(): GoldenFile[] {
     const pDir = path.join(goldenDir, personality);
     if (!fs.statSync(pDir).isDirectory()) continue;
     for (const f of fs.readdirSync(pDir).filter((x) => x.endsWith('.yaml'))) {
-      files.push(
-        yaml.load(fs.readFileSync(path.join(pDir, f), 'utf8')) as GoldenFile,
-      );
+      const gf = yaml.load(
+        fs.readFileSync(path.join(pDir, f), 'utf8'),
+      ) as GoldenFile;
+      files.push({ ...gf, file: path.basename(f, '.yaml') });
     }
   }
   return files;
@@ -60,16 +69,19 @@ async function run(): Promise<void> {
   const personalities = loadPersonalities();
   const byId = new Map(personalities.listAll().map((p) => [p.id, p]));
   let goldenFiles = loadGoldenFiles();
+  if (EVENT_FILTER) {
+    goldenFiles = goldenFiles.filter((f) => f.event === EVENT_FILTER);
+  }
   if (PERSONALITY_FILTER) {
     goldenFiles = goldenFiles.filter(
       (f) => f.personality === PERSONALITY_FILTER,
     );
-    if (!goldenFiles.length) {
-      console.error(
-        `[eval] No golden files for personality "${PERSONALITY_FILTER}"`,
-      );
-      process.exit(1);
-    }
+  }
+  if (!goldenFiles.length) {
+    console.error(
+      `[eval] No golden files match personality="${PERSONALITY_FILTER ?? '*'}" event="${EVENT_FILTER ?? '*'}"`,
+    );
+    process.exit(1);
   }
   const totalCases = goldenFiles.reduce((s, f) => s + f.cases.length, 0);
 
@@ -97,7 +109,7 @@ async function run(): Promise<void> {
         ok = false;
       } else {
         console.log(
-          `  [OK] ${gf.personality}/${gf.event} (${gf.cases.length} cases)`,
+          `  [OK] ${gf.personality}/${gf.file} (${gf.cases.length} cases)`,
         );
       }
     }
@@ -142,13 +154,24 @@ async function run(): Promise<void> {
     );
     const scores: number[] = [];
 
-    console.log(`\n[${gf.personality}/${gf.event}]`);
+    console.log(`\n[${gf.personality}/${gf.file}]`);
 
     for (const c of gf.cases) {
       const genResp = await openai.chat.completions.create({
         model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
+        // Same shape the gateway sends: persona first, then memory as its
+        // own system message. memory_seed was never sent, so continuity
+        // cases asked about "my knee again" with no history at all.
         messages: [
           { role: 'system', content: systemPrompt },
+          ...(c.memory_seed
+            ? [
+                {
+                  role: 'system' as const,
+                  content: `[Memory Context]\n${c.memory_seed}\n[End Memory Context]`,
+                },
+              ]
+            : []),
           { role: 'user', content: c.user },
         ],
         temperature: personality.routing.temperature ?? 0.6,
@@ -184,7 +207,7 @@ async function run(): Promise<void> {
     const fileFailed = fileAvg < TONE_THRESHOLD;
     if (fileFailed) anyFailed = true;
     results.push({
-      key: `${gf.personality}/${gf.event}`,
+      key: `${gf.personality}/${gf.file} (${gf.event})`,
       avg: fileAvg,
       failed: fileFailed,
     });
