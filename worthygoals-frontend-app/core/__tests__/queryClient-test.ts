@@ -6,11 +6,18 @@
  *
  * The allowlist is the point: a query that is not named is not persisted, so a
  * new one is private by default.
+ *
+ * Only successful queries are persisted: a failed one carries its AxiosError,
+ * and the error's request config held the Bearer access token.
  */
+import { Query } from '@tanstack/react-query';
 import { persistOptions } from '../queryClient';
 
-const shouldPersist = (key: readonly unknown[]) =>
-  persistOptions.dehydrateOptions.shouldDehydrateQuery({ queryKey: key });
+const query = (queryKey: readonly unknown[], status = 'success') =>
+  ({ queryKey, state: { status } }) as unknown as Query;
+
+const shouldPersist = (key: readonly unknown[], status?: string) =>
+  persistOptions.dehydrateOptions.shouldDehydrateQuery(query(key, status));
 
 describe('query cache persistence', () => {
   it.each([[['dashboard']], [['tasks']], [['tasks', 'goal-1']], [['goals']], [['mentors']]])(
@@ -30,4 +37,11 @@ describe('query cache persistence', () => {
   it('treats an unknown query as private by default', () => {
     expect(shouldPersist(['some-future-feature'])).toBe(false);
   });
+
+  it.each(['error', 'pending'])(
+    'never persists an allowlisted query in %s state — its error held the Bearer token',
+    (status) => {
+      expect(shouldPersist(['dashboard'], status)).toBe(false);
+    },
+  );
 });

@@ -198,14 +198,21 @@ describe('GoalsService', () => {
       expect(task.dueDate.getHours()).toBe(0); // start of today
     });
 
-    it('seeds no task when the goal has no recognisable repeatRule', async () => {
+    // The app has no way to add a task, so a goal seeded with none was a dead
+    // end (every hand-filled wizard goal, Oct 17 simulator QA).
+    it('seeds a single one-off task when the goal has no recognisable repeatRule', async () => {
       const goal = makeGoal({ title: 'One-off', repeatRule: undefined });
       repo.create.mockReturnValue(goal);
       repo.save.mockResolvedValue(goal);
 
       await service.create(USER_SUB, { title: 'One-off' } as any);
 
-      expect(taskRepo.save).not.toHaveBeenCalled();
+      expect(taskRepo.save).toHaveBeenCalledTimes(1);
+      expect(taskRepo.create.mock.calls[0][0]).toMatchObject({
+        goalId: goal.id,
+        title: 'One-off',
+        repeatFrequency: TaskRepeatFrequency.NONE,
+      });
     });
 
     it('throws NotFoundException when user not found', async () => {

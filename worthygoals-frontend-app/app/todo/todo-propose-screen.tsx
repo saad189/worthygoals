@@ -198,11 +198,13 @@ function DeadlineField({ value, onChange }: { value: string; onChange: (v: strin
 export default function TodoProposeScreen() {
   const { colors, space, radius, fonts, fontSizes } = useAppTheme();
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
-  const { raw, skip } = useLocalSearchParams<{ raw: string; skip?: string }>();
+  const { raw, skip, mentor } = useLocalSearchParams<{ raw: string; skip?: string; mentor?: string }>();
   const { proposal, loading, error, propose } = useGoalProposal();
 
+  const isSkip = skip === 'true';
   const [fields, setFields] = useState<Record<FieldKey, string>>({
-    title: '',
+    // Skipping the AI draft still keeps what was typed on step 1.
+    title: isSkip ? raw ?? '' : '',
     description: '',
     costText: '',
     benefitText: '',
@@ -212,7 +214,6 @@ export default function TodoProposeScreen() {
   const [stakeOn, setStakeOn] = useState(false);
   const [stake, setStake] = useState('');
 
-  const isSkip = skip === 'true';
   const set = (key: FieldKey) => (v: string) => setFields((f) => ({ ...f, [key]: v }));
 
   useEffect(() => {
@@ -248,6 +249,7 @@ export default function TodoProposeScreen() {
         category: proposal?.category,
         repeatRule: proposal?.repeatRule,
       }),
+      ...(mentor ? { mentor } : {}),
     } as never);
   };
 

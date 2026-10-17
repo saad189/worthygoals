@@ -144,12 +144,16 @@ export class GoalsService {
   // a new goal isn't empty (today screen + goal detail have something to do). The
   // recurring scheduler (materializeRecurringTasks) spins up every occurrence
   // after this first one is completed. Deliberately NOT a full task breakdown:
-  // one-off goals (no repeatRule) and multi-step decomposition are left for a
-  // future second-AI pass that would break a goal into a concrete task list.
+  // multi-step decomposition is left for a future second-AI pass that would
+  // break a goal into a concrete task list.
   // See progress-report.html "Goal→task seeding" note for the upgrade path.
   private async seedFirstTask(goal: Goal, em: EntityManager): Promise<void> {
-    const frequency = this.mapRepeatFrequency(goal.repeatRule);
-    if (!frequency) return; // no recognisable cadence → no auto-task (yet)
+    // No recognisable cadence (every hand-filled "Skip" goal, and AI drafts the
+    // model read as one-off) still gets one one-off task: the app has no way to
+    // add a task, so a goal without one could never be worked on or completed.
+    // NONE is excluded from roll-forward, so this stays a single task.
+    const frequency =
+      this.mapRepeatFrequency(goal.repeatRule) ?? TaskRepeatFrequency.NONE;
 
     const dueDate = new Date();
     dueDate.setHours(0, 0, 0, 0); // due today so it lands on the today screen

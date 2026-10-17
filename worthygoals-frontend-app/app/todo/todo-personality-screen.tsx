@@ -6,7 +6,7 @@
  * renders on-brand even before the backend mentor table is reseeded; the real
  * backend mentorId is merged in by slug when available (U2 handoff). U5 reskin.
  */
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Alert, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import type { ApiCreateGoalPayload } from '@/types/api';
@@ -15,7 +15,7 @@ import { Button, Card, Header, MentorAvatar, Screen, StepDots, Text } from '@/co
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { PERSONALITIES, PersonalitySlug, personaBySlug } from '@/constants/Personalities';
 import { useMentors } from '@/hooks/useMentors';
-import onboardingService from '@/services/onboarding.service';
+import { useProfile } from '@/hooks/useProfile';
 import { useCreateGoal } from '@/hooks/useCreateGoal';
 import { ROUTE_NAMES } from '@/constants/Routes';
 
@@ -62,28 +62,24 @@ function parseGoalDraft(raw?: string): GoalDraft | null {
 
 export default function TodoPersonalityScreen() {
   const { space, colors } = useAppTheme();
-  const { goalData } = useLocalSearchParams<{ goalData: string }>();
+  const { goalData, mentor } = useLocalSearchParams<{ goalData: string; mentor?: string }>();
 
   // A deep link can put anything in goalData (the scheme is public). JSON.parse
   // used to run unguarded inside render, so a malformed value threw into the
   // error boundary instead of just landing on an empty draft.
   const parsedGoal = useMemo(() => parseGoalDraft(goalData), [goalData]);
 
-  // Default to the mentor the user matched with during onboarding; fall back to
-  // Marcus (the prototype's pre-selected personality).
-  const [selected, setSelected] = useState<PersonalitySlug>('marcus');
+  // Pre-selection, in order: the mentor this goal was started from ("Set a goal
+  // with X"), then the user's own mentor from the profile, then Marcus. The
+  // onboarding value in local storage was used before, but it is empty after
+  // a sign-in on a fresh install, so every user fell through to Marcus.
+  const { mentorSlug: profileSlug } = useProfile();
+  const [picked, setPicked] = useState<PersonalitySlug | null>(
+    personaBySlug(mentor)?.slug ?? null,
+  );
+  const selected: PersonalitySlug = picked ?? profileSlug ?? 'marcus';
   const { createGoal, saving } = useCreateGoal();
   const { resolveMentorId } = useMentors();
-
-  useEffect(() => {
-    let active = true;
-    onboardingService.getMentor().then((saved) => {
-      if (active && saved?.slug) setSelected(saved.slug);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const selectedPersona = personaBySlug(selected)!;
   // The contract is confirmed in the chosen mentor's own colour (§F).
@@ -154,7 +150,7 @@ export default function TodoPersonalityScreen() {
 
       <View style={{ gap: space['4'] }}>
         {PERSONALITIES.map((p) => (
-          <Card key={p.slug} selected={p.slug === selected} onPress={() => setSelected(p.slug)}>
+          <Card key={p.slug} selected={p.slug === selected} onPress={() => setPicked(p.slug)}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: space['4'] }}>
               <MentorAvatar mentor={p.slug} size={48} />
               <View style={{ flex: 1 }}>

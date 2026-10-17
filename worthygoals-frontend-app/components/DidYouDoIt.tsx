@@ -7,6 +7,7 @@
  */
 import React from 'react';
 import { Modal, StyleSheet, Pressable, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Button, MentorAvatar, Screen, Text } from '@/components/ui';
 import { personaBySlug } from '@/constants/Personalities';
@@ -43,39 +44,44 @@ export default function DidYouDoIt({
       onRequestClose={onDismiss}
       statusBarTranslucent
     >
-      <Screen>
-        <View style={styles.cancelRow}>
-          <Pressable
-            onPress={onDismiss}
-            accessibilityRole="button"
-            accessibilityLabel="Not now"
-            hitSlop={12}
-          >
-            <Text variant="muted">not now</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.center}>
-          <Text variant="eyebrow" style={{ marginBottom: space['4'] }}>
-            {`${taskTitle ?? 'your task'} · due now`}
-          </Text>
-          <Text variant="display" style={styles.question}>
-            Did you do it?
-          </Text>
-
-          <View style={[styles.kickerRow, { marginTop: space['6'], gap: space['3'] }]}>
-            <MentorAvatar mentor={persona.slug} size={28} />
-            <Text variant="muted">
-              {`${persona.name.toLowerCase()} is waiting for the answer.`}
-            </Text>
+      {/* A Modal is its own native root: the app's SafeAreaProvider doesn't
+          reach it, so Screen got zero insets and "not now" drew under the iOS
+          status bar, where taps never land — the only ways out were the answers. */}
+      <SafeAreaProvider>
+        <Screen>
+          <View style={styles.cancelRow}>
+            <Pressable
+              onPress={onDismiss}
+              accessibilityRole="button"
+              accessibilityLabel="Not now"
+              hitSlop={12}
+            >
+              <Text variant="muted">not now</Text>
+            </Pressable>
           </View>
-        </View>
 
-        <View style={{ paddingBottom: space['4'], gap: space['3'] }}>
-          <Button label="Yes" onPress={onYes} />
-          <Button label="Not today" variant="secondary" onPress={onNotToday} />
-        </View>
-      </Screen>
+          <View style={styles.center}>
+            <Text variant="eyebrow" style={{ marginBottom: space['4'] }}>
+              {`${taskTitle ?? 'your task'} · due now`}
+            </Text>
+            <Text variant="display" style={styles.question}>
+              Did you do it?
+            </Text>
+
+            <View style={[styles.kickerRow, { marginTop: space['6'], gap: space['3'] }]}>
+              <MentorAvatar mentor={persona.slug} size={28} />
+              <Text variant="muted">
+                {`${persona.name.toLowerCase()} is waiting for the answer.`}
+              </Text>
+            </View>
+          </View>
+
+          <View style={{ paddingBottom: space['4'], gap: space['3'] }}>
+            <Button label="Yes" onPress={onYes} />
+            <Button label="Not today" variant="secondary" onPress={onNotToday} />
+          </View>
+        </Screen>
+      </SafeAreaProvider>
     </Modal>
   );
 }
