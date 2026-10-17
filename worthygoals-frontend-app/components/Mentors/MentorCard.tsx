@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Mentor } from "@/models";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { MentorAvatar, Text } from "@/components/ui";
+import { personaBySlug } from "@/constants/Personalities";
 
 export default function MentorCard({
   mentor,
@@ -22,6 +23,9 @@ export default function MentorCard({
   chatLoading?: boolean;
 }) {
   const { colors, space } = useAppTheme();
+  // Same source as mentor detail, chat and the wizard ("the lieutenant"); the
+  // backend title ("The Stoic") is older copy and read as a different mentor.
+  const role = personaBySlug(mentor.slug)?.role ?? mentor.title;
 
   return (
     <View style={[staticStyles.container, { borderBottomColor: colors.border }]}>
@@ -29,7 +33,7 @@ export default function MentorCard({
         style={staticStyles.mainPressArea}
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={[mentor.name, mentor.title, mentor.shortDescription]
+        accessibilityLabel={[mentor.name, role, mentor.shortDescription]
           .filter(Boolean)
           .join('. ')}
       >
@@ -42,9 +46,9 @@ export default function MentorCard({
         />
         <View style={staticStyles.textContainer}>
           <Text variant="title">{mentor.name}</Text>
-          {!!mentor.title && (
+          {!!role && (
             <Text variant="eyebrow" style={{ marginTop: space["1"] }}>
-              {mentor.title}
+              {role}
             </Text>
           )}
           {!!mentor.shortDescription && (

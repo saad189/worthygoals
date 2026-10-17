@@ -157,9 +157,12 @@ export default function FeedScreen() {
         Loading the feed…
       </Text>
     ) : error ? (
-      <Text variant="muted" color="primary" style={{ marginTop: space['8'] }}>
-        {error}
-      </Text>
+      <View style={{ marginTop: space['8'], gap: space['4'] }}>
+        <Text variant="muted" color="primary">
+          {error}
+        </Text>
+        <Button label="Try again" variant="secondary" onPress={refetch} />
+      </View>
     ) : (
       <View style={{ marginTop: space['8'], gap: space['4'] }}>
         <Text variant="display" style={{ fontSize: 26 }}>

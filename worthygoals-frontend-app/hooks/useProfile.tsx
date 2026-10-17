@@ -31,6 +31,10 @@ export function useProfile() {
   const mentorSlug = useMemo<PersonalitySlug | null>(() => {
     // Authoritative: the mentor the user picked at onboarding.
     if (user?.personalityId) return user.personalityId as PersonalitySlug;
+    // No profile (still loading, or the request failed) is not "no mentor":
+    // guessing from goals here showed the wrong mentor and "tone: not set" as
+    // if they were the user's real settings whenever /users/profile failed.
+    if (!user) return null;
     // Back-compat: derive from the most-recent goal for users who onboarded
     // before users.personalityId existed.
     const recent = [...goals].sort(
@@ -40,7 +44,7 @@ export function useProfile() {
     if (!recent?.mentorId) return null;
     const slug = mentors.find((m: Mentor) => m.id === recent.mentorId)?.slug;
     return (slug as PersonalitySlug) ?? null;
-  }, [user?.personalityId, goals, mentors]);
+  }, [user, goals, mentors]);
 
   return {
     user,

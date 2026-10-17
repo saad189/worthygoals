@@ -12,7 +12,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useNavigation } from 'expo-router';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { ParamListBase } from '@react-navigation/native';
-import { Header, Screen, Text } from '@/components/ui';
+import { Button, Header, Screen, Text } from '@/components/ui';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import useBoard from '@/hooks/useBoard';
 import { BoardItem, MilestoneKind } from '@/models';
@@ -155,7 +155,7 @@ const MotivationalBoardScreen: React.FC = () => {
     return (
       <Screen padded={false} edges={['top']} style={styles.container}>
         <View style={styles.titleContainer}>
-          <Header title="feed" eyebrow="your wins" />
+          <Header title="board" eyebrow="your wins" />
         </View>
         <View style={{ flexDirection: 'row', gap: 12, paddingHorizontal: 12, paddingTop: 12 }}>
           <View style={{ flex: 1, gap: 12 }}>
@@ -174,16 +174,19 @@ const MotivationalBoardScreen: React.FC = () => {
   return (
     <Screen padded={false} edges={['top']} style={styles.container}>
       <View style={styles.titleContainer}>
-        <Header title="feed" eyebrow="your wins" onBack={() => navigation.goBack()} />
+        <Header title="board" eyebrow="your wins" onBack={() => navigation.goBack()} />
       </View>
 
-      {error ? (
-        <Text variant="muted" style={styles.errorText}>
-          {error}
-        </Text>
-      ) : null}
-
-      {items.length === 0 && !loading ? (
+      {/* An error with no items is its own state, with a way to retry —
+          not the "nothing here yet" empty state underneath an error line. */}
+      {error && items.length === 0 ? (
+        <View style={styles.errorState}>
+          <Text variant="muted" style={styles.errorText}>
+            {error}
+          </Text>
+          <Button label="Try again" variant="secondary" onPress={refresh} />
+        </View>
+      ) : items.length === 0 && !loading ? (
         <View style={styles.empty}>
           {/* ponytail: OS Text, not the brand-font Text — an emoji through the
               custom font falls back to the font's .notdef box, not colour emoji. */}
@@ -305,6 +308,10 @@ const styles = StyleSheet.create({
   errorText: {
     textAlign: 'center',
     marginTop: 20,
+    paddingHorizontal: 20,
+  },
+  errorState: {
+    gap: 16,
     paddingHorizontal: 20,
   },
 });
