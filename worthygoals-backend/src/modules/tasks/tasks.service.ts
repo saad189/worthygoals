@@ -190,7 +190,6 @@ export class TasksService {
       event: 'task.completed',
       context: {
         goalName: goal.title,
-        streak: '',
         reflection: dto.reflection ?? '',
       },
       userMessage: dto.reflection || 'I completed the task.',

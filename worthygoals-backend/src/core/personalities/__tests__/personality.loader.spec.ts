@@ -24,15 +24,40 @@ describe('PersonalityLoader', () => {
     }
   });
 
-  it('each personality has a voice with tone and vocabulary', () => {
+  it('each personality has a persona, and no model id in routing', () => {
     const loader = new PersonalityLoader();
     loader.onModuleInit();
 
     for (const p of loader.getAll()) {
-      expect(p.voice.tone).toBeTruthy();
-      expect(Array.isArray(p.voice.vocabulary)).toBe(true);
-      expect(p.voice.vocabulary.length).toBeGreaterThan(0);
+      expect(p.persona).toBeTruthy();
+      // A provider-specific id here is sent to whichever provider is active.
+      expect(Object.keys(p.routing)).not.toContain('preferred_model');
     }
+  });
+
+  it('throws on boot if an event still uses the old system_prompt key', () => {
+    const loader = new PersonalityLoader();
+    const legacy = (event: string) => `  ${event}:\n    instruction: "ok"\n`;
+    const badYaml = `
+id: bad
+name: Bad
+persona: "You are Bad."
+events:
+${['default', 'task.completed', 'task.failed.couldnt', 'task.failed.forgot', 'task.failed.chose_not_to'].map(legacy).join('')}  status.reaction:
+    system_prompt: "old format"
+routing: {}
+`;
+    const readSpy = jest
+      .spyOn(fs, 'readdirSync')
+      .mockReturnValue(['bad.yaml'] as any);
+    const readFileSpy = jest.spyOn(fs, 'readFileSync').mockReturnValue(badYaml);
+
+    expect(() => loader.onModuleInit()).toThrow(
+      /event "status.reaction" missing instruction/,
+    );
+
+    readSpy.mockRestore();
+    readFileSpy.mockRestore();
   });
 
   it('throws on boot if a YAML file has a missing required event', () => {
@@ -41,15 +66,11 @@ describe('PersonalityLoader', () => {
 id: bad
 name: Bad
 description: Missing events
-voice:
-  tone: blunt
-  vocabulary: [a]
-  escalation_curve: firm
+persona: "You are Bad."
 events:
   default:
-    system_prompt: "ok"
-routing:
-  preferred_model: gpt-4o-mini
+    instruction: "ok"
+routing: {}
 `;
     const readSpy = jest
       .spyOn(fs, 'readdirSync')

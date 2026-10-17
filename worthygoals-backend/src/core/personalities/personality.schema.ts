@@ -1,16 +1,16 @@
-export interface PersonalityVoice {
-  tone: string;
-  vocabulary: string[];
-  escalation_curve: 'gentle' | 'firm' | 'sharp';
+export interface PersonalityExample {
+  user: string;
+  assistant: string;
 }
 
 export interface PersonalityEvent {
-  system_prompt: string;
-  examples?: Array<{ user: string; assistant: string }>;
+  /** What to do for this event; the persona's identity is added in front. */
+  instruction: string;
+  examples?: PersonalityExample[];
 }
 
+/** Provider-neutral: no model id, so any provider can serve any persona. */
 export interface PersonalityRouting {
-  preferred_model?: string;
   temperature?: number;
   max_tokens?: number;
 }
@@ -19,7 +19,8 @@ export interface PersonalitySchema {
   id: string;
   name: string;
   description: string;
-  voice: PersonalityVoice;
+  /** Identity and always-on rules, sent ahead of every event instruction. */
+  persona: string;
   events: Record<string, PersonalityEvent>;
   routing: PersonalityRouting;
 }

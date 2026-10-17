@@ -86,18 +86,11 @@ export class AgentService implements OnApplicationBootstrap {
     return { valid, missing, invalid };
   }
 
-  async buildAgentInstructionsByMentorId(mentorId: number): Promise<string> {
-    const mentor = await this.mentorRepository.findOne({
-      where: { id: mentorId },
-    });
-
-    if (!mentor) {
-      throw new NotFoundException(`Mentor ${mentorId} not found`);
-    }
-
-    return this.buildAgentInstructions(mentor);
-  }
-
+  /**
+   * Only for mentors with no YAML personality — the retired legacy roster,
+   * still reachable through old conversations. Seeded mentors get their voice
+   * from the persona YAML, injected by the gateway.
+   */
   buildAgentInstructions(mentor: MentorEntity): string {
     const traitLine = mentor.personalityTraits
       ? `Traits JSON: ${JSON.stringify(mentor.personalityTraits)}`
@@ -193,8 +186,12 @@ ${traitLine}
       }),
     ]);
 
-    const instructions = this.buildAgentInstructions(mentor);
-    const messages: ChatMessage[] = [{ role: 'system', content: instructions }];
+    // A personality mentor's voice comes from its YAML, which the gateway
+    // puts first; sending the DB prompt as well would give the model two
+    // competing personas.
+    const messages: ChatMessage[] = mentor.personalityId
+      ? []
+      : [{ role: 'system', content: this.buildAgentInstructions(mentor) }];
 
     if (latestSummary?.summaryText) {
       messages.push({
@@ -209,33 +206,13 @@ ${traitLine}
       if (param) messages.push(param);
     }
 
-    // promptBlocks never carries these for seeded mentors; the seeder writes
-    // them to mentors.modelConfig, and the persona YAML has `routing`. Reading
-    // only promptBlocks sent every reply with no max_tokens (Goggs is meant to
-    // stop at 120) at the provider's default temperature.
-    const routing = mentor.personalityId
-      ? this.personalityService?.getRoutingConfig(mentor.personalityId)
-      : undefined;
-    const model =
-      mentor.promptBlocks?.model ??
-      mentor.modelConfig?.model ??
-      routing?.preferred_model;
-    const temperature =
-      mentor.promptBlocks?.temperature ??
-      mentor.modelConfig?.temperature ??
-      routing?.temperature;
-    const maxTokens =
-      mentor.promptBlocks?.maxOutputTokens ??
-      mentor.modelConfig?.maxOutputTokens ??
-      routing?.max_tokens;
-
+    // No model/temperature/maxTokens here: the gateway applies the persona's
+    // provider-neutral routing. Passing the YAML's old `gpt-4o-mini` sent an
+    // OpenAI id to Anthropic whenever it was the active provider.
     const gatewayReq = {
       userId: params.userId,
       feature: 'chat',
       messages,
-      model,
-      temperature,
-      maxTokens,
       personalityId: mentor.personalityId ?? undefined,
       event: 'chat',
     };
