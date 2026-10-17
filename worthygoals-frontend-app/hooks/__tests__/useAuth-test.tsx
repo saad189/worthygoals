@@ -164,4 +164,17 @@ describe('useAuth.logout', () => {
 
     expect(mockClearTokens).toHaveBeenCalled();
   });
+
+  it('skips the push-token call for a deleted account but still clears everything', async () => {
+    const result = await signedInHook();
+
+    await act(async () => {
+      await result.current.logout({ accountDeleted: true });
+    });
+
+    expect(mockUnregister).not.toHaveBeenCalled();
+    expect(mockClearTokens).toHaveBeenCalled();
+    expect(mockQueryClear).toHaveBeenCalled();
+    expect(result.current.isAuthenticated).toBe(false);
+  });
 });

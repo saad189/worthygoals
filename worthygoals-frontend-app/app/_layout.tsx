@@ -173,6 +173,10 @@ function Routes() {
         options={{ presentation: "modal", headerShown: false }}
       />
       <Stack.Screen
+        name={ROUTE_NAMES.ACCOUNT.self}
+        options={{ animation: slide('slide_from_right'), headerShown: false }}
+      />
+      <Stack.Screen
         name={ROUTE_NAMES.REVIEW.self}
         options={{ animation: slide('slide_from_right'), headerShown: false }}
       />

@@ -129,6 +129,12 @@ export default function MeScreen() {
       `/${ROUTE_NAMES.TABS.INSPIRATION.self}/${ROUTE_NAMES.TABS.INSPIRATION.DEFAULT_SCREEN}` as never,
     );
 
+  // App Store 5.1.1(v): account deletion must be reachable inside the app.
+  const goToDeleteAccount = () =>
+    router.push(
+      `/${ROUTE_NAMES.ACCOUNT.self}/${ROUTE_NAMES.ACCOUNT.DELETE_ACCOUNT_SCREEN}` as never,
+    );
+
   return (
     <Screen scroll>
       <Header eyebrow={`${APP_NAME} · V1`} title="me." />
@@ -200,6 +206,19 @@ export default function MeScreen() {
       <Card>
         <SettingRow label="app" value={APP_NAME} />
         <SettingRow label="version" value={version} last />
+      </Card>
+
+      {/* ── ACCOUNT ───────────────────────────────────────────── */}
+      <Text variant="eyebrow" color="textMuted" style={styles.groupLabel}>
+        account
+      </Text>
+      <Card>
+        <SettingRow
+          label="delete"
+          value="Erase your account"
+          onPress={goToDeleteAccount}
+          last
+        />
       </Card>
 
       <View style={{ marginTop: space["6"] }}>

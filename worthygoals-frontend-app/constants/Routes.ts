@@ -53,6 +53,11 @@ export const ROUTE_NAMES = {
     COMPOSE_SCREEN: "compose-screen",
   },
 
+  ACCOUNT: {
+    self: "account",
+    DELETE_ACCOUNT_SCREEN: "delete-account-screen",
+  },
+
   REVIEW: {
     self: "review",
     REVIEW_SCREEN: "review-screen",
