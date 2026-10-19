@@ -13,21 +13,26 @@ import {
 
 /**
  * Per-mentor fallback commentary, keyed by trend, used when the AI path is
- * unavailable so the weekly review always renders. `personalityId === slug` on
+ * unavailable so the weekly review always renders. `none` is a week with zero
+ * completions: 0-vs-0 is trend `flat`, and Lyra's flat line ("A steady week")
+ * was shown on a goal with nothing done and two skips (QA-34). `personalityId === slug` on
  * the WG roster, so the same id drives the YAML persona and the frontend avatar.
  */
-const FALLBACK: Record<string, Record<WeekTrend, string>> = {
+const FALLBACK: Record<string, Record<WeekTrend | 'none', string>> = {
   marcus: {
+    none: 'Nothing done this week. Begin again on Monday.',
     up: 'More than last week. Hold the line.',
     flat: 'Steady. Steadiness is its own discipline.',
     down: 'Fewer than last week. Account for it, then move.',
   },
   lyra: {
+    none: "This one didn't get a day this week. No verdict — just pick one small start.",
     up: 'You showed up more this week — feel that.',
     flat: 'A steady week. That counts too.',
     down: 'A quieter week. Be gentle, then begin again.',
   },
   goggs: {
+    none: 'ZERO THIS WEEK. THAT IS THE NUMBER. CHANGE IT MONDAY.',
     up: 'MORE REPS. KEEP STACKING.',
     flat: 'SAME AS LAST WEEK. NOT ENOUGH. PUSH.',
     down: 'YOU SLIPPED. NO EXCUSES. GET BACK ON IT.',
@@ -59,7 +64,7 @@ export class WeeklyReviewService {
 
     const goals = await this.goalRepo.find({
       where: { userId: user.id, status: GoalStatus.ACTIVE },
-      relations: ['tasks', 'tasks.completions', 'mentor'],
+      relations: ['tasks', 'tasks.completions', 'tasks.explanations', 'mentor'],
       order: { createdAt: 'DESC' },
     });
 
@@ -101,6 +106,11 @@ export class WeeklyReviewService {
       inRange(d, lastWeekStart, weekStart),
     ).length;
 
+    // Explanations are the "Not today" answers — the misses the user owned up to.
+    const skipsThisWeek = (goal.tasks ?? [])
+      .flatMap((t) => t.explanations ?? [])
+      .filter((e) => inRange(new Date(e.createdAt), weekStart, weekEnd)).length;
+
     const delta = thisWeekCount - lastWeekCount;
     const trend: WeekTrend = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
     const danger = thisWeekCount === 0;
@@ -114,6 +124,7 @@ export class WeeklyReviewService {
       goal.title,
       thisWeekCount,
       lastWeekCount,
+      skipsThisWeek,
       trend,
     );
 
@@ -137,14 +148,16 @@ export class WeeklyReviewService {
     goalTitle: string,
     thisWeekCount: number,
     lastWeekCount: number,
+    skipsThisWeek: number,
     trend: WeekTrend,
   ): Promise<string> {
+    const key = thisWeekCount === 0 ? 'none' : trend;
     const fallback =
-      FALLBACK[personalityId]?.[trend] ?? FALLBACK[DEFAULT_PERSONALITY][trend];
+      FALLBACK[personalityId]?.[key] ?? FALLBACK[DEFAULT_PERSONALITY][key];
 
     const summary =
-      `Goal: ${goalTitle}. This week: ${thisWeekCount} completion(s); ` +
-      `last week: ${lastWeekCount}. Trend: ${trend}.`;
+      `Goal: ${goalTitle}. This week: ${thisWeekCount} completion(s), ` +
+      `${skipsThisWeek} skip(s); last week: ${lastWeekCount}. Trend: ${trend}.`;
 
     try {
       const result = await this.gateway.chat({
