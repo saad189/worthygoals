@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native';
 
-import { useNavigation } from 'expo-router';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { ParamListBase } from '@react-navigation/native';
 
@@ -159,6 +159,21 @@ export default function TodoListScreen() {
       open(task);
     }, 200);
   };
+  // Today-screen tap: `?goalId&taskId` drills into the goal, then opens that
+  // task's answer moment once its tasks load. Params are cleared after use so
+  // coming back to the tab doesn't re-open it; the next tap sets them again.
+  const { goalId: linkGoalId, taskId: linkTaskId } =
+    useLocalSearchParams<{ goalId?: string; taskId?: string }>();
+  useEffect(() => {
+    if (linkGoalId) setSelectedGoalId(linkGoalId);
+  }, [linkGoalId]);
+  useEffect(() => {
+    const task = linkTaskId && tasks.find((t: TaskItem) => t.id === linkTaskId);
+    if (!task) return;
+    if (task.status === 'pending') setAskTask(task);
+    router.setParams({ goalId: undefined, taskId: undefined });
+  }, [linkTaskId, tasks]);
+
   const answerYes = (task: TaskItem) => answer(task, openComplete);
   const answerNotToday = (task: TaskItem) => answer(task, openExplain);
 
