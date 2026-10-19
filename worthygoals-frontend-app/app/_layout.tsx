@@ -89,6 +89,7 @@ function RootLayout() {
   });
 
   const [isSplashVisible, setIsSplashVisible] = useState(true);
+  const scheme = useColorScheme();
 
   // // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -119,7 +120,7 @@ function RootLayout() {
     // (CompletionSheet / ExplanationSheet) drives gesture handlers in the main
     // navigation tree, which crash without a root provider (E-1).
     <GestureHandlerRootView
-      style={{ flex: 1, backgroundColor: Colors.light.background }}
+      style={{ flex: 1, backgroundColor: Colors[scheme].background }}
     >
       {isSplashVisible || !loaded ? (
         <CustomSplashScreen onDone={() => setIsSplashVisible(false)} />

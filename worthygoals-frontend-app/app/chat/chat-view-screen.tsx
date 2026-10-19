@@ -38,7 +38,7 @@ export default function ChatViewScreen() {
   // Recover the personality from the conversation name → its identity colour +
   // bubble shape tint the whole thread (§F per-mentor theming / Hi-Fi §1).
   const persona = personaByName(chatData?.name);
-  const { colors, accent, bubbleRadius } = useAppTheme(persona.slug);
+  const { colors, accent, bubbleRadius, isDark } = useAppTheme(persona.slug);
 
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
   const [chatDetail, setChatDetail] = useState<ConversationDetail>(chatData);
@@ -302,7 +302,7 @@ export default function ChatViewScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
     >
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? "light" : "dark"} />
       <View style={dynamicStyles.header}>
         <TouchableOpacity
           onPress={navigation.goBack}
@@ -400,7 +400,8 @@ export default function ChatViewScreen() {
           <Ionicons
             name="send"
             size={18}
-            color={colors.textWhite}
+            // Marcus's accent is ink, off-white in dark: white would vanish.
+            color={persona.slug === 'marcus' ? colors.textOnInk : colors.textWhite}
             style={{ marginLeft: 4 }}
           />
         </TouchableOpacity>

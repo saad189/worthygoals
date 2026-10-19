@@ -21,6 +21,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Palette } from '@/constants/tokens';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedG = Animated.createAnimatedComponent(G);
@@ -52,6 +53,9 @@ type Props = {
 };
 
 export default function CradleMark({ size = 120, animate = true, onDone }: Props) {
+  // The ink strokes are the theme's text colour, so the mark inverts in dark
+  // mode (matching worthy-goals-splash-dark.png); rust stays rust.
+  const ink = useAppTheme().colors.text;
   // Start hidden when animating, otherwise render the finished mark.
   const arcOffset = useSharedValue(animate ? ARC_LEN : 0);
   const stemOffset = useSharedValue(animate ? STEM_LEN : 0);
@@ -105,7 +109,7 @@ export default function CradleMark({ size = 120, animate = true, onDone }: Props
     <Svg width={size} height={size} viewBox="0 0 64 64" fill="none">
       <AnimatedPath
         d="M13 32 A 19 19 0 0 0 51 32"
-        stroke={Palette.ink}
+        stroke={ink}
         strokeWidth={3.6}
         strokeLinecap="round"
         strokeDasharray={ARC_LEN}
@@ -123,7 +127,7 @@ export default function CradleMark({ size = 120, animate = true, onDone }: Props
         <Path d="M32 30.5 C 27 30.5 22 26.5 21.5 20.5 C 27 21.5 31 25 32 30.5 Z" fill={Palette.accent} />
       </AnimatedG>
       <AnimatedG originX={32} originY={29} animatedProps={leafRProps}>
-        <Path d="M32 27 C 37 27 42 23.5 42.5 18 C 37 19 33 22.5 32 27 Z" fill={Palette.ink} />
+        <Path d="M32 27 C 37 27 42 23.5 42.5 18 C 37 19 33 22.5 32 27 Z" fill={ink} />
       </AnimatedG>
     </Svg>
   );

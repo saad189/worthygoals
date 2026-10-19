@@ -36,7 +36,7 @@ export default function Screen({
   contentStyle,
   refreshControl,
 }: Props) {
-  const { colors, space } = useAppTheme();
+  const { colors, space, isDark } = useAppTheme();
 
   const inner: ViewStyle = {
     paddingHorizontal: padded ? space['5'] : 0,
@@ -46,7 +46,7 @@ export default function Screen({
 
   return (
     <SafeAreaView style={[styles.fill, { backgroundColor: colors.background }, style]} edges={edges}>
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       {scroll ? (
         <ScrollView
           style={styles.fill}

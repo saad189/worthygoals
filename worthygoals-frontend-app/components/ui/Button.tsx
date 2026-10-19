@@ -42,7 +42,10 @@ export default function Button({
   const isLink = variant === 'link';
   const isSecondary = variant === 'secondary';
   const bg = variant === 'accent' ? colors.primary : isSecondary ? 'transparent' : colors.text;
-  const labelColor = isLink || isSecondary ? 'text' : 'white';
+  // The ink pill inverts with the scheme (off-white in dark), so its label
+  // does too; rust stays white in both.
+  const labelColor =
+    isLink || isSecondary ? 'text' : variant === 'accent' ? 'white' : 'textOnInk';
 
   const containerStyle: ViewStyle = isLink
     ? { paddingVertical: space['3'], alignItems: 'center' }
@@ -78,7 +81,9 @@ export default function Button({
       style={[containerStyle, disabled ? styles.disabled : null, style]}
     >
       {loading ? (
-        <ActivityIndicator color={isLink || isSecondary ? colors.textMuted : colors.white} />
+        <ActivityIndicator
+          color={isLink || isSecondary ? colors.textMuted : colors[labelColor]}
+        />
       ) : (
         <>
           {icon ? <View>{icon}</View> : null}

@@ -18,6 +18,9 @@ type Props = {
   onDone?: () => void;
 };
 
+// Follows the theme, like the native splash it continues: that one has a
+// dark variant (worthy-goals-splash-dark.png on paperDark), so a dark-mode
+// launch is dark from the first frame to the today screen.
 export default function CustomSplashScreen({ onDone }: Props) {
   const { space } = useAppTheme();
   return (

@@ -69,6 +69,27 @@ describe('colour contrast (WCAG AA, normal text)', () => {
     }
   });
 
+  // Content sitting on a coloured fill, in both schemes. Dark mode first shipped
+  // with white on the inverted (off-white) ink fill — every primary button,
+  // the user avatar and Marcus's avatar — and a 3.4:1 chat bubble.
+  const FILLS: Array<[string, string]> = [
+    ['textOnInk', 'text'], // primary button, user avatar
+    ['textOnInk', 'mentorMarcus'], // Marcus's avatar + send button
+    ['white', 'mentorGoggs'],
+    ['bubbleOtherText', 'bubbleOther'],
+    ['bubbleSelfText', 'bubbleSelf'],
+  ];
+  for (const scheme of SCHEMES) {
+    for (const [fg, bg] of FILLS) {
+      it(`${scheme}: ${fg} on ${bg} meets ${AA_NORMAL_TEXT}:1`, () => {
+        const palette = Colors[scheme] as Record<string, string>;
+        expect(contrastRatio(palette[fg], palette[bg])).toBeGreaterThanOrEqual(
+          AA_NORMAL_TEXT,
+        );
+      });
+    }
+  }
+
   it('keeps white legible on the accent fill', () => {
     expect(
       contrastRatio('#FFFFFF', (Colors.light as Record<string, string>).buttonBackground),

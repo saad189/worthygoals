@@ -6,15 +6,24 @@
     "orientation": "portrait",
     "icon": "./assets/images/worthy-goals-icon.png",
     "scheme": "worthygoals",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/worthy-goals-splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F4EFE3"
+      "backgroundColor": "#F4EFE3",
+      "dark": {
+        "image": "./assets/images/worthy-goals-splash-dark.png",
+        "backgroundColor": "#1A1714"
+      }
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.saad189.worthygoalsfrontendapp"
+      "bundleIdentifier": "com.saad189.worthygoalsfrontendapp",
+      "icon": {
+        "light": "./assets/images/worthy-goals-icon.png",
+        "dark": "./assets/images/worthy-goals-icon-dark.png",
+        "tinted": "./assets/images/worthy-goals-icon-tinted.png"
+      }
     },
     "android": {
       "adaptiveIcon": {

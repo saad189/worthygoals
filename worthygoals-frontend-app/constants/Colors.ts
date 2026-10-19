@@ -23,6 +23,10 @@ export const Colors = {
     textMuted:    Palette.inkMuted,       // secondary / caption text
     textFaint:    Palette.inkFaint,       // placeholders, disabled
     textWhite:    Palette.white,          // text on dark/accent surfaces
+    // Content on a `text`-coloured fill (the ink pill, user/Marcus avatars).
+    // That fill inverts with the scheme, so this must too — white was
+    // invisible on the off-white ink of dark mode.
+    textOnInk:    Palette.white,
     textInactive: Palette.inkFaint,
     textAccent:   Palette.accentText,     // accent used AS TEXT (not as a fill)
 
@@ -110,6 +114,7 @@ export const Colors = {
     textMuted:    Palette.inkMutedDark,
     textFaint:    Palette.inkFaintDark,
     textWhite:    Palette.white,
+    textOnInk:    Palette.paperDark,
     textInactive: Palette.inkMutedDark,
     textAccent:   Palette.accentTextDark, // accent used AS TEXT (not as a fill)
 
@@ -145,7 +150,8 @@ export const Colors = {
     // ── Chat bubble colours ─────────────────────────────────────
     bubbleSelf:    Palette.accent,
     bubbleSelfText:Palette.white,
-    bubbleOther:   Palette.inkFaintDark,
+    // Was inkFaintDark: off-white text on it was ~3.4:1.
+    bubbleOther:   Palette.raisedDark,
     bubbleOtherText: Palette.inkDark,
 
     // ── Semantic aliases ───────────────────────────────────────
