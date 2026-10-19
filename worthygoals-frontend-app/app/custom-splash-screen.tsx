@@ -12,20 +12,28 @@ import { Screen, Text } from '@/components/ui';
 import CradleMark from '@/components/brand/CradleMark';
 import { APP_NAME } from '@/constants/Brand';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { Colors } from '@/constants/Colors';
+import { Palette } from '@/constants/tokens';
 
 type Props = {
   /** Called when the mark finishes drawing, so the root layout can hand off. */
   onDone?: () => void;
 };
 
+// The splash stays on brand paper in dark mode too: it continues the native
+// splash (an ink-on-paper image), and a dark one would need a dark-mode logo
+// asset that doesn't exist yet.
 export default function CustomSplashScreen({ onDone }: Props) {
   const { space } = useAppTheme();
   return (
-    <Screen center>
+    <Screen center style={{ backgroundColor: Palette.paper }}>
       <View style={{ marginBottom: space['6'] }}>
         <CradleMark size={104} animate onDone={onDone} />
       </View>
-      <Text variant="eyebrow" style={{ marginBottom: space['3'] }}>
+      <Text
+        variant="eyebrow"
+        style={{ marginBottom: space['3'], color: Colors.light.textMuted }}
+      >
         {`${APP_NAME} · V1`}
       </Text>
       {/* <Text variant="display" style={{ textAlign: 'center' }}>

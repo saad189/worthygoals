@@ -31,6 +31,7 @@ export const Palette = {
   paperDark:    '#1A1714', // same as ink — becomes the dark surface
   canvasDark:   '#141210', // slightly deeper warm dark
   inkDark:      '#EDE8DF', // off-white warm — primary text on dark
+  raisedDark:   '#2A2622', // one step up from paperDark — the other side's chat bubble
   // Dark mode failed identically: #6B6560 was 3.11:1 and #2D2926 was 1.24:1.
   // Measured against `paperDark`, the lighter of the two dark surfaces.
   inkMutedDark: '#98928C', // muted on dark (5.80:1 on paperDark)

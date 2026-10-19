@@ -1,7 +1,8 @@
-// V1 is warm-light only. Dark mode is V1.5 (see ui-frontend-rearchitecture-plan
-// §E-3): the dark palette exists but is unfinished, so following the OS scheme
-// renders a half-built dark theme. Pin to 'light' until dark is intentionally
-// completed; this is the single switch to flip when that happens.
+import { useColorScheme as useSystemScheme } from 'react-native';
+
+// The app follows the system appearance. Every colour reaches components
+// through useAppTheme → this hook, so this is the one switch: pin it to
+// 'light' (and set userInterfaceStyle back to "light") to force light again.
 export function useColorScheme(): 'light' | 'dark' {
-  return 'light';
+  return useSystemScheme() === 'dark' ? 'dark' : 'light';
 }

@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/worthy-goals-icon.png",
     "scheme": "worthygoals",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/worthy-goals-splash.png",
       "resizeMode": "contain",

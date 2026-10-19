@@ -62,7 +62,9 @@ export default function MentorAvatar({ mentor, size = 40, style }: Props) {
       {/* Sized to the box, not the reader: scaling would clip the letter. */}
       <Text
         variant="title"
-        color="white"
+        // Marcus's colour is ink, which inverts in dark; Lyra's blue and
+        // Goggs's rust carry white in both schemes.
+        color={v.color === colors.mentorMarcus ? 'textOnInk' : 'white'}
         maxFontSizeMultiplier={1}
         style={{ fontSize: size * 0.42, lineHeight: size * 0.5 }}
       >
