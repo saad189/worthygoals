@@ -9,7 +9,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { Goal, Task } from 'src/database/models';
 import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
-import { GoalCategory, TaskRepeatFrequency } from 'src/common/constants';
+import {
+  GoalCategory,
+  GoalStatus,
+  TaskRepeatFrequency,
+  TaskStatus,
+} from 'src/common/constants';
 import { UsersService } from '../users/users.service';
 import { dueOnDay, localDay } from 'src/common/timezone';
 import { CreateGoalDto } from './dto/create-goal.dto';
@@ -226,9 +231,70 @@ export class GoalsService {
     const goal = await this.goalRepository.findOne({ where: { id } });
     if (!goal) throw new NotFoundException(`Goal ${id} not found`);
     if (goal.userId !== user.id) throw new ForbiddenException();
+    // Pause (paused) and Let it go (archived) need nothing beyond the status:
+    // every surface that schedules or shows work reads active goals only.
+    // Coming back does — see resumeTasks.
+    const resuming =
+      dto.status === GoalStatus.ACTIVE && goal.status !== GoalStatus.ACTIVE;
     this.goalRepository.merge(goal, dto as unknown as Partial<Goal>);
-    const saved = await this.goalRepository.save(goal);
+    const saved = await this.goalRepository.manager.transaction(async (em) => {
+      const g = await em.save(goal);
+      if (resuming) await this.resumeTasks(g, user.timezone, em);
+      return g;
+    });
     return this.toDto(saved);
+  }
+
+  /**
+   * A paused or let-go goal comes back with exactly one thing to do today —
+   * not a pile of the days it sat out.
+   *
+   * While it was away nothing rolled forward, so its newest pending task is
+   * stranded in the past (and older unanswered ones may sit behind it). The
+   * newest moves to today and the older ones go: they were never answered,
+   * and they'd otherwise read as misses the user didn't make. A goal whose
+   * tasks are all answered gets its next occurrence today if it repeats. A
+   * goal that already has work today or later is left alone.
+   */
+  private async resumeTasks(
+    goal: Goal,
+    timezone: string,
+    em: EntityManager,
+  ): Promise<void> {
+    const today = localDay(timezone);
+    const tasks = await em.find(Task, {
+      where: { goalId: goal.id },
+      order: { occurrenceIndex: 'DESC', createdAt: 'DESC' },
+    });
+    const pending = tasks.filter((t) => t.status === TaskStatus.PENDING);
+    const stale = pending.filter((t) => t.dueOn && t.dueOn < today);
+    const upcoming = pending.some((t) => t.dueOn && t.dueOn >= today);
+
+    if (upcoming) {
+      if (stale.length) await em.remove(stale);
+      return;
+    }
+    if (stale.length) {
+      const [keep, ...older] = stale;
+      Object.assign(keep, dueOnDay(today, timezone));
+      await em.save(keep);
+      if (older.length) await em.remove(older);
+      return;
+    }
+    const latest = tasks[0];
+    if (latest && latest.repeatFrequency !== TaskRepeatFrequency.NONE) {
+      await em.save(
+        em.create(Task, {
+          goalId: goal.id,
+          title: latest.title,
+          description: latest.description,
+          repeatFrequency: latest.repeatFrequency,
+          occurrenceIndex: latest.occurrenceIndex + 1,
+          parentTaskId: latest.id,
+          ...dueOnDay(today, timezone),
+        }),
+      );
+    }
   }
 
   async remove(id: string, sub: string): Promise<void> {

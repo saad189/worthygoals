@@ -5,6 +5,7 @@ import {
   GoalCategory,
   GoalStatus,
   TaskRepeatFrequency,
+  TaskStatus,
 } from 'src/common/constants';
 import { Goal, Task } from 'src/database/models';
 import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
@@ -47,7 +48,12 @@ describe('GoalsService', () => {
     remove: jest.Mock;
     manager: { transaction: jest.Mock };
   };
-  let taskRepo: { create: jest.Mock; save: jest.Mock };
+  let taskRepo: {
+    create: jest.Mock;
+    save: jest.Mock;
+    find: jest.Mock;
+    remove: jest.Mock;
+  };
   let usersService: { findByAccountSub: jest.Mock };
   let gateway: { chat: jest.Mock };
 
@@ -68,6 +74,8 @@ describe('GoalsService', () => {
               entity === Goal ? repo.create(x) : taskRepo.create(x),
             save: (x: Record<string, unknown>) =>
               'goalId' in x ? taskRepo.save(x) : repo.save(x),
+            find: (_: unknown, opts: unknown) => taskRepo.find(opts),
+            remove: (x: unknown) => taskRepo.remove(x),
           }),
         ),
       },
@@ -75,6 +83,8 @@ describe('GoalsService', () => {
     taskRepo = {
       create: jest.fn((x) => x),
       save: jest.fn(),
+      find: jest.fn().mockResolvedValue([]),
+      remove: jest.fn(),
     };
     usersService = {
       findByAccountSub: jest.fn().mockResolvedValue({ id: USER_ID }),
@@ -318,6 +328,118 @@ describe('GoalsService', () => {
       await expect(
         service.update('goal-uuid-1', USER_SUB, { title: 'X' }),
       ).rejects.toThrow(ForbiddenException);
+    });
+
+    describe('pause / let it go / resume', () => {
+      const TODAY = '2026-10-19';
+      const task = (o: Record<string, unknown>) => ({
+        goalId: 'goal-uuid-1',
+        title: 'Run',
+        status: TaskStatus.PENDING,
+        repeatFrequency: TaskRepeatFrequency.DAILY,
+        ...o,
+      });
+      const resume = async (from: GoalStatus) => {
+        repo.findOne.mockResolvedValue(makeGoal({ status: from }));
+        repo.merge.mockImplementation((g, dto) => Object.assign(g, dto));
+        repo.save.mockImplementation((g) => g);
+        return service.update('goal-uuid-1', USER_SUB, {
+          status: GoalStatus.ACTIVE,
+        });
+      };
+      beforeEach(() =>
+        jest.useFakeTimers().setSystemTime(new Date(`${TODAY}T09:00:00Z`)),
+      );
+      afterEach(() => jest.useRealTimers());
+
+      it.each([GoalStatus.PAUSED, GoalStatus.ARCHIVED])(
+        'sets %s without touching tasks',
+        async (status) => {
+          repo.findOne.mockResolvedValue(makeGoal());
+          repo.merge.mockImplementation((g, dto) => Object.assign(g, dto));
+          repo.save.mockImplementation((g) => g);
+
+          const result = await service.update('goal-uuid-1', USER_SUB, {
+            status,
+          });
+
+          expect(result.status).toBe(status);
+          expect(taskRepo.find).not.toHaveBeenCalled();
+        },
+      );
+
+      it('brings the newest stranded task to today and drops the older ones', async () => {
+        const newest = task({
+          id: 'b',
+          occurrenceIndex: 5,
+          dueOn: '2026-10-10',
+        });
+        const older = task({
+          id: 'a',
+          occurrenceIndex: 4,
+          dueOn: '2026-10-09',
+        });
+        taskRepo.find.mockResolvedValue([newest, older]);
+
+        const result = await resume(GoalStatus.PAUSED);
+
+        expect(result.status).toBe(GoalStatus.ACTIVE);
+        expect(taskRepo.save).toHaveBeenCalledWith(
+          expect.objectContaining({ id: 'b', dueOn: TODAY }),
+        );
+        expect(taskRepo.remove).toHaveBeenCalledWith([older]);
+      });
+
+      it('leaves a goal that already has work today alone, minus stale rows', async () => {
+        const stale = task({
+          id: 'a',
+          occurrenceIndex: 4,
+          dueOn: '2026-10-18',
+        });
+        const todays = task({ id: 'b', occurrenceIndex: 5, dueOn: TODAY });
+        taskRepo.find.mockResolvedValue([todays, stale]);
+
+        await resume(GoalStatus.PAUSED);
+
+        expect(taskRepo.save).not.toHaveBeenCalled();
+        expect(taskRepo.remove).toHaveBeenCalledWith([stale]);
+      });
+
+      it('gives a repeating goal with nothing pending its next occurrence today', async () => {
+        taskRepo.find.mockResolvedValue([
+          task({
+            id: 'done',
+            occurrenceIndex: 3,
+            status: TaskStatus.COMPLETED,
+            dueOn: '2026-10-01',
+          }),
+        ]);
+
+        await resume(GoalStatus.ARCHIVED);
+
+        expect(taskRepo.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            parentTaskId: 'done',
+            occurrenceIndex: 4,
+            dueOn: TODAY,
+          }),
+        );
+      });
+
+      it('does not invent work for a finished one-off goal', async () => {
+        taskRepo.find.mockResolvedValue([
+          task({
+            id: 'done',
+            status: TaskStatus.COMPLETED,
+            repeatFrequency: TaskRepeatFrequency.NONE,
+            dueOn: '2026-10-01',
+          }),
+        ]);
+
+        await resume(GoalStatus.PAUSED);
+
+        expect(taskRepo.save).not.toHaveBeenCalled();
+      });
     });
   });
 

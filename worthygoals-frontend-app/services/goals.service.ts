@@ -1,4 +1,4 @@
-import { ApiGoal, GoalProposal } from "@/models";
+import { ApiGoal, GoalProposal, GoalStatus } from "@/models";
 import type { ApiCreateGoalPayload, ApiCreateGoalResponse } from '@/types/api';
 import ApiService, { AI_REQUEST_TIMEOUT_MS } from "./api.service";
 
@@ -26,7 +26,7 @@ export const goalsApiService = {
 
   update: async (
     goalId: string,
-    payload: { title?: string; description?: string },
+    payload: { title?: string; description?: string; status?: GoalStatus },
   ): Promise<ApiGoal> => {
     const { data } = await ApiService.patch<ApiGoal>(`${GOALS_BASE}/${goalId}`, payload);
     return data;

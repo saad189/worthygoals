@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   StyleSheet,
   TouchableOpacity,
@@ -16,20 +17,58 @@ import CompletionSheet, { CompletionSheetHandle } from '@/components/CompletionS
 import DidYouDoIt from '@/components/DidYouDoIt';
 import ExplanationSheet, { ExplanationSheetHandle } from '@/components/ExplanationSheet';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { useGoals } from '@/hooks/useGoals';
+import { useGoals, useSetGoalStatus } from '@/hooks/useGoals';
 import { useMentors } from '@/hooks/useMentors';
 import { useTasks } from '@/hooks/useTasks';
 import { useCompleteTask } from '@/hooks/useCompleteTask';
 import { useExplainTask } from '@/hooks/useExplainTask';
 import { ROUTE_NAMES } from '@/constants/Routes';
-import { ApiGoal, Mentor, TaskItem } from '@/models';
+import { ApiGoal, GoalStatus, Mentor, TaskItem } from '@/models';
+
+const STATUS_ORDER: Record<GoalStatus, number> = {
+  active: 0,
+  paused: 1,
+  completed: 2,
+  archived: 3,
+};
+
+/** The words the user picked, not the stored enum ("archived" is Let it go). */
+const GOAL_STATUS_LABEL: Record<GoalStatus, string> = {
+  active: 'active',
+  paused: 'paused',
+  completed: 'done',
+  archived: 'let go',
+};
+
+/** The banner a goal that's not in play shows above its tasks. */
+const AWAY_COPY: Partial<Record<GoalStatus, { title: string; body: string; cta: string }>> = {
+  paused: {
+    title: 'Paused',
+    body: 'Off your today screen, and your mentor stays quiet about it. Nothing is lost.',
+    cta: 'Resume this goal',
+  },
+  archived: {
+    title: 'You let this one go',
+    body: 'No tasks, no nudges. Its history stays here if you want it back.',
+    cta: 'Bring it back',
+  },
+};
 
 export default function TodoListScreen() {
   const { colors, space, radius } = useAppTheme();
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
 
-  const { goals, loading: goalsLoading, error: goalsError, refetch: refetchGoals } = useGoals();
+  const { goals: allGoals, loading: goalsLoading, error: goalsError, refetch: refetchGoals } = useGoals();
   const { mentors } = useMentors();
+  const { setStatus, updating: updatingStatus } = useSetGoalStatus();
+  // What you're working on first; paused, then let-go goals below it.
+  const goals = useMemo(
+    () =>
+      [...allGoals].sort(
+        (a: ApiGoal, b: ApiGoal) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status],
+      ),
+    [allGoals],
+  );
 
   // Drill from the goals list into a single goal's task list. Tasks (and the
   // completion sheets) are scoped to whichever goal is selected — `useTasks`
@@ -223,6 +262,25 @@ export default function TodoListScreen() {
       marginTop: space['2'],
       backgroundColor: colors.canvas,
     },
+    pausedBadge: { backgroundColor: colors.notificationInfo },
+    awayCard: { opacity: 0.7, borderStyle: 'dashed', borderWidth: 1 },
+    awayBanner: {
+      marginHorizontal: space['4'],
+      marginBottom: space['3'],
+      padding: space['4'],
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderStyle: 'dashed',
+      borderColor: colors.border,
+      backgroundColor: colors.canvas,
+      gap: space['2'],
+    },
+    lifecycleRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: space['5'],
+      paddingVertical: space['4'],
+    },
     retryBtn: {
       marginTop: space['3'],
       paddingVertical: space['3'],
@@ -242,23 +300,33 @@ export default function TodoListScreen() {
   // ── Goal card (list level) ──
   // useCallback: both FlatLists got a new renderItem identity on every render
   // of a screen that also holds two sheets and a modal.
-  const renderGoal = useCallback(({ item }: { item: ApiGoal }) => (
+  const renderGoal = useCallback(({ item }: { item: ApiGoal }) => {
+    const away = item.status !== 'active';
+    return (
     <TouchableOpacity
-      style={[s.card, s.goalCard]}
+      // A goal that's out of play reads as such at a glance: dimmed card,
+      // dashed edge, and its status in words.
+      style={[s.card, s.goalCard, away && s.awayCard]}
       onPress={() => setSelectedGoalId(item.id)}
       accessibilityRole="button"
-      accessibilityLabel={`Open goal ${item.title}`}
+      accessibilityLabel={
+        away
+          ? `Open goal ${item.title}, ${GOAL_STATUS_LABEL[item.status]}`
+          : `Open goal ${item.title}`
+      }
     >
       <View style={{ flex: 1 }}>
-        <Text variant="title">{item.title}</Text>
+        <Text variant="title" color={away ? 'textMuted' : 'text'}>
+          {item.title}
+        </Text>
         {item.description ? (
           <Text variant="muted" numberOfLines={2} style={{ marginTop: space['1'] }}>
             {item.description}
           </Text>
         ) : null}
-        <View style={s.goalStatusBadge}>
-          <Text variant="eyebrow" color="textMuted">
-            {item.status}
+        <View style={[s.goalStatusBadge, item.status === 'paused' && s.pausedBadge]}>
+          <Text variant="eyebrow" color={item.status === 'paused' ? 'text' : 'textMuted'}>
+            {GOAL_STATUS_LABEL[item.status] ?? item.status}
           </Text>
         </View>
       </View>
@@ -266,11 +334,14 @@ export default function TodoListScreen() {
         ›
       </Text>
     </TouchableOpacity>
-  ), [s, space]);
+    );
+  }, [s, space]);
 
   // ── Task card (drilled-in level) ──
+  const goalInPlay = selectedGoal?.status === 'active';
   const renderTask = useCallback(({ item }: { item: TaskItem }) => {
-    const isPending = item.status === 'pending';
+    // A paused or let-go goal's tasks are history until it's back in play.
+    const isPending = item.status === 'pending' && goalInPlay;
     const badgeColor =
       item.status === 'completed'
         ? colors.notificationSuccess
@@ -322,10 +393,38 @@ export default function TodoListScreen() {
         </View>
       </TouchableOpacity>
     );
-  }, [s, space, colors]);
+  }, [s, space, colors, goalInPlay]);
 
   // ── Drilled-in view: one goal's tasks ──
   if (selectedGoal) {
+    const away = AWAY_COPY[selectedGoal.status];
+    const letGo = () =>
+      Alert.alert(
+        'Let this goal go?',
+        'It leaves today and your mentor stops nudging you about it. You can bring it back from Goals.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Let it go',
+            style: 'destructive',
+            onPress: () => setStatus(selectedGoal.id, 'archived'),
+          },
+        ],
+      );
+    // Pause / Let it go aren't only for the 3rd miss: you can step away from
+    // a goal whenever you choose to.
+    const lifecycleControls = goalInPlay ? (
+      <View style={s.lifecycleRow}>
+        <Button
+          label="pause this goal"
+          variant="link"
+          onPress={() => setStatus(selectedGoal.id, 'paused')}
+          disabled={updatingStatus}
+        />
+        <Button label="let it go" variant="link" onPress={letGo} disabled={updatingStatus} />
+      </View>
+    ) : null;
+
     return (
       <Screen padded={false} edges={['top']}>
         <View style={s.backRow}>
@@ -357,6 +456,19 @@ export default function TodoListScreen() {
           style={{ paddingHorizontal: space['5'], marginBottom: space['3'] }}
         />
 
+        {away ? (
+          <View style={s.awayBanner} accessibilityRole="summary">
+            <Text variant="title">{away.title}</Text>
+            <Text variant="muted">{away.body}</Text>
+            <Button
+              label={away.cta}
+              onPress={() => setStatus(selectedGoal.id, 'active')}
+              loading={updatingStatus}
+              disabled={updatingStatus}
+            />
+          </View>
+        ) : null}
+
         {loading ? (
           <View style={s.center}>
             <ActivityIndicator size="small" color={colors.text} />
@@ -380,6 +492,7 @@ export default function TodoListScreen() {
             <Text variant="muted" style={{ textAlign: 'center' }}>
               This goal has no tasks to work on right now.
             </Text>
+            {lifecycleControls}
           </View>
         ) : (
           <FlatList
@@ -387,6 +500,7 @@ export default function TodoListScreen() {
             keyExtractor={(t) => t.id}
             renderItem={renderTask}
             contentContainerStyle={s.list}
+            ListFooterComponent={lifecycleControls}
           />
         )}
 
@@ -425,6 +539,9 @@ export default function TodoListScreen() {
             const t = actingTaskRef.current;
             if (t) explain(t.id, payload);
           }}
+          onGoalAction={(action) =>
+            setStatus(selectedGoal.id, action === 'pause' ? 'paused' : 'archived')
+          }
           onClose={() => explanationRef.current?.close()}
         />
       </Screen>

@@ -42,9 +42,12 @@ jest.mock('@/components/DidYouDoIt', () => {
 
 // The data layer is not under test here — the render path is.
 const GOAL = { id: 'g1', title: 'Run a half marathon', status: 'active', mentorId: null };
+let mockGoals: Array<typeof GOAL> = [GOAL];
+const mockSetStatus = jest.fn();
 
 jest.mock('@/hooks/useGoals', () => ({
-  useGoals: () => ({ goals: [GOAL], loading: false, error: null, refetch: jest.fn() }),
+  useGoals: () => ({ goals: mockGoals, loading: false, error: null, refetch: jest.fn() }),
+  useSetGoalStatus: () => ({ setStatus: mockSetStatus, updating: false }),
 }));
 jest.mock('@/hooks/useMentors', () => ({ useMentors: () => ({ mentors: [] }) }));
 const TASK = { id: 't1', goalId: 'g1', title: 'Run 5k', status: 'pending', updatedAt: '2026-10-19' };
@@ -81,7 +84,9 @@ describe('TodoListScreen', () => {
   beforeEach(() => {
     mockParams = {};
     mockTasks = [];
+    mockGoals = [GOAL];
     mockSetParams.mockClear();
+    mockSetStatus.mockClear();
   });
 
   it('renders the goals list', () => {
@@ -117,5 +122,44 @@ describe('TodoListScreen', () => {
     render(<TodoListScreen />);
     fireEvent.press(screen.getByLabelText(`Open goal ${GOAL.title}`));
     expect(screen.queryByText(`Did you do it: ${TASK.title}`)).toBeNull();
+  });
+
+  describe('pause / let it go', () => {
+    it('pauses an active goal from its task list', () => {
+      mockTasks = [TASK];
+      render(<TodoListScreen />);
+      fireEvent.press(screen.getByLabelText(`Open goal ${GOAL.title}`));
+      fireEvent.press(screen.getByText('pause this goal'));
+      expect(mockSetStatus).toHaveBeenCalledWith('g1', 'paused');
+    });
+
+    it('lists a paused goal below active ones, labelled, and resumes it', () => {
+      const paused = { ...GOAL, id: 'g0', title: 'Learn Urdu', status: 'paused' };
+      mockGoals = [paused, GOAL];
+      mockTasks = [TASK];
+      render(<TodoListScreen />);
+
+      const titles = screen.getAllByText(/Run a half marathon|Learn Urdu/).map(
+        (n) => n.props.children,
+      );
+      expect(titles).toEqual(['Run a half marathon', 'Learn Urdu']);
+
+      fireEvent.press(screen.getByLabelText('Open goal Learn Urdu, paused'));
+      expect(screen.getByText('Paused')).toBeTruthy();
+      // Its pending task can't be answered while it's paused.
+      expect(screen.queryByText('tap to answer ›')).toBeNull();
+      expect(screen.queryByText('pause this goal')).toBeNull();
+
+      fireEvent.press(screen.getByText('Resume this goal'));
+      expect(mockSetStatus).toHaveBeenCalledWith('g0', 'active');
+    });
+
+    it('offers a let-go goal back', () => {
+      mockGoals = [{ ...GOAL, status: 'archived' }];
+      render(<TodoListScreen />);
+      fireEvent.press(screen.getByLabelText(`Open goal ${GOAL.title}, let go`));
+      fireEvent.press(screen.getByText('Bring it back'));
+      expect(mockSetStatus).toHaveBeenCalledWith('g1', 'active');
+    });
   });
 });
