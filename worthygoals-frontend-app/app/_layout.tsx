@@ -165,7 +165,7 @@ function Routes() {
       />
 
       <Stack.Screen
-        name={ROUTE_NAMES.TODO.self}
+        name={ROUTE_NAMES.GOAL.self}
         options={{ animation: slide('slide_from_right'), headerShown: false }}
       />
       <Stack.Screen

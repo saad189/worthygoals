@@ -19,7 +19,7 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
-import TodoListScreen from '../todo-list-screen';
+import GoalListScreen from '../goal-list-screen';
 
 let mockParams: { goalId?: string; taskId?: string } = {};
 const mockSetParams = jest.fn();
@@ -77,7 +77,7 @@ jest.mock('@/hooks/useExplainTask', () => ({
   }),
 }));
 
-describe('TodoListScreen', () => {
+describe('GoalListScreen', () => {
   beforeEach(() => {
     mockParams = {};
     mockTasks = [];
@@ -85,12 +85,12 @@ describe('TodoListScreen', () => {
   });
 
   it('renders the goals list', () => {
-    render(<TodoListScreen />);
+    render(<GoalListScreen />);
     expect(screen.getByText(GOAL.title)).toBeTruthy();
   });
 
   it('drills into a goal without throwing, mounting both bottom sheets', () => {
-    render(<TodoListScreen />);
+    render(<GoalListScreen />);
 
     expect(() =>
       fireEvent.press(screen.getByLabelText(`Open goal ${GOAL.title}`)),
@@ -105,7 +105,7 @@ describe('TodoListScreen', () => {
   it('opens the answer moment for the task the today screen links to', () => {
     mockParams = { goalId: GOAL.id, taskId: TASK.id };
     mockTasks = [TASK];
-    render(<TodoListScreen />);
+    render(<GoalListScreen />);
 
     expect(screen.getByLabelText('Back to goals')).toBeTruthy();
     expect(screen.getByText(`Did you do it: ${TASK.title}`)).toBeTruthy();
@@ -114,7 +114,7 @@ describe('TodoListScreen', () => {
 
   it('does not open the answer moment without a linked task', () => {
     mockTasks = [TASK];
-    render(<TodoListScreen />);
+    render(<GoalListScreen />);
     fireEvent.press(screen.getByLabelText(`Open goal ${GOAL.title}`));
     expect(screen.queryByText(`Did you do it: ${TASK.title}`)).toBeNull();
   });

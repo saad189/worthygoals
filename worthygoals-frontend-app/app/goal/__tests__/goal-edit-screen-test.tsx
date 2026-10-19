@@ -8,7 +8,7 @@ import { router } from 'expo-router';
 
 import { goalsApiService } from '@/services/goals.service';
 import { tasksService } from '@/services/tasks.service';
-import TodoEditScreen from '../todo-edit-screen';
+import GoalEditScreen from '../goal-edit-screen';
 
 let mockParams: Record<string, string> = {};
 
@@ -37,12 +37,12 @@ const press = (label: string) =>
     fireEvent.press(screen.getByText(label));
   });
 
-describe('TodoEditScreen', () => {
+describe('GoalEditScreen', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('saves a smaller task and goes back', async () => {
     mockParams = { kind: 'task', id: 't1', goalId: 'g1' };
-    render(<TodoEditScreen />);
+    render(<GoalEditScreen />);
     fireEvent.changeText(screen.getByDisplayValue('Run 5k today'), '  Walk 1k today ');
     await press('Save');
 
@@ -55,7 +55,7 @@ describe('TodoEditScreen', () => {
 
   it('renames a goal', async () => {
     mockParams = { kind: 'goal', id: 'g1' };
-    render(<TodoEditScreen />);
+    render(<GoalEditScreen />);
     fireEvent.changeText(screen.getByDisplayValue('Run a 5k'), 'Run a 10k');
     await press('Save');
 
@@ -67,7 +67,7 @@ describe('TodoEditScreen', () => {
 
   it('refuses an empty name without calling the API', async () => {
     mockParams = { kind: 'goal', id: 'g1' };
-    render(<TodoEditScreen />);
+    render(<GoalEditScreen />);
     fireEvent.changeText(screen.getByDisplayValue('Run a 5k'), '   ');
     await press('Save');
 

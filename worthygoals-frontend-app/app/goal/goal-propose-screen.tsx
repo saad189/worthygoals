@@ -195,7 +195,7 @@ function DeadlineField({ value, onChange }: { value: string; onChange: (v: strin
   );
 }
 
-export default function TodoProposeScreen() {
+export default function GoalProposeScreen() {
   const { colors, space, radius, fonts, fontSizes } = useAppTheme();
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
   const { raw, skip, mentor } = useLocalSearchParams<{ raw: string; skip?: string; mentor?: string }>();
@@ -237,7 +237,7 @@ export default function TodoProposeScreen() {
 
   const handleNext = () => {
     const stakeAmount = stakeOn ? Number(stake) : undefined;
-    navigation.navigate(ROUTE_NAMES.TODO.TODO_PERSONALITY_SCREEN, {
+    navigation.navigate(ROUTE_NAMES.GOAL.GOAL_PERSONALITY_SCREEN, {
       goalData: JSON.stringify({
         title: fields.title.trim(),
         description: fields.description.trim() || undefined,

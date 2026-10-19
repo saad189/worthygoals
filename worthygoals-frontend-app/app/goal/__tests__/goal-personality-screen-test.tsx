@@ -6,7 +6,7 @@
 import React from 'react';
 import { render, screen, within } from '@testing-library/react-native';
 
-import TodoPersonalityScreen from '../todo-personality-screen';
+import GoalPersonalityScreen from '../goal-personality-screen';
 
 let mockParams: Record<string, string | undefined> = {};
 let mockProfileSlug: string | null = null;
@@ -29,7 +29,7 @@ const selectedName = () =>
   within(screen.getByRole('button', { selected: true })).getByText(/^(Marcus|Lyra|Goggs)$/)
     .props.children;
 
-describe('TodoPersonalityScreen pre-selection', () => {
+describe('GoalPersonalityScreen pre-selection', () => {
   beforeEach(() => {
     mockParams = { goalData: JSON.stringify({ title: 'Run' }) };
     mockProfileSlug = null;
@@ -38,19 +38,19 @@ describe('TodoPersonalityScreen pre-selection', () => {
   it('selects the mentor the goal was started from', () => {
     mockParams.mentor = 'goggs';
     mockProfileSlug = 'lyra';
-    render(<TodoPersonalityScreen />);
+    render(<GoalPersonalityScreen />);
     expect(selectedName()).toBe('Goggs');
   });
 
   it("falls back to the user's own mentor from the profile", () => {
     mockProfileSlug = 'lyra';
-    render(<TodoPersonalityScreen />);
+    render(<GoalPersonalityScreen />);
     expect(selectedName()).toBe('Lyra');
   });
 
   it('ignores an unknown mentor param and falls back to Marcus', () => {
     mockParams.mentor = 'not-a-mentor';
-    render(<TodoPersonalityScreen />);
+    render(<GoalPersonalityScreen />);
     expect(selectedName()).toBe('Marcus');
   });
 });

@@ -16,7 +16,7 @@ jest.mock('expo-notifications', () => ({
 }));
 jest.mock('expo-router', () => ({ router: { navigate: jest.fn() } }));
 jest.mock('@/services/push.service', () => ({
-  routeForNotification: () => '/(tabs)/todo-list-screen',
+  routeForNotification: () => '/(tabs)/goal-list-screen',
 }));
 
 let mockAuthed = false;

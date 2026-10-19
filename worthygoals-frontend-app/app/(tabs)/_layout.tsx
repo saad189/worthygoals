@@ -57,7 +57,7 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name={ROUTE_NAMES.TABS.TODO_LIST_SCREEN}
+        name={ROUTE_NAMES.TABS.GOAL_LIST_SCREEN}
         options={{
           headerShown: false,
           title: "goals",

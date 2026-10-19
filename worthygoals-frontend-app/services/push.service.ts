@@ -107,7 +107,7 @@ export function routeForNotification(
   const home = `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.HOME_SCREEN}`;
   switch (data?.kind) {
     case 'task_due':
-      return `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.TODO_LIST_SCREEN}`;
+      return `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.GOAL_LIST_SCREEN}`;
     default:
       return home;
   }
