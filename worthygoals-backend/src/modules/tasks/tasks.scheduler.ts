@@ -26,8 +26,10 @@ export class TasksScheduler {
       this.logger,
       async () => {
         const count = await this.tasksService.materializeRecurringTasks();
+        const carried = await this.tasksService.carryOverOneOffs();
         this.logger.log(
-          `Recurring task materializer: created ${count} new task(s)`,
+          `Recurring task materializer: created ${count} new task(s), ` +
+            `carried ${carried} unanswered one-off(s) to today`,
         );
       },
     );

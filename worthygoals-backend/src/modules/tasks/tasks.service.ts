@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isUUID } from 'class-validator';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import {
   Task,
   TaskCompletion,
@@ -400,6 +400,60 @@ export class TasksService {
     }
 
     return created;
+  }
+
+  /**
+   * An unanswered one-off moves to the user's today. A repeating task is
+   * superseded by its next occurrence, but a one-off has no next one: once
+   * its day passed it simply dropped off the today screen, still pending,
+   * with nothing ever asking about it again. Answered ones (completed, or
+   * skipped with a reason) are left alone — a skip already scheduled its own
+   * retry. Same zone handling as materializeRecurringTasks.
+   */
+  async carryOverOneOffs(now = new Date()): Promise<number> {
+    let moved = 0;
+    let afterId = '00000000-0000-0000-0000-000000000000';
+
+    for (;;) {
+      const page: Array<{ id: string; dueOn: string; timezone: string }> =
+        await this.taskRepo.query(
+          `
+          SELECT t.id, to_char(t."dueOn", 'YYYY-MM-DD') AS "dueOn", u.timezone
+            FROM tasks t
+            JOIN goals g ON g.id = t."goalId"
+            JOIN users u ON u.id = g."userId"
+           WHERE t."repeatFrequency" = 'none'
+             AND t.status = 'pending'
+             AND g.status = 'active'
+             AND t."dueOn" < ($3::timestamptz AT TIME ZONE 'UTC')::date + 1
+             AND t.id > $1
+           ORDER BY t.id
+           LIMIT $2
+          `,
+          [afterId, RECURRING_PAGE_SIZE, now],
+        );
+      if (!page.length) break;
+
+      // One UPDATE per (zone, today) group: everyone in a zone shares a day.
+      const byTarget = new Map<string, { tz: string; ids: string[] }>();
+      for (const row of page) {
+        const today = localDay(row.timezone, now);
+        if (row.dueOn >= today) continue;
+        const key = `${row.timezone}|${today}`;
+        const group = byTarget.get(key) ?? { tz: row.timezone, ids: [] };
+        group.ids.push(row.id);
+        byTarget.set(key, group);
+      }
+      for (const [key, { tz, ids }] of byTarget) {
+        const today = key.split('|')[1];
+        await this.taskRepo.update({ id: In(ids) }, dueOnDay(today, tz));
+        moved += ids.length;
+      }
+
+      if (page.length < RECURRING_PAGE_SIZE) break;
+      afterId = page[page.length - 1].id;
+    }
+    return moved;
   }
 
   private async attachReaction<T>(
