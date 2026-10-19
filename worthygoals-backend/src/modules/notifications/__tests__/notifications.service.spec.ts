@@ -118,7 +118,11 @@ describe('NotificationsService', () => {
       expect(queue.addBulk).not.toHaveBeenCalled();
     });
 
+    afterEach(() => jest.useRealTimers());
+
     it('bulk-schedules morning and evening jobs with stable jobIds', async () => {
+      // A Wednesday: no weekly review in the next 25 hours.
+      jest.useFakeTimers().setSystemTime(new Date('2026-10-14T03:00:00Z'));
       onePage([{ userId: USER_ID, timezone: 'UTC' }]);
       await service.materializeNext24h();
       expect(queue.addBulk).toHaveBeenCalledTimes(1);
@@ -130,6 +134,20 @@ describe('NotificationsService', () => {
       for (const j of jobs) {
         expect(j.opts.jobId).toMatch(/^1:(morning_setup|evening_check_in):/);
       }
+    });
+
+    // The weekly review push had copy and a route, but nothing scheduled it.
+    it("adds the weekly review at 18:00 on the user's own Sunday", async () => {
+      // Sat 20:00 UTC = Sun 01:00 in Karachi: their Sunday 18:00 is 13:00 UTC.
+      jest.useFakeTimers().setSystemTime(new Date('2026-10-17T20:00:00Z'));
+      onePage([{ userId: USER_ID, timezone: 'Asia/Karachi' }]);
+      await service.materializeNext24h();
+
+      const review = queue.addBulk.mock.calls[0][0].find(
+        (j: { name: string }) => j.name === 'weekly_review',
+      );
+      expect(review.data.scheduledFor).toBe('2026-10-18T13:00:00.000Z');
+      expect(review.opts.jobId).toBe('1:weekly_review:2026-10-18');
     });
 
     it('pages by userId until a short page', async () => {

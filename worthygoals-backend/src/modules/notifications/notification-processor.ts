@@ -11,6 +11,7 @@ import { UsersService } from 'src/modules/users/users.service';
 import {
   NOTIFICATION_QUEUE,
   NotificationJobData,
+  NotificationJobKind,
   NotificationQueueData,
   PUSH_RECEIPTS_JOB,
   PushReceiptJobData,
@@ -47,7 +48,8 @@ export class NotificationProcessor extends WorkerHost {
   }
 
   private async send(job: Job<NotificationJobData>): Promise<void> {
-    const { userId, kind, scheduledFor } = job.data;
+    const { userId, scheduledFor } = job.data;
+    let kind = job.data.kind;
 
     const tokens = await this.notifService.getTokens(userId);
     if (!tokens.length) {
@@ -62,6 +64,16 @@ export class NotificationProcessor extends WorkerHost {
     }
 
     const tz = await this.notifService.userTimezone(userId);
+
+    // Decided now, not when the job was queued a day ago: what the user has
+    // left today is only known at send time.
+    const resolved = await this.resolveKind(userId, kind, tz);
+    if (!resolved) {
+      this.logger.debug(`User ${userId} has nothing for ${kind} — skipped`);
+      return;
+    }
+    kind = resolved;
+
     const allowed = await this.notifService.checkPacingAllowed(userId, tz);
     if (!allowed) {
       this.logger.debug(`User ${userId} hit daily cap — dropping ${kind}`);
@@ -188,6 +200,37 @@ export class NotificationProcessor extends WorkerHost {
         `Voicing failed for user ${userId}/${kind}: ${err?.message}. Using fallback.`,
       );
       return this.fallbackBody(kind);
+    }
+  }
+
+  /**
+   * Which push, if any, this slot should be — only pushes about work that's
+   * actually there. Only active goals count, so pausing or letting go of
+   * everything really does make the mentor go quiet.
+   *
+   * - morning: only if something is due today.
+   * - evening: `task_due` while today's tasks are still open (the reminder;
+   *   tasks have a day, not a time, so the 20:00 slot is when it fires);
+   *   `evening_check_in` once they're all answered; nothing on an empty day.
+   * - weekly review: only with an active goal to review.
+   * - re_engage: lapse detection already decided.
+   */
+  private async resolveKind(
+    userId: number,
+    kind: NotificationJobKind,
+    tz: string,
+  ): Promise<NotificationJobKind | null> {
+    if (kind === 're_engage') return kind;
+    const today = await this.notifService.todayWork(userId, tz);
+    switch (kind) {
+      case 'weekly_review':
+        return today.activeGoals > 0 ? kind : null;
+      case 'morning_setup':
+        return today.pending > 0 ? kind : null;
+      case 'evening_check_in':
+      case 'task_due':
+        if (today.pending > 0) return 'task_due';
+        return today.total > 0 ? 'evening_check_in' : null;
     }
   }
 

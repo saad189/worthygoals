@@ -1,4 +1,4 @@
-import { safeTimeZone } from 'src/common/timezone';
+import { localDay, safeTimeZone } from 'src/common/timezone';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -18,11 +18,19 @@ import {
 
 const DAILY_CAP = 3;
 
-const DAILY_SCHEDULE: Array<{ kind: NotificationJobKind; localHour: number }> =
-  [
-    { kind: 'morning_setup', localHour: 8 },
-    { kind: 'evening_check_in', localHour: 20 },
-  ];
+// The evening slot goes out as `task_due` while today's tasks are still open
+// (the processor decides at send time). Sunday adds the weekly review, which
+// keeps the busiest day at DAILY_CAP.
+const DAILY_SCHEDULE: Array<{
+  kind: NotificationJobKind;
+  localHour: number;
+  /** Only on this local weekday (0 = Sunday). */
+  weekday?: number;
+}> = [
+  { kind: 'morning_setup', localHour: 8 },
+  { kind: 'weekly_review', localHour: 18, weekday: 0 },
+  { kind: 'evening_check_in', localHour: 20 },
+];
 
 // Lapse re-engagement (PRD 9.4): after 3+ quiet days the next push must be
 // in-character and shame-free. One push when the lapse is detected, then at
@@ -74,6 +82,29 @@ export class NotificationsService {
         [dto.timezone, userId],
       );
     }
+  }
+
+  /**
+   * The user's work today, in their own day, on active goals only — what
+   * decides whether a push has anything to say.
+   */
+  async todayWork(
+    userId: number,
+    tz: string,
+  ): Promise<{ activeGoals: number; total: number; pending: number }> {
+    const [row] = await this.tokenRepo.manager.query(
+      `
+      SELECT (SELECT count(*) FROM goals
+               WHERE "userId" = $1 AND status = 'active')::int AS "activeGoals",
+             count(t.id)::int AS total,
+             (count(t.id) FILTER (WHERE t.status = 'pending'))::int AS pending
+        FROM tasks t
+        JOIN goals g ON g.id = t."goalId"
+       WHERE g."userId" = $1 AND g.status = 'active' AND t."dueOn" = $2
+      `,
+      [userId, localDay(tz)],
+    );
+    return row;
   }
 
   /** The user's zone — what the processor's pacing and quiet hours use. */
@@ -178,6 +209,11 @@ export class NotificationsService {
       }
 
       if (candidate > windowEnd) continue;
+      // candidate holds the user's local wall-clock fields, so getDay() is
+      // their weekday.
+      if (slot.weekday !== undefined && candidate.getDay() !== slot.weekday) {
+        continue;
+      }
 
       // candidate holds local wall-clock fields; its own toISOString() is off by
       // the server-vs-user tz skew. fromZonedTime gives the true UTC instant.

@@ -106,8 +106,11 @@ export function routeForNotification(
 ): string {
   const home = `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.HOME_SCREEN}`;
   switch (data?.kind) {
+    // The Sunday push is about the review — it used to land on today.
+    case 'weekly_review':
+      return `/${ROUTE_NAMES.REVIEW.self}/${ROUTE_NAMES.REVIEW.REVIEW_SCREEN}`;
+    // "A task is waiting": today's Up next is one tap from answering it.
     case 'task_due':
-      return `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.TODO_LIST_SCREEN}`;
     default:
       return home;
   }
