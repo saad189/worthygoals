@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
 import {
   ActivityIndicator,
   FlatList,
@@ -88,6 +89,9 @@ export default function TodoListScreen() {
   const [askTask, setAskTask] = useState<TaskItem | null>(null);
   const completionRef = useRef<CompletionSheetHandle>(null);
   const explanationRef = useRef<ExplanationSheetHandle>(null);
+  // The tab bar covers the sheets' bottom strip; they pad their content by it.
+  // Context, not useBottomTabBarHeight(), which throws outside a navigator.
+  const tabBarHeight = useContext(BottomTabBarHeightContext) ?? 0;
 
   const {
     complete,
@@ -401,6 +405,7 @@ export default function TodoListScreen() {
 
         <CompletionSheet
           ref={completionRef}
+          bottomInset={tabBarHeight}
           taskTitle={activeTask?.title}
           personalityId={personalityId}
           submitting={completing}
@@ -415,6 +420,7 @@ export default function TodoListScreen() {
 
         <ExplanationSheet
           ref={explanationRef}
+          bottomInset={tabBarHeight}
           taskTitle={activeTask?.title}
           personalityId={personalityId}
           submitting={explaining}

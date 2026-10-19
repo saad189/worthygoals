@@ -52,6 +52,8 @@ interface Props {
    *  At 2+ prior misses this one is the 3rd — the seriousness check fires
    *  regardless of which reason was picked (design: "3RD MISS THIS WEEK"). */
   missCountThisWeek?: number;
+  /** Height covered at the bottom — the tab bar's, when shown on a tab. */
+  bottomInset?: number;
   onSubmit: (payload: ExplainTaskPayload) => void;
   onClose: () => void;
 }
@@ -72,6 +74,7 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
       mentorReaction,
       safetyFlag,
       missCountThisWeek = 0,
+      bottomInset = 0,
       onSubmit,
       onClose,
     },
@@ -253,11 +256,15 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
         handleIndicatorStyle={{ backgroundColor: colors.border }}
         backgroundStyle={{ backgroundColor: colors.surface }}
       >
-        <BottomSheetView style={s.content}>
+        {/* The sheet's container is the whole window, so on a tab screen its
+            bottom strip sits under the tab bar: pad the content clear of it,
+            and let every view scroll, so the last option ("Pause this goal",
+            the hint) is never hidden — on a small phone it was. */}
+        <BottomSheetView style={[s.content, { paddingBottom: bottomInset }]}>
           {showingReaction || showingCrisis ? (
-            renderReactionView()
+            <ScrollView>{renderReactionView()}</ScrollView>
           ) : showingSerious ? (
-            renderSeriousView()
+            <ScrollView>{renderSeriousView()}</ScrollView>
           ) : (
             <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
               <Text variant="display">Which one is it?</Text>

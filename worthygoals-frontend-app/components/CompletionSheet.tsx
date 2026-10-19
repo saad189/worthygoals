@@ -48,6 +48,8 @@ interface Props {
   submitting: boolean;
   mentorReaction?: string | null;
   safetyFlag?: boolean;
+  /** Height covered at the bottom — the tab bar's, when shown on a tab. */
+  bottomInset?: number;
   onSubmit: (payload: CompleteTaskPayload) => void;
   onClose: () => void;
 }
@@ -58,7 +60,10 @@ export interface CompletionSheetHandle {
 }
 
 const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
-  ({ taskTitle, personalityId, submitting, mentorReaction, safetyFlag, onSubmit, onClose }, ref) => {
+  (
+    { taskTitle, personalityId, submitting, mentorReaction, safetyFlag, bottomInset = 0, onSubmit, onClose },
+    ref,
+  ) => {
     const { colors, space, radius, voice } = useAppTheme(personalityId ?? undefined);
     const sheetRef = useRef<BottomSheet>(null);
     const [mood, setMood] = useState<1 | 2 | 3 | 4 | null>(null);
@@ -258,9 +263,11 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
         handleIndicatorStyle={{ backgroundColor: colors.border }}
         backgroundStyle={{ backgroundColor: colors.surface }}
       >
-        <BottomSheetView style={s.content}>
+        {/* Padded clear of the tab bar, which covers the sheet's bottom strip
+            on a tab screen (see ExplanationSheet). */}
+        <BottomSheetView style={[s.content, { paddingBottom: bottomInset }]}>
           {showingReaction || showingCrisis ? (
-            renderReactionView()
+            <ScrollView>{renderReactionView()}</ScrollView>
           ) : (
             <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
               <Text variant="display">Done.</Text>
