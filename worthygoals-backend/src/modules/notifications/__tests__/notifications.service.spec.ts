@@ -122,7 +122,8 @@ describe('NotificationsService', () => {
       onePage([{ userId: USER_ID, timezone: 'UTC' }]);
       await service.materializeNext24h();
       expect(queue.addBulk).toHaveBeenCalledTimes(1);
-      const jobs = queue.addBulk.mock.calls[0][0];
+      const jobs: Array<{ name: string; opts: { jobId: string } }> =
+        queue.addBulk.mock.calls[0][0];
       expect(jobs.map((j) => j.name).sort()).toEqual([
         'evening_check_in',
         'morning_setup',
