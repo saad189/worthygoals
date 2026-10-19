@@ -64,7 +64,7 @@ function parseGoalDraft(raw?: string): GoalDraft | null {
   };
 }
 
-export default function TodoPersonalityScreen() {
+export default function GoalPersonalityScreen() {
   const { space, colors } = useAppTheme();
   const { goalData, mentor } = useLocalSearchParams<{ goalData: string; mentor?: string }>();
 
@@ -130,7 +130,7 @@ export default function TodoPersonalityScreen() {
         mentorId,
       });
       router.replace(
-        `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.TODO_LIST_SCREEN}` as never,
+        `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.GOAL_LIST_SCREEN}` as never,
       );
     } catch {
       Alert.alert('Could not save', 'Something went wrong saving your goal. Please try again.');

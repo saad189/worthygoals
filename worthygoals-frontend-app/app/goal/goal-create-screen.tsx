@@ -21,7 +21,7 @@ import { Button, Header, Screen, StepDots, Text } from '@/components/ui';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ROUTE_NAMES } from '@/constants/Routes';
 
-export default function TodoCreateScreen() {
+export default function GoalCreateScreen() {
   const { colors, space, radius, fonts, fontSizes } = useAppTheme();
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
   const inputRef = useRef<TextInput>(null);
@@ -31,7 +31,7 @@ export default function TodoCreateScreen() {
   const canProceed = raw.trim().length >= 5;
 
   const goPropose = (skip?: boolean) =>
-    navigation.navigate(ROUTE_NAMES.TODO.TODO_PROPOSE_SCREEN, {
+    navigation.navigate(ROUTE_NAMES.GOAL.GOAL_PROPOSE_SCREEN, {
       raw: raw.trim(),
       ...(skip ? { skip: 'true' } : {}),
       ...(mentor ? { mentor } : {}),

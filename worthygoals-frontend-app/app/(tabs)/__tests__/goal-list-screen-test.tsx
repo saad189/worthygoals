@@ -19,7 +19,7 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
-import TodoListScreen from '../todo-list-screen';
+import GoalListScreen from '../goal-list-screen';
 
 let mockParams: { goalId?: string; taskId?: string } = {};
 const mockSetParams = jest.fn();
@@ -80,7 +80,7 @@ jest.mock('@/hooks/useExplainTask', () => ({
   }),
 }));
 
-describe('TodoListScreen', () => {
+describe('GoalListScreen', () => {
   beforeEach(() => {
     mockParams = {};
     mockTasks = [];
@@ -90,12 +90,12 @@ describe('TodoListScreen', () => {
   });
 
   it('renders the goals list', () => {
-    render(<TodoListScreen />);
+    render(<GoalListScreen />);
     expect(screen.getByText(GOAL.title)).toBeTruthy();
   });
 
   it('drills into a goal without throwing, mounting both bottom sheets', () => {
-    render(<TodoListScreen />);
+    render(<GoalListScreen />);
 
     expect(() =>
       fireEvent.press(screen.getByLabelText(`Open goal ${GOAL.title}`)),
@@ -110,7 +110,7 @@ describe('TodoListScreen', () => {
   it('opens the answer moment for the task the today screen links to', () => {
     mockParams = { goalId: GOAL.id, taskId: TASK.id };
     mockTasks = [TASK];
-    render(<TodoListScreen />);
+    render(<GoalListScreen />);
 
     expect(screen.getByLabelText('Back to goals')).toBeTruthy();
     expect(screen.getByText(`Did you do it: ${TASK.title}`)).toBeTruthy();
@@ -119,7 +119,7 @@ describe('TodoListScreen', () => {
 
   it('does not open the answer moment without a linked task', () => {
     mockTasks = [TASK];
-    render(<TodoListScreen />);
+    render(<GoalListScreen />);
     fireEvent.press(screen.getByLabelText(`Open goal ${GOAL.title}`));
     expect(screen.queryByText(`Did you do it: ${TASK.title}`)).toBeNull();
   });
@@ -127,7 +127,7 @@ describe('TodoListScreen', () => {
   describe('pause / let it go', () => {
     it('pauses an active goal from its task list', () => {
       mockTasks = [TASK];
-      render(<TodoListScreen />);
+      render(<GoalListScreen />);
       fireEvent.press(screen.getByLabelText(`Open goal ${GOAL.title}`));
       fireEvent.press(screen.getByText('pause this goal'));
       expect(mockSetStatus).toHaveBeenCalledWith('g1', 'paused');
@@ -137,7 +137,7 @@ describe('TodoListScreen', () => {
       const paused = { ...GOAL, id: 'g0', title: 'Learn Urdu', status: 'paused' };
       mockGoals = [paused, GOAL];
       mockTasks = [TASK];
-      render(<TodoListScreen />);
+      render(<GoalListScreen />);
 
       const titles = screen.getAllByText(/Run a half marathon|Learn Urdu/).map(
         (n) => n.props.children,
@@ -156,7 +156,7 @@ describe('TodoListScreen', () => {
 
     it('offers a let-go goal back', () => {
       mockGoals = [{ ...GOAL, status: 'archived' }];
-      render(<TodoListScreen />);
+      render(<GoalListScreen />);
       fireEvent.press(screen.getByLabelText(`Open goal ${GOAL.title}, let go`));
       fireEvent.press(screen.getByText('Bring it back'));
       expect(mockSetStatus).toHaveBeenCalledWith('g1', 'active');

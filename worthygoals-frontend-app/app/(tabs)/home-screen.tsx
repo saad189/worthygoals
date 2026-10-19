@@ -104,7 +104,7 @@ const DashboardScreen = () => {
         // Opens this task's "Did you do it?" moment, not just the goals tab.
         onPress={() =>
           router.navigate({
-            pathname: `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.TODO_LIST_SCREEN}`,
+            pathname: `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.GOAL_LIST_SCREEN}`,
             params: { goalId: task.goalId, taskId: task.id },
           } as never)
         }

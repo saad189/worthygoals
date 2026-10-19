@@ -6,7 +6,7 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
-import TodoListScreen from '../todo-list-screen';
+import GoalListScreen from '../goal-list-screen';
 
 const mockOpenComplete = jest.fn();
 const mockOpenExplain = jest.fn();
@@ -80,7 +80,7 @@ describe('Did you do it? — answer race', () => {
   afterEach(() => jest.useRealTimers());
 
   it('opens only the sheet for the first answer', () => {
-    render(<TodoListScreen />);
+    render(<GoalListScreen />);
     fireEvent.press(screen.getByLabelText(`Open goal ${mockGoal.title}`));
     fireEvent.press(screen.getByLabelText(`Answer for ${mockTask.title}`));
 

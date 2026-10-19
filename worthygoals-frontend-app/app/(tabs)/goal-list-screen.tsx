@@ -55,7 +55,7 @@ const AWAY_COPY: Partial<Record<GoalStatus, { title: string; body: string; cta: 
   },
 };
 
-export default function TodoListScreen() {
+export default function GoalListScreen() {
   const { colors, space, radius } = useAppTheme();
   const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
 
@@ -108,14 +108,14 @@ export default function TodoListScreen() {
   }, [tasks]);
 
   const openEdit = (kind: 'goal' | 'task', id: string, goalId?: string) =>
-    navigation.navigate(ROUTE_NAMES.TODO.self as any, {
-      screen: ROUTE_NAMES.TODO.TODO_EDIT_SCREEN,
+    navigation.navigate(ROUTE_NAMES.GOAL.self as any, {
+      screen: ROUTE_NAMES.GOAL.GOAL_EDIT_SCREEN,
       params: { kind, id, goalId },
     });
 
   const startNewGoal = () =>
-    navigation.navigate(ROUTE_NAMES.TODO.self as any, {
-      screen: ROUTE_NAMES.TODO.TODO_CREATE_SCREEN,
+    navigation.navigate(ROUTE_NAMES.GOAL.self as any, {
+      screen: ROUTE_NAMES.GOAL.GOAL_CREATE_SCREEN,
     });
 
   const [activeTask, setActiveTask] = useState<TaskItem | null>(null);

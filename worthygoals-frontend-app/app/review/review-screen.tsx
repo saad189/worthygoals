@@ -165,7 +165,7 @@ const ReviewScreen = () => {
               label="Set next week"
               onPress={() =>
                 router.push(
-                  `/${ROUTE_NAMES.TODO.self}/${ROUTE_NAMES.TODO.TODO_CREATE_SCREEN}` as never
+                  `/${ROUTE_NAMES.GOAL.self}/${ROUTE_NAMES.GOAL.GOAL_CREATE_SCREEN}` as never
                 )
               }
             />
@@ -174,7 +174,7 @@ const ReviewScreen = () => {
               variant="link"
               onPress={() =>
                 router.push(
-                  `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.TODO_LIST_SCREEN}` as never
+                  `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.GOAL_LIST_SCREEN}` as never
                 )
               }
             />

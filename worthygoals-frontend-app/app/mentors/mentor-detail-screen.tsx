@@ -2,7 +2,7 @@
  * Mentor profile (Hi-Fi). Replaces the legacy tabbed "AI <name>" screen whose
  * "Set New Goals" tab hosted the old Goal Title / Category / Duration form
  * (the parity image #1). Goal creation now routes into the Hi-Fi wizard
- * (todo-create) like every other entry point — there is no second goal form.
+ * (goal-create) like every other entry point — there is no second goal form.
  *
  * This screen is a read-only profile: mentor identity in-voice, with two CTAs —
  * set a goal with this mentor, or open a 1:1 chat. Built from the ui/ primitives;
@@ -64,8 +64,8 @@ export default function MentorDetailScreen() {
 
   // Every "new goal" intent funnels into the one Hi-Fi wizard.
   const setGoal = () =>
-    navigation.navigate(ROUTE_NAMES.TODO.self as any, {
-      screen: ROUTE_NAMES.TODO.TODO_CREATE_SCREEN,
+    navigation.navigate(ROUTE_NAMES.GOAL.self as any, {
+      screen: ROUTE_NAMES.GOAL.GOAL_CREATE_SCREEN,
       // "Set a goal with X" pre-selects X on the wizard's last step.
       params: mentor?.slug ? { mentor: mentor.slug } : undefined,
     });

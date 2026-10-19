@@ -5,7 +5,7 @@ export const ROUTE_NAMES = {
     SETTINGS_SCREEN: "settings-screen",
     CHAT_LIST_SCREEN: "chat-list-screen",
     MENTORS_LIST_SCREEN: "mentors-list-screen",
-    TODO_LIST_SCREEN: "todo-list-screen",
+    GOAL_LIST_SCREEN: "goal-list-screen",
     FEED_SCREEN: "feed-screen",
     ME_SCREEN: "me-screen",
     INSPIRATION: {
@@ -62,12 +62,12 @@ export const ROUTE_NAMES = {
     REVIEW_SCREEN: "review-screen",
   },
 
-  TODO: {
-    self: "todo",
-    TODO_CREATE_SCREEN: "todo-create-screen",
-    TODO_PROPOSE_SCREEN: "todo-propose-screen",
-    TODO_PERSONALITY_SCREEN: "todo-personality-screen",
-    TODO_EDIT_SCREEN: "todo-edit-screen",
+  GOAL: {
+    self: "goal",
+    GOAL_CREATE_SCREEN: "goal-create-screen",
+    GOAL_PROPOSE_SCREEN: "goal-propose-screen",
+    GOAL_PERSONALITY_SCREEN: "goal-personality-screen",
+    GOAL_EDIT_SCREEN: "goal-edit-screen",
   },
 
   ABOUT: "about",

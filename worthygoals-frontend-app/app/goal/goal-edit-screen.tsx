@@ -29,7 +29,7 @@ const refreshEverywhere = () =>
     ),
   );
 
-export default function TodoEditScreen() {
+export default function GoalEditScreen() {
   const { space } = useAppTheme();
   const { kind, id, goalId } = useLocalSearchParams<Params>();
   const isGoal = kind === 'goal';
