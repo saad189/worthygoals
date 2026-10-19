@@ -296,4 +296,32 @@ export class ConversationsService {
       );
     }
   }
+
+  /** The user has the thread open: everything in it up to now is read. */
+  async markRead(params: { id: string; sub: string }): Promise<void> {
+    try {
+      const user = await this.usersService.findByAccountSub(params.sub);
+      if (!user) {
+        throw new BadRequestException(
+          'User profile not found for this token. Create your user profile first.',
+        );
+      }
+      // Scoped by userId in the WHERE, so another user's id matches nothing.
+      const { affected } = await this.conversationRepository.update(
+        { id: params.id, userId: user.id },
+        { lastReadAt: new Date() },
+      );
+      if (!affected) {
+        throw new NotFoundException(
+          `Conversation with id: ${params.id} not found.`,
+        );
+      }
+    } catch (error) {
+      rethrowSafe(
+        error,
+        this.logger,
+        `${ConversationsService.name}:${this.markRead.name}`,
+      );
+    }
+  }
 }

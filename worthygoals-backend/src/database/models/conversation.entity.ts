@@ -65,6 +65,13 @@ export class Conversation {
   @Column({ type: 'uuid', nullable: true })
   lastMessageId!: string | null;
 
+  /**
+   * When the user last had this thread open. A mentor message newer than this
+   * is unread; the app's messages list shows the dot from it.
+   */
+  @Column({ type: 'timestamptz', nullable: true })
+  lastReadAt!: Date | null;
+
   @Column({ type: 'jsonb', nullable: true })
   metadata!: Record<string, any> | null;
 

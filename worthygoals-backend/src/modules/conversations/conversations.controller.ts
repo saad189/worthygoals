@@ -5,6 +5,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -81,6 +83,15 @@ export class ConversationsController {
       sub: req.user.sub,
       dto: updateConversationDto,
     });
+  }
+
+  @Post(':id/read')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async markRead(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    return this.conversationsService.markRead({ id, sub: req.user.sub });
   }
 
   @Delete(':id')
