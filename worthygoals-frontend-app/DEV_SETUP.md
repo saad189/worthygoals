@@ -17,6 +17,14 @@ cp .env.local.example .env.local   # then edit EXPO_PUBLIC_API_URL (see below)
 yarn start
 ```
 
+### Native builds (CNG)
+
+`ios/` and `android/` aren't committed — `expo prebuild` generates them from
+`app.json` (Continuous Native Generation). `npm run ios` prebuilds on first run;
+after changing `app.json`, a plugin or a native dependency, run `npm run ios:clean`.
+Native settings (Info.plist keys, entitlements, icons, splash) go in `app.json` or
+a config plugin — a hand edit under `ios/` is lost on the next prebuild.
+
 ## EXPO_PUBLIC_API_URL — the "Could not connect to Server" gotcha
 
 `http://localhost:3000` only works on a **simulator/emulator**, which shares the

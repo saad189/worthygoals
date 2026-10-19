@@ -23,6 +23,15 @@
         "light": "./assets/images/worthy-goals-icon.png",
         "dark": "./assets/images/worthy-goals-icon-dark.png",
         "tinted": "./assets/images/worthy-goals-icon-tinted.png"
+      },
+      "splash": {
+        "image": "./assets/images/worthy-goals-splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#F4EFE3",
+        "dark": {
+          "image": "./assets/images/worthy-goals-splash-dark.png",
+          "backgroundColor": "#1A1714"
+        }
       }
     },
     "android": {
