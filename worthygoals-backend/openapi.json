@@ -7,7 +7,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -21,7 +28,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseUserDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -48,7 +62,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseUserDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -68,7 +89,14 @@
         "parameters": [],
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -118,7 +146,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseUserDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -148,7 +183,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokens"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -177,7 +219,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokens"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -225,7 +274,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -254,7 +310,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -283,7 +346,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -312,7 +382,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -341,7 +418,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -360,7 +444,17 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Mentor"
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -388,7 +482,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mentor"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -424,7 +525,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Conversation"
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -451,7 +562,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conversation"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -479,7 +597,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conversation"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -515,7 +640,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conversation"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -621,7 +753,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MessageResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -648,7 +790,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponseDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -677,7 +826,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalProposalDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -706,7 +862,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseGoalDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -732,7 +895,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResponseGoalDto"
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -760,7 +933,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseGoalDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -796,7 +976,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseGoalDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -851,7 +1038,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadUrlResponseDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -881,7 +1075,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -915,7 +1116,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Task"
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -943,7 +1154,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -979,7 +1197,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1043,7 +1268,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCompletionResponseDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1081,7 +1313,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskExplanationResponseDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1100,7 +1339,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponseDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1177,7 +1423,17 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PushToken"
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1288,6 +1544,16 @@
                 }
               }
             }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusPostDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1344,6 +1610,53 @@
       }
     },
     "schemas": {
+      "ResponseUserDto": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "id": {
+            "type": "number"
+          },
+          "localtion": {
+            "type": "object"
+          },
+          "role": {
+            "type": "object"
+          },
+          "age": {
+            "type": "number",
+            "nullable": true,
+            "description": "Null when no date of birth was given."
+          },
+          "tone": {
+            "type": "string",
+            "nullable": true,
+            "description": "Onboarding tone preference (soft | firm | intense); null until chosen."
+          },
+          "personalityId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Onboarding-matched mentor (personality slug); null until chosen."
+          }
+        },
+        "required": [
+          "firstName",
+          "lastName",
+          "email",
+          "id",
+          "localtion",
+          "role",
+          "age"
+        ]
+      },
       "UpdateUserDto": {
         "type": "object",
         "properties": {}
@@ -1353,6 +1666,7 @@
         "properties": {
           "email": {
             "type": "string",
+            "format": "email",
             "example": "user@example.com",
             "description": "Ignored — the profile takes the Cognito account's email. Accepted so existing clients don't fail validation."
           },
@@ -1373,6 +1687,7 @@
           },
           "gender": {
             "type": "string",
+            "maxLength": 1,
             "example": "m",
             "description": "The gender of the user"
           },
@@ -1388,11 +1703,21 @@
           },
           "tone": {
             "type": "string",
+            "enum": [
+              "soft",
+              "firm",
+              "intense"
+            ],
             "example": "firm",
             "description": "The user's onboarding tone preference (forced-choice deck result)"
           },
           "personalityId": {
             "type": "string",
+            "enum": [
+              "marcus",
+              "lyra",
+              "goggs"
+            ],
             "example": "marcus",
             "description": "The user's onboarding-matched mentor (personality slug)"
           },
@@ -1408,6 +1733,7 @@
         "properties": {
           "email": {
             "type": "string",
+            "format": "email",
             "example": "user@example.com",
             "description": "The email of the user"
           },
@@ -1420,6 +1746,25 @@
         "required": [
           "email",
           "password"
+        ]
+      },
+      "AuthTokens": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "idToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "accessToken",
+          "idToken",
+          "refreshToken"
         ]
       },
       "RefreshTokenDto": {
@@ -1445,6 +1790,7 @@
         "properties": {
           "email": {
             "type": "string",
+            "format": "email",
             "example": "user@example.com",
             "description": "The email of the user"
           },
@@ -1470,6 +1816,7 @@
         "properties": {
           "email": {
             "type": "string",
+            "format": "email",
             "example": "user@example.com",
             "description": "The email of the user"
           },
@@ -1489,6 +1836,7 @@
         "properties": {
           "email": {
             "type": "string",
+            "format": "email",
             "example": "user@example.com",
             "description": "The email of the user"
           }
@@ -1502,6 +1850,7 @@
         "properties": {
           "email": {
             "type": "string",
+            "format": "email",
             "example": "user@example.com",
             "description": "The email of the user"
           },
@@ -1528,23 +1877,928 @@
           "repeatedPassword"
         ]
       },
+      "Account": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "sub": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "isSignUp": {
+            "type": "boolean"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "dateAdded": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "dateUpdated": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sub",
+          "email",
+          "isSignUp",
+          "user",
+          "dateAdded",
+          "dateUpdated"
+        ]
+      },
+      "Permission": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Role"
+            }
+          },
+          "dateAdded": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "dateUpdated": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "roles",
+          "dateAdded",
+          "dateUpdated"
+        ]
+      },
+      "Role": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            }
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          },
+          "dateAdded": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "dateUpdated": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "permissions",
+          "users",
+          "dateAdded",
+          "dateUpdated"
+        ]
+      },
+      "Mentor": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "personalityId": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "shortDescription": {
+            "type": "string"
+          },
+          "longDescription": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          },
+          "coverImageUrl": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "supportedLanguages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "communicationStyle": {
+            "enum": [
+              "gentle",
+              "analytical",
+              "motivational",
+              "direct",
+              "straightforward",
+              "empathetic",
+              "calm",
+              "energetic",
+              "clear"
+            ],
+            "type": "string"
+          },
+          "responseLength": {
+            "enum": [
+              "short",
+              "medium",
+              "long"
+            ],
+            "type": "string"
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "personalityTraits": {
+            "type": "object"
+          },
+          "promptBlocks": {
+            "type": "object"
+          },
+          "topicPolicy": {
+            "type": "object"
+          },
+          "safetyPolicy": {
+            "type": "object"
+          },
+          "memoryPolicy": {
+            "type": "object"
+          },
+          "modelConfig": {
+            "type": "object"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "visibility": {
+            "enum": [
+              "public",
+              "private",
+              "beta"
+            ],
+            "type": "string"
+          },
+          "isPremium": {
+            "type": "boolean"
+          },
+          "requiredPlan": {
+            "type": "string"
+          },
+          "version": {
+            "type": "number"
+          },
+          "avgRating": {
+            "type": "number"
+          },
+          "totalSessions": {
+            "type": "number"
+          },
+          "conversations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Conversation"
+            }
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            }
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "personalityId",
+          "name",
+          "language",
+          "communicationStyle",
+          "responseLength",
+          "sortOrder",
+          "promptBlocks",
+          "isActive",
+          "visibility",
+          "isPremium",
+          "version",
+          "avgRating",
+          "totalSessions",
+          "conversations",
+          "messages",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "MessageAttachment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "messageId": {
+            "type": "string"
+          },
+          "message": {
+            "$ref": "#/components/schemas/Message"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "image",
+              "audio",
+              "file"
+            ]
+          },
+          "storageProvider": {
+            "type": "string",
+            "enum": [
+              "s3",
+              "r2",
+              "gcs",
+              "azure"
+            ]
+          },
+          "objectKey": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string",
+            "nullable": true
+          },
+          "sizeBytes": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationMs": {
+            "type": "number",
+            "nullable": true
+          },
+          "width": {
+            "type": "number",
+            "nullable": true
+          },
+          "height": {
+            "type": "number",
+            "nullable": true
+          },
+          "checksumSha256": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "messageId",
+          "message",
+          "type",
+          "storageProvider",
+          "objectKey",
+          "mimeType",
+          "sizeBytes",
+          "durationMs",
+          "width",
+          "height",
+          "checksumSha256",
+          "createdAt"
+        ]
+      },
+      "MessageFeedback": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "messageId": {
+            "type": "string"
+          },
+          "message": {
+            "$ref": "#/components/schemas/Message"
+          },
+          "userId": {
+            "type": "number",
+            "description": "who gave the feedback (usually the chatting user)"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "rating": {
+            "type": "number"
+          },
+          "tags": {
+            "type": "object",
+            "nullable": true
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "messageId",
+          "message",
+          "userId",
+          "user",
+          "rating",
+          "tags",
+          "comment",
+          "createdAt"
+        ]
+      },
+      "Message": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "conversationId": {
+            "type": "string"
+          },
+          "conversation": {
+            "$ref": "#/components/schemas/Conversation"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "mentor",
+              "system",
+              "tool"
+            ]
+          },
+          "userId": {
+            "type": "number",
+            "nullable": true,
+            "description": "Author links (optional depending on role)\n- role=user   => userId not null\n- role=mentor => mentorId not null\n- system/tool => both null"
+          },
+          "user": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              }
+            ]
+          },
+          "mentorId": {
+            "type": "number",
+            "nullable": true
+          },
+          "mentor": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Mentor"
+              }
+            ]
+          },
+          "contentType": {
+            "type": "string",
+            "enum": [
+              "text",
+              "image",
+              "audio",
+              "file",
+              "mixed"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "nullable": true
+          },
+          "content": {
+            "type": "object",
+            "nullable": true
+          },
+          "clientMessageId": {
+            "type": "string",
+            "nullable": true
+          },
+          "replyToMessageId": {
+            "type": "string",
+            "nullable": true
+          },
+          "tokensIn": {
+            "type": "number",
+            "nullable": true
+          },
+          "tokensOut": {
+            "type": "number",
+            "nullable": true
+          },
+          "safetyFlags": {
+            "type": "object",
+            "nullable": true
+          },
+          "archivedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageAttachment"
+            }
+          },
+          "feedback": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageFeedback"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "conversationId",
+          "conversation",
+          "role",
+          "userId",
+          "user",
+          "mentorId",
+          "mentor",
+          "contentType",
+          "text",
+          "content",
+          "clientMessageId",
+          "replyToMessageId",
+          "tokensIn",
+          "tokensOut",
+          "safetyFlags",
+          "archivedAt",
+          "createdAt",
+          "attachments",
+          "feedback"
+        ]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "Auto-incremented primary key"
+          },
+          "account": {
+            "$ref": "#/components/schemas/Account"
+          },
+          "email": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "dateOfBirth": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "gender": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "isAdmin": {
+            "type": "boolean"
+          },
+          "tier": {
+            "type": "string"
+          },
+          "tone": {
+            "type": "string",
+            "description": "Onboarding tone preference (soft | firm | intense) — the forced-choice\ndeck's result, persisted server-side so voiced surfaces (notifications,\npersonas) can scale to it. The earned-escalation slope builds on this."
+          },
+          "personalityId": {
+            "type": "string",
+            "description": "Onboarding-matched mentor (personality slug: marcus | lyra | goggs),\npersisted so \"your mentor\" survives a reinstall and is known before the\nfirst goal exists — decoupled from goal.mentorId (F2). Nullable: existing\nusers fall back to the goal-derived mentor until they re-onboard."
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "conversations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Conversation"
+            }
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            }
+          },
+          "feedback": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageFeedback"
+            }
+          },
+          "dateAdded": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "dateUpdated": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "account",
+          "email",
+          "firstName",
+          "lastName",
+          "dateOfBirth",
+          "gender",
+          "latitude",
+          "longitude",
+          "isAdmin",
+          "tier",
+          "tone",
+          "personalityId",
+          "role",
+          "conversations",
+          "messages",
+          "feedback",
+          "dateAdded",
+          "dateUpdated"
+        ]
+      },
+      "ConversationSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "conversationId": {
+            "type": "string"
+          },
+          "conversation": {
+            "$ref": "#/components/schemas/Conversation"
+          },
+          "summaryType": {
+            "type": "string",
+            "enum": [
+              "rolling",
+              "monthly",
+              "milestone"
+            ]
+          },
+          "fromMessageId": {
+            "type": "string"
+          },
+          "toMessageId": {
+            "type": "string"
+          },
+          "summaryText": {
+            "type": "string"
+          },
+          "summaryEmotions": {
+            "type": "object",
+            "nullable": true
+          },
+          "summaryTopics": {
+            "type": "object",
+            "nullable": true
+          },
+          "keyFacts": {
+            "type": "object",
+            "nullable": true
+          },
+          "model": {
+            "type": "string",
+            "nullable": true
+          },
+          "promptVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "conversationId",
+          "conversation",
+          "summaryType",
+          "fromMessageId",
+          "toMessageId",
+          "summaryText",
+          "summaryEmotions",
+          "summaryTopics",
+          "keyFacts",
+          "model",
+          "promptVersion",
+          "createdAt"
+        ]
+      },
+      "ConversationMemoryItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "conversationId": {
+            "type": "string"
+          },
+          "conversation": {
+            "$ref": "#/components/schemas/Conversation"
+          },
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "object"
+          },
+          "confidence": {
+            "type": "number",
+            "nullable": true
+          },
+          "sourceMessageId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "conversationId",
+          "conversation",
+          "key",
+          "value",
+          "confidence",
+          "sourceMessageId",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "Conversation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "number"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "mentorId": {
+            "type": "number"
+          },
+          "mentor": {
+            "$ref": "#/components/schemas/Mentor"
+          },
+          "status": {
+            "enum": [
+              "active",
+              "archived",
+              "deleted"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastMessageAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "lastMessageId": {
+            "type": "string",
+            "nullable": true
+          },
+          "metadata": {
+            "type": "object",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            }
+          },
+          "summaries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationSummary"
+            }
+          },
+          "memoryItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationMemoryItem"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "user",
+          "mentorId",
+          "mentor",
+          "status",
+          "title",
+          "lastMessageAt",
+          "lastMessageId",
+          "metadata",
+          "createdAt",
+          "updatedAt",
+          "messages",
+          "summaries",
+          "memoryItems"
+        ]
+      },
       "CreateConversationDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "mentorId": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 180
+          },
+          "metadata": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "mentorId"
+        ]
       },
       "UpdateConversationDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "archived",
+              "deleted"
+            ]
+          }
+        }
+      },
+      "MessageResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "conversationId": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string",
+            "nullable": true
+          },
+          "clientMessageId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "number",
+            "nullable": true
+          },
+          "mentorId": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "conversationId",
+          "role",
+          "contentType",
+          "text",
+          "clientMessageId",
+          "createdAt",
+          "userId",
+          "mentorId"
+        ]
       },
       "SendTextMessageDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "conversationId": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8000
+          },
+          "clientMessageId": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "conversationId",
+          "text"
+        ]
       },
       "ProposeGoalDto": {
         "type": "object",
         "properties": {
           "raw": {
             "type": "string",
+            "maxLength": 1000,
             "example": "I want to run a half-marathon by October"
           }
         },
@@ -1552,23 +2806,77 @@
           "raw"
         ]
       },
-      "CreateGoalDto": {
+      "GoalProposalDto": {
         "type": "object",
         "properties": {
           "title": {
             "type": "string",
-            "example": "20-minute morning run"
+            "example": "Run a half-marathon"
           },
-          "description": {
-            "type": "string"
+          "costText": {
+            "type": "string",
+            "example": "13.1 miles of training time and physical discomfort"
+          },
+          "benefitText": {
+            "type": "string",
+            "example": "Improved cardiovascular health and personal accomplishment"
+          },
+          "failureText": {
+            "type": "string",
+            "example": "Letting sedentary habits win; missing the October race window"
+          },
+          "deadline": {
+            "type": "string",
+            "example": "2026-10-01T00:00:00.000Z"
+          },
+          "repeatRule": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "frequency": "weekly",
+              "days": [
+                1,
+                3,
+                6
+              ]
+            }
           },
           "category": {
-            "type": "string",
             "enum": [
               "power",
               "knowledge",
               "spiritual"
             ],
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "example": "Maintain a weekly schedule of long-run, tempo, and recovery runs."
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "CreateGoalDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "example": "20-minute morning run"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "category": {
+            "enum": [
+              "power",
+              "knowledge",
+              "spiritual"
+            ],
+            "type": "string",
             "default": "power"
           },
           "mentorId": {
@@ -1576,13 +2884,16 @@
             "example": 1
           },
           "costText": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 1000
           },
           "benefitText": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 1000
           },
           "failureText": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 1000
           },
           "deadline": {
             "type": "string",
@@ -1600,11 +2911,88 @@
             "example": 50
           },
           "imageUri": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 512
           }
         },
         "required": [
           "title"
+        ]
+      },
+      "ResponseGoalDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "number"
+          },
+          "mentorId": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "power",
+              "knowledge",
+              "spiritual"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "active",
+              "paused",
+              "completed",
+              "archived"
+            ],
+            "type": "string"
+          },
+          "costText": {
+            "type": "string"
+          },
+          "benefitText": {
+            "type": "string"
+          },
+          "failureText": {
+            "type": "string"
+          },
+          "deadline": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "repeatRule": {
+            "type": "object"
+          },
+          "stakeAmount": {
+            "type": "number"
+          },
+          "imageUri": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "title",
+          "category",
+          "status",
+          "createdAt",
+          "updatedAt"
         ]
       },
       "UpdateGoalDto": {
@@ -1612,18 +3000,20 @@
         "properties": {
           "title": {
             "type": "string",
+            "maxLength": 255,
             "example": "20-minute morning run"
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 2000
           },
           "category": {
-            "type": "string",
             "enum": [
               "power",
               "knowledge",
               "spiritual"
             ],
+            "type": "string",
             "default": "power"
           },
           "mentorId": {
@@ -1631,13 +3021,16 @@
             "example": 1
           },
           "costText": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 1000
           },
           "benefitText": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 1000
           },
           "failureText": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 1000
           },
           "deadline": {
             "type": "string",
@@ -1655,19 +3048,80 @@
             "example": 50
           },
           "imageUri": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 512
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "completed",
+              "archived"
+            ]
           }
         }
       },
       "CreateUploadUrlDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "contentType": {
+            "type": "string",
+            "pattern": "/^image\\/(jpeg|png|webp|gif|heic|heif)$/"
+          },
+          "byteSize": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10485760
+          },
+          "width": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "height": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10000
+          }
+        },
+        "required": [
+          "fileName",
+          "contentType",
+          "byteSize"
+        ]
+      },
+      "UploadUrlResponseDto": {
+        "type": "object",
+        "properties": {
+          "uploadUrl": {
+            "type": "string",
+            "description": "Presigned PUT URL; the declared size and content type are signed in."
+          },
+          "mediaId": {
+            "type": "string",
+            "description": "Pass this back as mediaId when attaching the photo."
+          },
+          "s3Key": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "uploadUrl",
+          "mediaId",
+          "s3Key"
+        ]
       },
       "CreateTaskDto": {
         "type": "object",
         "properties": {
           "title": {
             "type": "string",
+            "maxLength": 255,
             "example": "Morning 5km run"
           },
           "goalId": {
@@ -1675,20 +3129,21 @@
             "example": "goal-uuid-here"
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 2000
           },
           "dueDate": {
             "type": "string",
             "example": "2026-06-01T07:00:00.000Z"
           },
           "repeatFrequency": {
-            "type": "string",
             "enum": [
               "none",
               "daily",
               "weekly",
               "monthly"
             ],
+            "type": "string",
             "default": "none"
           }
         },
@@ -1697,60 +3152,54 @@
           "goalId"
         ]
       },
-      "UpdateTaskDto": {
+      "TaskCompletion": {
         "type": "object",
         "properties": {
-          "title": {
-            "type": "string",
-            "example": "Morning 5km run"
-          },
-          "description": {
+          "id": {
             "type": "string"
           },
-          "dueDate": {
-            "type": "string",
-            "example": "2026-06-01T07:00:00.000Z"
+          "taskId": {
+            "type": "string"
           },
-          "repeatFrequency": {
-            "type": "string",
-            "enum": [
-              "none",
-              "daily",
-              "weekly",
-              "monthly"
-            ],
-            "default": "none"
-          }
-        }
-      },
-      "CompleteTaskDto": {
-        "type": "object",
-        "properties": {
           "moodScore": {
             "type": "number",
-            "minimum": 1,
-            "maximum": 4,
-            "example": 3
+            "description": "1–4: 😣 😐 🙂 🔥"
           },
           "reflection": {
             "type": "string"
           },
           "memoryPictureId": {
             "type": "string",
-            "description": "UUID of an uploaded media item (M06)"
+            "description": "FK to a future media table (M06)"
           },
-          "personalityId": {
-            "type": "string",
-            "description": "Personality ID for mentor reaction generation"
+          "mentorReaction": {
+            "type": "string"
+          },
+          "task": {
+            "$ref": "#/components/schemas/Task"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
           }
         },
         "required": [
-          "moodScore"
+          "id",
+          "taskId",
+          "moodScore",
+          "task",
+          "createdAt"
         ]
       },
-      "ExplainTaskDto": {
+      "TaskExplanation": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": "string"
+          },
           "reason": {
             "type": "string",
             "enum": [
@@ -1762,8 +3211,295 @@
           "freeText": {
             "type": "string"
           },
+          "task": {
+            "$ref": "#/components/schemas/Task"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "taskId",
+          "reason",
+          "task",
+          "createdAt"
+        ]
+      },
+      "Task": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "goalId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "completed",
+              "skipped"
+            ],
+            "type": "string"
+          },
+          "dueDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "repeatFrequency": {
+            "enum": [
+              "none",
+              "daily",
+              "weekly",
+              "monthly"
+            ],
+            "type": "string"
+          },
+          "occurrenceIndex": {
+            "type": "number",
+            "description": "Populated for recurring instances: which occurrence # is this"
+          },
+          "parentTaskId": {
+            "type": "string",
+            "description": "UUID of the parent recurring task (null for originals)"
+          },
+          "goal": {
+            "$ref": "#/components/schemas/Goal"
+          },
+          "completions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskCompletion"
+            }
+          },
+          "explanations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskExplanation"
+            }
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "goalId",
+          "title",
+          "status",
+          "repeatFrequency",
+          "occurrenceIndex",
+          "goal",
+          "completions",
+          "explanations",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "Goal": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "number"
+          },
+          "mentorId": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "power",
+              "knowledge",
+              "spiritual"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "completed",
+              "archived"
+            ]
+          },
+          "costText": {
+            "type": "string"
+          },
+          "benefitText": {
+            "type": "string"
+          },
+          "failureText": {
+            "type": "string"
+          },
+          "deadline": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "repeatRule": {
+            "type": "object"
+          },
+          "stakeAmount": {
+            "type": "number"
+          },
+          "imageUri": {
+            "type": "string"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            }
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "mentor": {
+            "$ref": "#/components/schemas/Mentor"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "title",
+          "category",
+          "status",
+          "tasks",
+          "user",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateTaskDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "example": "Morning 5km run"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "dueDate": {
+            "type": "string",
+            "example": "2026-06-01T07:00:00.000Z"
+          },
+          "repeatFrequency": {
+            "enum": [
+              "none",
+              "daily",
+              "weekly",
+              "monthly"
+            ],
+            "type": "string",
+            "default": "none"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "completed",
+              "skipped"
+            ]
+          }
+        }
+      },
+      "CompleteTaskDto": {
+        "type": "object",
+        "properties": {
+          "moodScore": {
+            "type": "number",
+            "description": "1 = 😣  2 = 😐  3 = 🙂  4 = 🔥",
+            "minimum": 1,
+            "maximum": 4,
+            "example": 3
+          },
+          "reflection": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "memoryPictureId": {
+            "type": "string",
+            "description": "UUID of an uploaded media item (M06)"
+          },
           "personalityId": {
             "type": "string",
+            "maxLength": 64,
+            "description": "Personality ID for mentor reaction generation"
+          }
+        },
+        "required": [
+          "moodScore"
+        ]
+      },
+      "TaskCompletionResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TaskCompletion"
+          },
+          "mentorReaction": {
+            "type": "string",
+            "description": "The mentor's in-voice reaction, when one was generated."
+          },
+          "safetyFlag": {
+            "type": "boolean",
+            "description": "True when the text tripped the crisis classifier; mentorReaction is the resources copy."
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ExplainTaskDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "enum": [
+              "couldnt",
+              "forgot",
+              "chose_not_to"
+            ],
+            "type": "string"
+          },
+          "freeText": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "personalityId": {
+            "type": "string",
+            "maxLength": 64,
             "description": "Personality ID for mentor reaction generation"
           }
         },
@@ -1771,11 +3507,141 @@
           "reason"
         ]
       },
+      "TaskExplanationResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TaskExplanation"
+          },
+          "mentorReaction": {
+            "type": "string",
+            "description": "The mentor's in-voice reaction, when one was generated."
+          },
+          "safetyFlag": {
+            "type": "boolean",
+            "description": "True when the text tripped the crisis classifier; mentorReaction is the resources copy."
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "TaskSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "goalId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "dueDate": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "goalId",
+          "status"
+        ]
+      },
+      "GoalSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "currentStreak": {
+            "type": "number"
+          },
+          "longestStreak": {
+            "type": "number"
+          },
+          "todayTaskCount": {
+            "type": "number"
+          },
+          "completedTodayCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "category",
+          "currentStreak",
+          "longestStreak",
+          "todayTaskCount",
+          "completedTodayCount"
+        ]
+      },
+      "TodayProgressDto": {
+        "type": "object",
+        "properties": {
+          "completed": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "completed",
+          "total"
+        ]
+      },
+      "DashboardResponseDto": {
+        "type": "object",
+        "properties": {
+          "todaysTasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskSummaryDto"
+            }
+          },
+          "weekCompletions": {
+            "description": "Completion counts indexed Mon=0 … Sun=6 for the current calendar week",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "goals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoalSummaryDto"
+            }
+          },
+          "todayProgress": {
+            "$ref": "#/components/schemas/TodayProgressDto"
+          }
+        },
+        "required": [
+          "todaysTasks",
+          "weekCompletions",
+          "goals",
+          "todayProgress"
+        ]
+      },
       "RegisterTokenDto": {
         "type": "object",
         "properties": {
           "token": {
             "type": "string",
+            "maxLength": 512,
             "example": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
           },
           "platform": {
@@ -1789,6 +3655,7 @@
           },
           "timezone": {
             "type": "string",
+            "maxLength": 64,
             "example": "America/New_York"
           }
         },
@@ -1801,11 +3668,56 @@
         "properties": {
           "token": {
             "type": "string",
+            "maxLength": 512,
             "example": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
           }
         },
         "required": [
           "token"
+        ]
+      },
+      "PushToken": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "number"
+          },
+          "token": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "object"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "token",
+          "platform",
+          "timezone",
+          "active",
+          "createdAt",
+          "updatedAt"
         ]
       },
       "BoardItemDto": {
@@ -1831,7 +3743,8 @@
             "type": "string"
           },
           "moodScore": {
-            "type": "number"
+            "type": "number",
+            "description": "1–4: 😣 😐 🙂 🔥"
           },
           "reflection": {
             "type": "string"
@@ -1840,7 +3753,8 @@
             "type": "string"
           },
           "mediaUrl": {
-            "type": "string"
+            "type": "string",
+            "description": "Pre-signed GET URL for the memory photo (1-hour TTL)"
           },
           "milestoneKind": {
             "type": "string",
@@ -1900,9 +3814,9 @@
             "type": "string"
           },
           "imageUrl": {
-            "type": "object",
-            "description": "Presigned GET url for the attached photo, if any.",
-            "nullable": true
+            "type": "string",
+            "nullable": true,
+            "description": "Presigned GET url for the attached photo, if any."
           },
           "reactions": {
             "type": "array",
@@ -1931,8 +3845,8 @@
         "properties": {
           "text": {
             "type": "string",
-            "description": "The free-text status broadcast to the team.",
             "maxLength": 500,
+            "description": "The free-text status broadcast to the team.",
             "example": "wrote 500 words today. skipped the run."
           },
           "mediaId": {
@@ -1954,7 +3868,8 @@
             "type": "string"
           },
           "mentorPersonalityId": {
-            "type": "string"
+            "type": "string",
+            "description": "personalityId slug — marcus / lyra / goggs. Drives the avatar + voice styling."
           },
           "mentorName": {
             "type": "string"

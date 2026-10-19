@@ -23,6 +23,13 @@ type GoalDraft = Omit<ApiCreateGoalPayload, 'mentorId'>;
 
 const optStr = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
 
+// The backend accepts these three (GoalCategory). Anything else — the AI
+// draft can name categories the backend doesn't have (tracker D6) — is
+// dropped so the server's default applies, rather than sent and 400'd.
+const CATEGORIES: ReadonlyArray<GoalDraft['category']> = ['power', 'knowledge', 'spiritual'];
+const optCategory = (v: unknown): GoalDraft['category'] =>
+  CATEGORIES.find((c) => c === v);
+
 /**
  * The draft the propose screen serialises into the route. Parsed field by
  * field: JSON.parse returns `any`, and spreading `any` into the payload erased
@@ -47,12 +54,9 @@ function parseGoalDraft(raw?: string): GoalDraft | null {
     benefitText: optStr(o.benefitText),
     failureText: optStr(o.failureText),
     deadline: optStr(o.deadline),
-    category: optStr(o.category),
+    category: optCategory(o.category),
     stakeAmount:
       typeof o.stakeAmount === 'number' && o.stakeAmount > 0 ? o.stakeAmount : undefined,
-    // The generated type says Record<string, never> because the backend DTO's
-    // @ApiPropertyOptional carried no schema (fixed there; lands here when
-    // api.gen.ts is next regenerated — tracker G4).
     repeatRule:
       o.repeatRule && typeof o.repeatRule === 'object' && !Array.isArray(o.repeatRule)
         ? (o.repeatRule as GoalDraft['repeatRule'])

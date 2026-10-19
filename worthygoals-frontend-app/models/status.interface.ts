@@ -1,24 +1,7 @@
-// Shapes returned by the /status routes (the backend's StatusPostDto). That
-// route isn't described in openapi.json yet, so these are hand-written to match
-// it — keep in sync with src/modules/status/dto/status-post.dto.ts on the
-// backend (same convention as ApiGoal).
+// Shapes returned by the /status routes, generated from the backend's
+// StatusPostDto via openapi.json — the pre-push contract gate fails if the
+// backend changes them without the app regenerating.
+import type { components } from '@/types/api.gen';
 
-export interface StatusReaction {
-  /** personalityId slug — marcus / lyra / goggs. */
-  personalityId: string;
-  mentorName: string;
-  text: string;
-}
-
-export interface StatusPost {
-  id: string;
-  text: string;
-  createdAt: string;
-  /** Presigned GET url for the attached photo, if any (screen 12's chip). */
-  imageUrl?: string | null;
-  reactions: StatusReaction[];
-  /** Set when the status tripped the crisis gate: no mentor reactions. */
-  safetyFlag?: boolean;
-  /** The safe response with crisis resources, when safetyFlag. */
-  crisisResponse?: string;
-}
+export type StatusReaction = components['schemas']['StatusReactionDto'];
+export type StatusPost = components['schemas']['StatusPostDto'];

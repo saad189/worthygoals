@@ -19,6 +19,10 @@ import { JwtAuthGuard } from 'src/common/guards';
 import { CompleteTaskDto } from './dto/complete-task.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { ExplainTaskDto } from './dto/explain-task.dto';
+import {
+  TaskCompletionResponseDto,
+  TaskExplanationResponseDto,
+} from './dto/task-reaction-response.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TasksService } from './tasks.service';
 
@@ -77,7 +81,7 @@ export class TasksController {
     @Request() req: AuthenticatedRequest,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CompleteTaskDto,
-  ) {
+  ): Promise<TaskCompletionResponseDto> {
     return this.tasksService.complete(req.user.sub, id, dto);
   }
 
@@ -87,7 +91,7 @@ export class TasksController {
     @Request() req: AuthenticatedRequest,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ExplainTaskDto,
-  ) {
+  ): Promise<TaskExplanationResponseDto> {
     return this.tasksService.explain(req.user.sub, id, dto);
   }
 }

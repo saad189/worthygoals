@@ -1,4 +1,5 @@
 import { Chip, ImageCard } from ".";
+import type { components } from "@/types/api.gen";
 
 export enum GoalCategoryEnum {
     Power = "power",
@@ -22,28 +23,11 @@ export interface GoalItem {
     creationDate: Date;
 }
 
-// The shape returned by GET /goals (the backend's ResponseGoalDto). That route
-// isn't described in openapi.json yet, so this is hand-written to match it —
-// keep in sync with src/modules/goals/dto/response-goal.dto.ts on the backend.
+// The shape returned by GET /goals, generated from the backend's
+// ResponseGoalDto via openapi.json (the pre-push contract gate keeps it current).
+export type ApiGoal = components['schemas']['ResponseGoalDto'];
 /** `paused` is "Pause this goal"; `archived` is "Let it go". */
-export type GoalStatus = 'active' | 'paused' | 'completed' | 'archived';
-
-export interface ApiGoal {
-    id: string;
-    userId: number;
-    mentorId?: number;
-    title: string;
-    description?: string;
-    category: string;
-    status: GoalStatus;
-    costText?: string;
-    benefitText?: string;
-    failureText?: string;
-    stakeAmount?: number;
-    imageUri?: string;
-    createdAt: string;
-    updatedAt: string;
-}
+export type GoalStatus = ApiGoal['status'];
 
 export interface GoalProposal {
     title: string;
