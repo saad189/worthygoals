@@ -17,6 +17,10 @@ import { ConversationSummary } from './conversation-summary.entity';
 import { ConversationMemoryItem } from './conversation-memory-item.entity';
 
 @Entity({ name: 'conversations' })
+// One thread per user per mentor; ConversationsService.create relies on it.
+@Index('uq_conversations_user_mentor', ['userId', 'mentorId'], {
+  unique: true,
+})
 @Index('idx_conversations_user_last_msg_created', [
   'userId',
   'lastMessageAt',

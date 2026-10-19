@@ -16,6 +16,9 @@ import { CreateConversationDto } from './dto/create-conversation.dto';
 import { UpdateConversationDto } from './dto/update-conversation.dto';
 import { UsersService } from 'src/modules/users/users.service';
 
+/** Postgres unique_violation. */
+const UNIQUE_VIOLATION = '23505';
+
 @Injectable()
 export class ConversationsService {
   private logger = new Logger(ConversationsService.name);
@@ -196,26 +199,27 @@ export class ConversationsService {
         });
       if (!listed) throw new NotFoundException('Mentor not found');
 
-      // Prevent duplicate conversations per user+mentor.
-      // ponytail: read-then-write, so a concurrent double-tap can still make
-      // two; a unique (userId, mentorId) index needs existing duplicates
-      // merged first.
-      const existing = await this.conversationRepository.findOne({
-        where: {
-          userId: user.id,
-          mentorId: params.dto.mentorId,
-        },
-      });
+      // One thread per user+mentor. The lookup is the fast path; the unique
+      // index uq_conversations_user_mentor is the guarantee — a concurrent
+      // double tap that slips past it loses the insert and gets the winner.
+      const where = { userId: user.id, mentorId: params.dto.mentorId };
+      const existing = await this.conversationRepository.findOne({ where });
       if (existing) return existing;
 
       const conversation = this.conversationRepository.create({
-        userId: user.id,
-        mentorId: params.dto.mentorId,
+        ...where,
         title: params.dto.title ?? null,
         metadata: params.dto.metadata ?? null,
       });
 
-      return await this.conversationRepository.save(conversation);
+      try {
+        return await this.conversationRepository.save(conversation);
+      } catch (error: any) {
+        if (error?.code !== UNIQUE_VIOLATION) throw error;
+        const winner = await this.conversationRepository.findOne({ where });
+        if (!winner) throw error;
+        return winner;
+      }
     } catch (error) {
       rethrowSafe(
         error,

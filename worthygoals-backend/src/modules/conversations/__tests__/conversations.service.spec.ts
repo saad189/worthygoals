@@ -34,4 +34,20 @@ describe('ConversationsService.create', () => {
       service.create({ sub: 's', dto: { mentorId: 1 } as any }),
     ).resolves.toMatchObject({ userId: 7, mentorId: 1 });
   });
+
+  // The lookup used to be the only guard, so a double tap made two threads.
+  it('returns the winning thread when a concurrent create hits the unique index', async () => {
+    mentorRepo.exist.mockResolvedValue(true);
+    const winner = { id: 'c-first', userId: 7, mentorId: 1 };
+    conversationRepo.findOne
+      .mockResolvedValueOnce(null) // the fast-path lookup missed
+      .mockResolvedValueOnce(winner); // re-read after losing the insert
+    conversationRepo.save.mockRejectedValueOnce(
+      Object.assign(new Error('duplicate key'), { code: '23505' }),
+    );
+
+    await expect(
+      service.create({ sub: 's', dto: { mentorId: 1 } as any }),
+    ).resolves.toBe(winner);
+  });
 });
