@@ -12,6 +12,7 @@ export const CRON_LOCK = {
   notificationCopyPregen: 4_919_303,
   recurringTasks: 4_919_304,
   memoryDigest: 4_919_305,
+  mediaSweep: 4_919_306,
 } as const;
 
 /**

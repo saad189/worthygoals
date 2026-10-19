@@ -1,4 +1,6 @@
 import {
+  HttpException,
+  HttpStatus,
   Injectable,
   Logger,
   NotFoundException,
@@ -10,16 +12,28 @@ import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
+  DeleteObjectsCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
-import { EntityManager, In, Repository } from 'typeorm';
+import { EntityManager, In, MoreThan, Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { CreateUploadUrlDto } from './dto/create-upload-url.dto';
 import { Media } from 'src/database/models/media.entity';
 import { createObjectStorage } from './object-storage';
 
 const PRESIGNED_URL_TTL_SECONDS = 300;
+
+/**
+ * Upload URLs a user can mint in any rolling 24 hours. A real day is a
+ * handful of completion and status photos; this only stops a script (or a
+ * retry loop) filling the bucket on our bill.
+ */
+export const MAX_UPLOADS_PER_DAY = 40;
+
+/** A draft nothing references after this long was abandoned, not pending. */
+const ORPHAN_AFTER_HOURS = 24;
+const SWEEP_PAGE_SIZE = 500;
 
 @Injectable()
 export class MediaService {
@@ -51,6 +65,19 @@ export class MediaService {
 
     const user = await this.usersService.findByAccountSub(sub);
     if (!user) throw new NotFoundException('User not found');
+
+    const recent = await this.mediaRepo.count({
+      where: {
+        userId: user.id,
+        uploadedAt: MoreThan(new Date(Date.now() - 24 * 3_600_000)),
+      },
+    });
+    if (recent >= MAX_UPLOADS_PER_DAY) {
+      throw new HttpException(
+        'Upload limit reached for today. Try again tomorrow.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
 
     const rawExt = dto.fileName.split('.').pop()?.toLowerCase() ?? 'jpg';
     // Strip anything that could break out of the drafts/<userId>/ key prefix.
@@ -157,5 +184,62 @@ export class MediaService {
         )
       : undefined;
     if (!res?.affected) throw new NotFoundException('Media not found');
+  }
+
+  /**
+   * Delete uploads nothing ever used: a presigned URL minted for a photo the
+   * user then didn't post, or a completion abandoned mid-sheet. Without this
+   * every such draft was stored and billed forever.
+   *
+   * "Used" is read from the references themselves, not just isAttached:
+   * completion photos (task_completions.memoryPictureId) never set the flag,
+   * so trusting it alone would delete the board's memory pictures. Objects go
+   * before rows, so a failed S3 call leaves the row to retry next run instead
+   * of an object nothing points to.
+   */
+  async sweepOrphans(now = new Date()): Promise<number> {
+    const s3 = this.s3;
+    if (!s3) return 0;
+    const cutoff = new Date(now.getTime() - ORPHAN_AFTER_HOURS * 3_600_000);
+    let swept = 0;
+
+    for (;;) {
+      const orphans: Array<{ id: string; s3Key: string }> =
+        await this.mediaRepo.query(
+          `
+          SELECT m.id, m."s3Key"
+            FROM media m
+           WHERE m."isAttached" = false
+             AND m."uploadedAt" < $1
+             AND NOT EXISTS (SELECT 1 FROM status_posts s
+                              WHERE s."mediaId" = m.id)
+             AND NOT EXISTS (SELECT 1 FROM task_completions c
+                              WHERE c."memoryPictureId" = m.id::text)
+           LIMIT $2
+          `,
+          [cutoff, SWEEP_PAGE_SIZE],
+        );
+      if (!orphans.length) break;
+
+      const res = await s3.send(
+        new DeleteObjectsCommand({
+          Bucket: this.bucket,
+          Delete: { Objects: orphans.map((o) => ({ Key: o.s3Key })) },
+        }),
+      );
+      // Keep the rows whose object S3 refused to delete; they're retried.
+      const failed = new Set((res.Errors ?? []).map((e) => e.Key));
+      const deleted = orphans.filter((o) => !failed.has(o.s3Key));
+      if (deleted.length) {
+        await this.mediaRepo.delete({ id: In(deleted.map((o) => o.id)) });
+      }
+      swept += deleted.length;
+      if (failed.size) {
+        this.logger.warn(`Orphan sweep: ${failed.size} object(s) not deleted`);
+        break;
+      }
+      if (orphans.length < SWEEP_PAGE_SIZE) break;
+    }
+    return swept;
   }
 }
