@@ -144,7 +144,7 @@ describe('NotificationsService', () => {
       await service.materializeNext24h();
 
       const review = queue.addBulk.mock.calls[0][0].find(
-        (j) => j.name === 'weekly_review',
+        (j: { name: string }) => j.name === 'weekly_review',
       );
       expect(review.data.scheduledFor).toBe('2026-10-18T13:00:00.000Z');
       expect(review.opts.jobId).toBe('1:weekly_review:2026-10-18');
