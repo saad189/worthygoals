@@ -1,0 +1,14 @@
+# The new-goal wizard opens on step 1 and offers both paths (AI draft and
+# "fill it in myself"). Leaves without creating a goal.
+appId: com.saad189.worthygoalsfrontendapp
+name: New-goal wizard opens
+tags: [smoke]
+---
+- runFlow: subflows/launch.yaml
+- tapOn: "goals, tab.*"
+- tapOn: "\\+ New goal"
+- assertVisible: "What do you want to do\\?"
+- assertVisible: "1 / 3"
+- assertVisible: "Skip — fill it in myself"
+- assertVisible: "Next →"
+# Nothing typed or submitted; the next flow relaunches the app.

@@ -1,0 +1,22 @@
+# Cold-launch the app and get past the dev client to the today screen.
+# Works on a dev-client build (expo-dev-client) and on a plain build.
+appId: com.saad189.worthygoalsfrontendapp
+---
+- stopApp
+- launchApp
+# Dev client with no bundler remembered: pick the local Metro server.
+- runFlow:
+    when:
+      visible: "Development servers"
+    commands:
+      - tapOn: ".*:8081.*"
+# Dev client's one-time developer-menu intro.
+- runFlow:
+    when:
+      visible: "This is the developer menu.*"
+    commands:
+      - tapOn: "Continue"
+# The app needs a signed-in account (see README): today is the landing tab.
+- extendedWaitUntil:
+    visible: "today"
+    timeout: 30000

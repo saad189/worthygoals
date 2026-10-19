@@ -14,7 +14,8 @@
     "hex-lint": "bash ./scripts/hex-lint.sh",
     "generate:api": "openapi-typescript ../worthygoals-backend/openapi.json -o types/api.gen.ts --default-non-nullable=false",
     "//ci:check-api": "Regenerates types/api.gen.ts from the backend openapi.json and fails on any diff. Wired into .husky/pre-push after the backend spec export.",
-    "ci:check-api": "npm run generate:api && git diff --exit-code types/api.gen.ts"
+    "ci:check-api": "npm run generate:api && git diff --exit-code types/api.gen.ts",
+    "e2e:ios": "JAVA_HOME=/opt/homebrew/opt/openjdk@17 maestro test .maestro"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

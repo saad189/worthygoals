@@ -1,0 +1,12 @@
+# Feed and me render their headers and primary actions.
+appId: com.saad189.worthygoalsfrontendapp
+name: Feed and me
+tags: [smoke]
+---
+- runFlow: subflows/launch.yaml
+- tapOn: "feed, tab.*"
+- assertVisible: "the team\\."
+- assertVisible: "\\+ status"
+- tapOn: "me, tab.*"
+- assertVisible: "me\\."
+- assertVisible: "YOUR TEAM"

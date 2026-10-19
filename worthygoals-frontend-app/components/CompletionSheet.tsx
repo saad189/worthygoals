@@ -258,6 +258,8 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
         // its snap point and its content is flex: 1 — keep the v4 behaviour.
         enableDynamicSizing={false}
         enablePanDownToClose
+        // Not one opaque "Bottom Sheet" element: VoiceOver reads each control.
+        accessible={false}
         backdropComponent={renderBackdrop}
         onClose={onClose}
         handleIndicatorStyle={{ backgroundColor: colors.border }}

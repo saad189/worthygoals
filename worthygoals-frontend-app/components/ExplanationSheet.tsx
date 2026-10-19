@@ -256,6 +256,9 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
         // its snap point and its content is flex: 1 — keep the v4 behaviour.
         enableDynamicSizing={false}
         enablePanDownToClose
+        // gorhom defaults the sheet to one accessible element ("Bottom Sheet"),
+        // which hid every option from VoiceOver (and from the E2E flows).
+        accessible={false}
         backdropComponent={renderBackdrop}
         onClose={onClose}
         handleIndicatorStyle={{ backgroundColor: colors.border }}
