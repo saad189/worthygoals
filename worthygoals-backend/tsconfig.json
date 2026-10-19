@@ -13,10 +13,9 @@
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
-    // noImplicitAny stays off for now: measured at 47 errors, and its shadow
-    // is the 514 no-unsafe-* lint findings parked in .eslintrc.js. Flip it and
-    // fix those together, then the type-checked lint family can come on.
-    "noImplicitAny": false,
+    // On since Oct 2026 (it was 47 errors in Sep, 2 by then). The no-unsafe-*
+    // lint family it shadows is still parked in .eslintrc.js.
+    "noImplicitAny": true,
     "strictBindCallApply": true,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,

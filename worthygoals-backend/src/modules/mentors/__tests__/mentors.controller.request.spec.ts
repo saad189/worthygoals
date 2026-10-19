@@ -122,12 +122,15 @@ describe('/mentors (request level)', () => {
     ['post', '/mentors'],
     ['patch', '/mentors/1'],
     ['delete', '/mentors/1'],
-  ])('%s %s is not routed — mentors are catalog data', async (method, url) => {
-    await request(app.getHttpServer())
-      [method](url)
-      .send({ promptBlocks: { system: 'pwned' } })
-      .expect(404);
-  });
+  ] as const)(
+    '%s %s is not routed — mentors are catalog data',
+    async (method, url) => {
+      await request(app.getHttpServer())
+        [method](url)
+        .send({ promptBlocks: { system: 'pwned' } })
+        .expect(404);
+    },
+  );
 
   // A mentor's conversations and messages belong to every user who talks to
   // it; ?include=conversations.messages used to return all of them.
