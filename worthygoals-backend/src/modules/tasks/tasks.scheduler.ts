@@ -13,8 +13,12 @@ export class TasksScheduler {
     private readonly dataSource: DataSource,
   ) {}
 
-  /** Runs every day at 01:00 UTC — spin up next instances of recurring tasks */
-  @Cron(CronExpression.EVERY_DAY_AT_1AM)
+  /**
+   * Hourly — spin up next instances of recurring tasks. Each user's day starts
+   * at their own midnight, so there is no single right hour; and a run missed
+   * while the API was down is caught up within the hour instead of a day.
+   */
+  @Cron(CronExpression.EVERY_HOUR)
   async materializeRecurringTasks() {
     await runExclusive(
       this.dataSource,

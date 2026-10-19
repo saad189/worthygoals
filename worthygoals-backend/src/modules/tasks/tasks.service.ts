@@ -30,6 +30,12 @@ import { ExplainTaskDto } from './dto/explain-task.dto';
 import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
 import { SafetyService } from 'src/core/safety/safety.service';
 import { MemoryService } from 'src/core/memory/memory.service';
+import {
+  addDays,
+  addMonthsClamped,
+  dueOnDay,
+  localDay,
+} from 'src/common/timezone';
 
 export interface TaskReactionResult<T> {
   data: T;
@@ -107,7 +113,12 @@ export class TasksService {
     if (!goal) throw new NotFoundException(`Goal ${dto.goalId} not found`);
     if (goal.userId !== user.id) throw new ForbiddenException();
 
-    const task = this.taskRepo.create(dto);
+    const task = this.taskRepo.create({
+      ...dto,
+      ...(dto.dueDate
+        ? { dueOn: localDay(user.timezone, new Date(dto.dueDate)) }
+        : {}),
+    });
     return this.taskRepo.save(task);
   }
 
@@ -145,14 +156,19 @@ export class TasksService {
   async update(sub: string, taskId: string, dto: UpdateTaskDto): Promise<Task> {
     const task = await this.taskRepo.findOne({ where: { id: taskId } });
     if (!task) throw new NotFoundException(`Task ${taskId} not found`);
-    await this.assertGoalOwnership(sub, task.goalId);
+    const user = await this.assertGoalOwnership(sub, task.goalId);
     // dueDate arrives as an ISO string (@IsDateString) for a Date column. The
     // old `as unknown as Partial<Task>` cast hid that and left a string on
     // task.dueDate until the round-trip.
     const { dueDate, ...rest } = dto;
     this.taskRepo.merge(task, {
       ...rest,
-      ...(dueDate !== undefined ? { dueDate: new Date(dueDate) } : {}),
+      ...(dueDate !== undefined
+        ? {
+            dueDate: new Date(dueDate),
+            dueOn: localDay(user.timezone, new Date(dueDate)),
+          }
+        : {}),
     });
     return this.taskRepo.save(task);
   }
@@ -255,9 +271,8 @@ export class TasksService {
       task.repeatFrequency === TaskRepeatFrequency.NONE &&
       goal.status === GoalStatus.ACTIVE
     ) {
-      const dueDate = new Date();
-      dueDate.setHours(0, 0, 0, 0);
-      dueDate.setDate(dueDate.getDate() + 1);
+      // "Tomorrow" is the user's tomorrow, not the server's.
+      const tomorrow = addDays(localDay(user.timezone), 1);
       await this.taskRepo.save(
         this.taskRepo.create({
           goalId: task.goalId,
@@ -266,7 +281,7 @@ export class TasksService {
           repeatFrequency: TaskRepeatFrequency.NONE,
           occurrenceIndex: task.occurrenceIndex + 1,
           parentTaskId: task.id,
-          dueDate,
+          ...dueOnDay(tomorrow, user.timezone),
         }),
       );
     }
@@ -309,8 +324,16 @@ export class TasksService {
    * API. Now one keyset-paged query returns only tasks with no next
    * occurrence (NOT EXISTS), served by idx_tasks_recurring_due and
    * idx_tasks_parent_occurrence, and each page is inserted in one statement.
+   *
+   * Days are the user's: a task rolls forward once its `dueOn` has arrived in
+   * the user's own zone, and the next one lands on the next calendar day
+   * there. The zone test is done here, not in SQL — `AT TIME ZONE` raises on a
+   * name Postgres doesn't know, and one bad row must not stop the job for
+   * everyone. SQL only pre-filters to `dueOn <= UTC today + 1` (no zone is
+   * further ahead than that). Only active goals roll forward: a paused or
+   * let-go goal stops growing tasks.
    */
-  async materializeRecurringTasks(): Promise<number> {
+  async materializeRecurringTasks(now = new Date()): Promise<number> {
     let created = 0;
     let afterId = '00000000-0000-0000-0000-000000000000';
 
@@ -321,15 +344,20 @@ export class TasksService {
         title: string;
         description: string | null;
         repeatFrequency: TaskRepeatFrequency;
-        dueDate: Date;
+        dueOn: string;
         occurrenceIndex: number;
+        timezone: string;
       }> = await this.taskRepo.query(
         `
         SELECT p.id, p."goalId", p.title, p.description, p."repeatFrequency",
-               p."dueDate", p."occurrenceIndex"
+               to_char(p."dueOn", 'YYYY-MM-DD') AS "dueOn",
+               p."occurrenceIndex", u.timezone
           FROM tasks p
+          JOIN goals g ON g.id = p."goalId"
+          JOIN users u ON u.id = g."userId"
          WHERE p."repeatFrequency" <> 'none'
-           AND p."dueDate" < now()
+           AND g.status = 'active'
+           AND p."dueOn" <= ($3::timestamptz AT TIME ZONE 'UTC')::date + 1
            AND p.id > $1
            AND NOT EXISTS (
                  SELECT 1 FROM tasks c
@@ -338,25 +366,34 @@ export class TasksService {
          ORDER BY p.id
          LIMIT $2
         `,
-        [afterId, RECURRING_PAGE_SIZE],
+        [afterId, RECURRING_PAGE_SIZE, now],
       );
       if (!page.length) break;
 
-      await this.taskRepo.insert(
-        page.map((parent) => ({
-          goalId: parent.goalId,
-          title: parent.title,
-          description: parent.description ?? undefined,
-          repeatFrequency: parent.repeatFrequency,
-          dueDate: this.nextDueDate(
-            new Date(parent.dueDate),
-            parent.repeatFrequency,
-          ),
-          occurrenceIndex: parent.occurrenceIndex + 1,
-          parentTaskId: parent.id,
-        })),
+      const due = page.filter(
+        (parent) => parent.dueOn <= localDay(parent.timezone, now),
       );
-      created += page.length;
+      if (due.length) {
+        await this.taskRepo.insert(
+          due.map((parent) => ({
+            goalId: parent.goalId,
+            title: parent.title,
+            description: parent.description ?? undefined,
+            repeatFrequency: parent.repeatFrequency,
+            ...dueOnDay(
+              this.nextDueOn(
+                parent.dueOn,
+                parent.repeatFrequency,
+                localDay(parent.timezone, now),
+              ),
+              parent.timezone,
+            ),
+            occurrenceIndex: parent.occurrenceIndex + 1,
+            parentTaskId: parent.id,
+          })),
+        );
+        created += due.length;
+      }
 
       if (page.length < RECURRING_PAGE_SIZE) break;
       afterId = page[page.length - 1].id;
@@ -419,30 +456,23 @@ export class TasksService {
   // Steps from the parent's dueDate until the result is today or later, so a
   // missed cron run catches up instead of leaving every later occurrence due
   // in the past (and therefore never on the today screen).
-  nextDueDate(from: Date, freq: TaskRepeatFrequency, now = new Date()): Date {
-    const today = new Date(now);
-    today.setHours(0, 0, 0, 0);
-    const d = new Date(from);
-    const day = from.getDate();
+  // All in calendar days ("YYYY-MM-DD"), so DST and timezone changes can't
+  // drift it. `today` is the user's local day.
+  nextDueOn(from: string, freq: TaskRepeatFrequency, today: string): string {
+    let d = from;
     let months = 0;
     do {
       switch (freq) {
         case TaskRepeatFrequency.DAILY:
-          d.setDate(d.getDate() + 1);
+          d = addDays(d, 1);
           break;
         case TaskRepeatFrequency.WEEKLY:
-          d.setDate(d.getDate() + 7);
+          d = addDays(d, 7);
           break;
-        case TaskRepeatFrequency.MONTHLY: {
-          // Clamp to the month's last day: Jan 31 → Feb 28, not Mar 3.
-          months += 1;
-          d.setTime(from.getTime());
-          d.setDate(1);
-          d.setMonth(from.getMonth() + months);
-          const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-          d.setDate(Math.min(day, last));
+        case TaskRepeatFrequency.MONTHLY:
+          // From the original day each time: Jan 31 → Feb 28 → Mar 31.
+          d = addMonthsClamped(from, ++months);
           break;
-        }
         default:
           return d;
       }
@@ -456,13 +486,11 @@ export class TasksService {
     return user;
   }
 
-  private async assertGoalOwnership(
-    sub: string,
-    goalId: string,
-  ): Promise<void> {
+  private async assertGoalOwnership(sub: string, goalId: string) {
     const user = await this.resolveUser(sub);
     const goal = await this.goalRepo.findOne({ where: { id: goalId } });
     if (!goal) throw new NotFoundException(`Goal ${goalId} not found`);
     if (goal.userId !== user.id) throw new ForbiddenException();
+    return user;
   }
 }

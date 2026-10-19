@@ -1,4 +1,5 @@
 import { EntityManager } from 'typeorm';
+import { safeTimeZone } from '../timezone';
 
 /**
  * The distinct days each of a user's goals had a completion on, keyed by goal
@@ -9,15 +10,21 @@ import { EntityManager } from 'typeorm';
  * reduce them to this set in JavaScript. Postgres now does the reduction and
  * returns one row per goal per day.
  *
- * Days are bucketed in the server process's own timezone, the zone the
- * existing streak code already used via getDate()/getMonth(), so streak
- * results are unchanged. (That zone is still not the user's — see the
- * ponytail note in AddPerDayCompletionUniqueness.)
+ * Days are bucketed in the user's own timezone. The returned Dates are local
+ * midnights in the server's zone purely as calendar-day carriers for the
+ * streak code's getDate()/getMonth() arithmetic.
+ *
+ * ponytail: history is bucketed in the user's *current* zone, so after a move
+ * a late-evening completion can shift to a neighbouring day. Exact would mean
+ * storing each completion's local day; streaks don't need it.
  */
 export async function completionDaysByGoal(
   manager: EntityManager,
   userId: number,
-  { activeGoalsOnly }: { activeGoalsOnly: boolean },
+  {
+    activeGoalsOnly,
+    timezone,
+  }: { activeGoalsOnly: boolean; timezone: string | null | undefined },
 ): Promise<Map<string, Date[]>> {
   const rows: Array<{ goalId: string; day: string }> = await manager.query(
     `
@@ -30,7 +37,8 @@ export async function completionDaysByGoal(
        ${activeGoalsOnly ? "AND g.status = 'active'" : ''}
      GROUP BY 1, 2
     `,
-    [userId, Intl.DateTimeFormat().resolvedOptions().timeZone],
+    // Validated here: Postgres raises on a zone name it doesn't know.
+    [userId, safeTimeZone(timezone)],
   );
 
   const byGoal = new Map<string, Date[]>();

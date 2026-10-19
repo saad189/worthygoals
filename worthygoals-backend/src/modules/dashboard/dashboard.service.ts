@@ -6,6 +6,12 @@ import { GoalStatus, TaskStatus } from 'src/common/constants';
 import { UsersService } from '../users/users.service';
 import { completionDaysByGoal } from 'src/common/streaks/completion-days';
 import {
+  addDays,
+  localDay,
+  mondayOf,
+  zonedMidnight,
+} from 'src/common/timezone';
+import {
   DashboardResponseDto,
   GoalSummaryDto,
   TaskSummaryDto,
@@ -25,14 +31,14 @@ export class DashboardService {
     const user = await this.usersService.findByAccountSub(sub);
     if (!user) throw new NotFoundException('User not found');
 
-    const today = this.startOfDay(new Date());
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // The user's today, in their zone — a task is on it when dueOn matches.
+    const tz = user.timezone;
+    const today = localDay(tz);
 
     const [todaysTasks, weekCounts, goalSummaries] = await Promise.all([
-      this.fetchTodaysTasks(user.id, today, tomorrow),
-      this.fetchWeekCompletions(user.id),
-      this.fetchGoalSummaries(user.id, today, tomorrow),
+      this.fetchTodaysTasks(user.id, today),
+      this.fetchWeekCompletions(user.id, today, tz),
+      this.fetchGoalSummaries(user.id, today, tz),
     ]);
 
     const totalToday = goalSummaries.reduce((s, g) => s + g.todayTaskCount, 0);
@@ -51,15 +57,15 @@ export class DashboardService {
 
   private async fetchTodaysTasks(
     userId: number,
-    today: Date,
-    tomorrow: Date,
+    today: string,
   ): Promise<TaskSummaryDto[]> {
     const tasks = await this.taskRepo
       .createQueryBuilder('t')
       .innerJoin('t.goal', 'g')
       .where('g.userId = :userId', { userId })
-      .andWhere('t.dueDate >= :today', { today })
-      .andWhere('t.dueDate < :tomorrow', { tomorrow })
+      // A paused or let-go goal's tasks leave today with it.
+      .andWhere('g.status = :active', { active: GoalStatus.ACTIVE })
+      .andWhere('t.dueOn = :today', { today })
       .andWhere('t.status = :status', { status: TaskStatus.PENDING })
       .select(['t.id', 't.title', 't.goalId', 't.status', 't.dueDate'])
       .getMany();
@@ -73,10 +79,15 @@ export class DashboardService {
     }));
   }
 
-  private async fetchWeekCompletions(userId: number): Promise<number[]> {
-    const weekStart = this.startOfWeek(new Date());
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 7);
+  private async fetchWeekCompletions(
+    userId: number,
+    today: string,
+    tz: string,
+  ): Promise<number[]> {
+    // Monday–Sunday of the user's week, bounded by their local midnights.
+    const monday = mondayOf(today);
+    const weekStart = zonedMidnight(monday, tz);
+    const weekEnd = zonedMidnight(addDays(monday, 7), tz);
 
     const rows = await this.completionRepo
       .createQueryBuilder('c')
@@ -90,17 +101,19 @@ export class DashboardService {
 
     const counts = Array<number>(7).fill(0);
     for (const row of rows) {
-      const d = new Date(row.createdAt);
-      const dow = (d.getDay() + 6) % 7; // 0=Mon … 6=Sun
-      counts[dow]++;
+      const day = localDay(tz, new Date(row.createdAt));
+      const dow = Math.round(
+        (Date.parse(day) - Date.parse(monday)) / 86_400_000,
+      ); // 0=Mon … 6=Sun
+      if (dow >= 0 && dow < 7) counts[dow]++;
     }
     return counts;
   }
 
   private async fetchGoalSummaries(
     userId: number,
-    today: Date,
-    tomorrow: Date,
+    today: string,
+    tz: string,
   ): Promise<GoalSummaryDto[]> {
     // Three bounded queries instead of hydrating goals × tasks × completions
     // (ECC-1 H4): the goals, their distinct completion days, and today's
@@ -113,14 +126,14 @@ export class DashboardService {
       }),
       completionDaysByGoal(this.goalRepo.manager, userId, {
         activeGoalsOnly: true,
+        timezone: tz,
       }),
       this.taskRepo
         .createQueryBuilder('t')
         .innerJoin('t.goal', 'g')
         .where('g.userId = :userId', { userId })
         .andWhere('g.status = :active', { active: GoalStatus.ACTIVE })
-        .andWhere('t.dueDate >= :today', { today })
-        .andWhere('t.dueDate < :tomorrow', { tomorrow })
+        .andWhere('t.dueOn = :today', { today })
         .select('t.goalId', 'goalId')
         // A skipped task was answered ("Not today" + a reason), so it isn't
         // left to do. Counting it kept the ring at "1 of 2 · One left" while
@@ -142,6 +155,7 @@ export class DashboardService {
     return goals.map((goal) => {
       const { current, longest } = this.computeStreak(
         daysByGoal.get(goal.id) ?? [],
+        today,
       );
       const counts = todayByGoal.get(goal.id);
       return {
@@ -157,7 +171,10 @@ export class DashboardService {
   }
 
   /** Deterministic streak computation from a list of completion timestamps. */
-  computeStreak(dates: Date[]): { current: number; longest: number } {
+  computeStreak(
+    dates: Date[],
+    todayStr?: string,
+  ): { current: number; longest: number } {
     if (dates.length === 0) return { current: 0, longest: 0 };
 
     // All date arithmetic uses local calendar dates to avoid UTC-offset drift
@@ -185,15 +202,13 @@ export class DashboardService {
       if (run > longest) longest = run;
     }
 
-    // Current streak: walk backwards from today (or yesterday if today has no completion)
-    const now = new Date();
-    const todayStr = dayStr(now);
-    const yesterdayStr = dayStr(
-      new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1),
-    );
+    // Current streak: walk backwards from the user's today (or yesterday if
+    // today has no completion yet).
+    const today = todayStr ?? dayStr(new Date());
+    const yesterdayStr = addDays(today, -1);
     let current = 0;
-    if (daySet.has(todayStr) || daySet.has(yesterdayStr)) {
-      let check = parseLocalDay(daySet.has(todayStr) ? todayStr : yesterdayStr);
+    if (daySet.has(today) || daySet.has(yesterdayStr)) {
+      let check = parseLocalDay(daySet.has(today) ? today : yesterdayStr);
       while (daySet.has(dayStr(check))) {
         current++;
         check = new Date(
@@ -205,19 +220,5 @@ export class DashboardService {
     }
 
     return { current, longest: Math.max(longest, current) };
-  }
-
-  private startOfDay(d: Date): Date {
-    const out = new Date(d);
-    out.setHours(0, 0, 0, 0);
-    return out;
-  }
-
-  private startOfWeek(d: Date): Date {
-    const out = new Date(d);
-    const day = out.getDay(); // 0=Sun
-    out.setDate(out.getDate() - (day === 0 ? 6 : day - 1)); // back to Monday
-    out.setHours(0, 0, 0, 0);
-    return out;
   }
 }

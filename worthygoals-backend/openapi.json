@@ -1367,6 +1367,11 @@
             "type": "string",
             "example": "marcus",
             "description": "The user's onboarding-matched mentor (personality slug)"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "Asia/Karachi",
+            "description": "The device's IANA timezone. The app re-sends it whenever it changes; every 'today' is computed in it."
           }
         }
       },

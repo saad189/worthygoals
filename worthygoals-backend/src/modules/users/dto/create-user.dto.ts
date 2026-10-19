@@ -6,6 +6,7 @@ import {
   IsString,
   IsDateString,
   IsNumber,
+  IsTimeZone,
   MaxLength,
 } from 'class-validator';
 
@@ -93,4 +94,14 @@ export class CreateUserDto {
   @IsOptional()
   @IsIn(['marcus', 'lyra', 'goggs'])
   readonly personalityId?: string;
+
+  @ApiProperty({
+    example: 'Asia/Karachi',
+    description:
+      "The device's IANA timezone. The app re-sends it whenever it changes; every 'today' is computed in it.",
+    required: false,
+  })
+  @IsOptional()
+  @IsTimeZone()
+  readonly timezone?: string;
 }

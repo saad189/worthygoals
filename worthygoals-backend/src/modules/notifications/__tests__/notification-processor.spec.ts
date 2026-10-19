@@ -60,6 +60,7 @@ describe('NotificationProcessor', () => {
 
   const notifService = {
     getTokens: jest.fn(),
+    userTimezone: jest.fn().mockResolvedValue('UTC'),
     checkPacingAllowed: jest.fn().mockResolvedValue(true),
     tokensSentToday: jest.fn().mockResolvedValue(new Set()),
     recordSent: jest.fn(),

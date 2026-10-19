@@ -11,6 +11,7 @@ import { Goal, Task } from 'src/database/models';
 import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
 import { GoalCategory, TaskRepeatFrequency } from 'src/common/constants';
 import { UsersService } from '../users/users.service';
+import { dueOnDay, localDay } from 'src/common/timezone';
 import { CreateGoalDto } from './dto/create-goal.dto';
 import { UpdateGoalDto } from './dto/update-goal.dto';
 import { ResponseGoalDto } from './dto/response-goal.dto';
@@ -141,7 +142,7 @@ export class GoalsService {
     // 500, and the user's retry created it twice.
     const saved = await this.goalRepository.manager.transaction(async (em) => {
       const goal = await em.save(em.create(Goal, { ...dto, userId: user.id }));
-      await this.seedFirstTask(goal, em);
+      await this.seedFirstTask(goal, user.timezone, em);
       return goal;
     });
     return this.toDto(saved);
@@ -154,7 +155,11 @@ export class GoalsService {
   // multi-step decomposition is left for a future second-AI pass that would
   // break a goal into a concrete task list.
   // See progress-report.html "Goal→task seeding" note for the upgrade path.
-  private async seedFirstTask(goal: Goal, em: EntityManager): Promise<void> {
+  private async seedFirstTask(
+    goal: Goal,
+    timezone: string,
+    em: EntityManager,
+  ): Promise<void> {
     // No recognisable cadence (every hand-filled "Skip" goal, and AI drafts the
     // model read as one-off) still gets one one-off task: the app has no way to
     // add a task, so a goal without one could never be worked on or completed.
@@ -162,15 +167,14 @@ export class GoalsService {
     const frequency =
       this.mapRepeatFrequency(goal.repeatRule) ?? TaskRepeatFrequency.NONE;
 
-    const dueDate = new Date();
-    dueDate.setHours(0, 0, 0, 0); // due today so it lands on the today screen
     await em.save(
       em.create(Task, {
         goalId: goal.id,
         title: goal.title,
         description: goal.description,
         repeatFrequency: frequency,
-        dueDate,
+        // Due on the user's today so it lands on the today screen.
+        ...dueOnDay(localDay(timezone), timezone),
       }),
     );
   }

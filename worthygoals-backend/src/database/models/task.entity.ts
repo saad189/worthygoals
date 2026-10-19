@@ -42,6 +42,16 @@ export class Task {
   @Column({ type: 'timestamptz', nullable: true })
   dueDate?: Date;
 
+  /**
+   * The user's calendar day this task belongs to ("YYYY-MM-DD"). "Today" is
+   * `dueOn = localDay(user.timezone)`, so a timezone change can't push a task
+   * onto a neighbouring day; `dueDate` stays as that day's local midnight for
+   * display.
+   */
+  @Index('idx_tasks_due_on')
+  @Column({ type: 'date', nullable: true })
+  dueOn?: string;
+
   @Column({ type: 'varchar', length: 16, default: TaskRepeatFrequency.NONE })
   repeatFrequency!: TaskRepeatFrequency;
 

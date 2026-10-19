@@ -81,6 +81,14 @@ export class User {
   @Column({ length: 64, nullable: true })
   personalityId: string;
 
+  /**
+   * The user's IANA zone, sent by the app whenever the device's zone changes.
+   * Every "today" — the today screen, roll-forward, streaks, the week window,
+   * push hours — is computed in it, never in the server's zone.
+   */
+  @Column({ length: 64, default: 'UTC' })
+  timezone: string;
+
   @ManyToOne(() => Role, (role) => role.users, { eager: true })
   @JoinColumn({ name: 'roleId', foreignKeyConstraintName: 'fk_users_role' })
   role: Role;
