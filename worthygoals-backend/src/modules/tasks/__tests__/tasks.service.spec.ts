@@ -88,6 +88,7 @@ describe('TasksService', () => {
       createQueryBuilder: jest.fn().mockReturnValue(qbMock),
       query: jest.fn(),
       insert: jest.fn(),
+      update: jest.fn(),
     };
     completionRepo = {
       create: jest.fn(),
@@ -515,6 +516,56 @@ describe('TasksService', () => {
       taskRepo.query.mockResolvedValueOnce([]);
       expect(await service.materializeRecurringTasks()).toBe(0);
       expect(taskRepo.insert).not.toHaveBeenCalled();
+    });
+  });
+
+  // An unanswered one-off used to drop off today once its day passed, with
+  // nothing ever asking about it again.
+  describe('carryOverOneOffs', () => {
+    // 05:00 UTC Sep 27 = Sep 26 22:00 in Los Angeles, Sep 27 14:00 in Tokyo.
+    const NOW = new Date('2026-09-27T05:00:00Z');
+    const row = (id: string, dueOn: string, timezone: string) => ({
+      id,
+      dueOn,
+      timezone,
+    });
+
+    it("moves past-due pending one-offs to each user's own today", async () => {
+      taskRepo.query.mockResolvedValueOnce([
+        row('tokyo-old', '2026-09-25', 'Asia/Tokyo'),
+        row('tokyo-also', '2026-09-26', 'Asia/Tokyo'),
+        row('utc-old', '2026-09-20', 'UTC'),
+      ]);
+
+      expect(await service.carryOverOneOffs(NOW)).toBe(3);
+
+      // One UPDATE per zone, each to that zone's today at its midnight.
+      const calls = taskRepo.update.mock.calls;
+      expect(calls).toHaveLength(2);
+      const tokyo = calls.find(([, set]) => set.dueOn === '2026-09-27');
+      expect(tokyo[0].id.value ?? tokyo[0].id._value).toEqual([
+        'tokyo-old',
+        'tokyo-also',
+      ]);
+      expect(tokyo[1].dueDate).toEqual(new Date('2026-09-26T15:00:00Z'));
+    });
+
+    it("leaves a task whose day hasn't ended in the user's zone", async () => {
+      // Sep 26 is still today in Los Angeles at 05:00 UTC Sep 27.
+      taskRepo.query.mockResolvedValueOnce([
+        row('la-today', '2026-09-26', 'America/Los_Angeles'),
+      ]);
+      expect(await service.carryOverOneOffs(NOW)).toBe(0);
+      expect(taskRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('only selects pending one-offs on active goals', async () => {
+      taskRepo.query.mockResolvedValueOnce([]);
+      await service.carryOverOneOffs(NOW);
+      const sql = taskRepo.query.mock.calls[0][0];
+      expect(sql).toContain(`"repeatFrequency" = 'none'`);
+      expect(sql).toContain(`t.status = 'pending'`);
+      expect(sql).toContain(`g.status = 'active'`);
     });
   });
 
