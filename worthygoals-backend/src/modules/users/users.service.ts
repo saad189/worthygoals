@@ -277,6 +277,7 @@ export class UsersService {
       age,
       tone: tone ?? null,
       personalityId: personalityId ?? null,
+      timezone: user.timezone,
       role: {
         id: role.id,
         name: role.name,

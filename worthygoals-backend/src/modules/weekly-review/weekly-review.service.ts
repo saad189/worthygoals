@@ -6,6 +6,12 @@ import { GoalStatus } from 'src/common/constants';
 import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
 import { UsersService } from '../users/users.service';
 import {
+  addDays,
+  localDay,
+  mondayOf,
+  zonedMidnight,
+} from 'src/common/timezone';
+import {
   GoalWeekRowDto,
   WeeklyReviewDto,
   WeekTrend,
@@ -56,11 +62,11 @@ export class WeeklyReviewService {
     const user = await this.usersService.findByAccountSub(sub);
     if (!user) throw new NotFoundException('User not found');
 
-    const weekStart = this.startOfWeek(new Date());
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 7); // exclusive upper bound
-    const lastWeekStart = new Date(weekStart);
-    lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+    // The user's Monday–Sunday, bounded by their own local midnights.
+    const monday = mondayOf(localDay(user.timezone));
+    const weekStart = zonedMidnight(monday, user.timezone);
+    const weekEnd = zonedMidnight(addDays(monday, 7), user.timezone); // exclusive
+    const lastWeekStart = zonedMidnight(addDays(monday, -7), user.timezone);
 
     const goals = await this.goalRepo.find({
       where: { userId: user.id, status: GoalStatus.ACTIVE },
@@ -80,7 +86,8 @@ export class WeeklyReviewService {
     return {
       weekStart: weekStart.toISOString(),
       weekEnd: weekEndInclusive.toISOString(),
-      weekNumber: this.isoWeekNumber(weekStart),
+      // Local noon of the user's Monday: isoWeekNumber reads calendar fields.
+      weekNumber: this.isoWeekNumber(new Date(`${monday}T12:00:00`)),
       onTrackCount,
       totalGoals: rows.length,
       goals: rows,
@@ -176,15 +183,6 @@ export class WeeklyReviewService {
       );
       return fallback;
     }
-  }
-
-  /** Monday 00:00 local of the week containing `d`. */
-  private startOfWeek(d: Date): Date {
-    const out = new Date(d);
-    const day = out.getDay(); // 0=Sun
-    out.setDate(out.getDate() - (day === 0 ? 6 : day - 1)); // back to Monday
-    out.setHours(0, 0, 0, 0);
-    return out;
   }
 
   /** ISO-8601 week number (weeks start Monday; week 1 holds the first Thursday). */

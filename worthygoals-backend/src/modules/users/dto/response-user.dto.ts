@@ -13,4 +13,6 @@ export class ResponseUserDto {
   tone?: string | null;
   /** Onboarding-matched mentor (personality slug); null until chosen. */
   personalityId?: string | null;
+  /** IANA zone every "today" is computed in; the app re-sends it on change. */
+  timezone?: string;
 }

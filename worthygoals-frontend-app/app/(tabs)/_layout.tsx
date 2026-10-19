@@ -8,6 +8,7 @@ import { useClientOnlyValue } from "@/components/useClientOnlyValue";
 import { ROUTE_NAMES } from "@/constants/Routes";
 import { Colors } from "@/constants";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTimezoneSync } from "@/hooks/useTimezoneSync";
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
@@ -19,6 +20,7 @@ function TabBarIcon(props: {
 
 const { height } = Dimensions.get("window");
 export default function TabLayout() {
+  useTimezoneSync();
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
   return (

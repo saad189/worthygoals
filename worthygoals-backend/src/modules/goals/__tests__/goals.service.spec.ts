@@ -10,6 +10,7 @@ import { Goal, Task } from 'src/database/models';
 import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
 import { GoalsService, toProposal } from '../goals.service';
 import { UsersService } from '../../users/users.service';
+import { localDay } from 'src/common/timezone';
 
 const USER_ID = 1;
 const USER_SUB = 'cognito-sub-abc';
@@ -205,7 +206,29 @@ describe('GoalsService', () => {
         title: 'Run daily',
         repeatFrequency: TaskRepeatFrequency.WEEKLY,
       });
-      expect(task.dueDate.getHours()).toBe(0); // start of today
+      // The user's today (UTC when unset), at their midnight.
+      expect(task.dueOn).toBe(localDay('UTC'));
+      expect(task.dueDate).toEqual(new Date(`${task.dueOn}T00:00:00Z`));
+    });
+
+    // 20:30 UTC Oct 17 is already Oct 18 in Karachi: the first task belongs
+    // to the user's today, not the server's.
+    it("seeds the first task on the user's local today", async () => {
+      jest.useFakeTimers().setSystemTime(new Date('2026-10-17T20:30:00Z'));
+      usersService.findByAccountSub.mockResolvedValue({
+        id: USER_ID,
+        timezone: 'Asia/Karachi',
+      });
+      const goal = makeGoal({ repeatRule: { frequency: 'daily' } });
+      repo.create.mockReturnValue(goal);
+      repo.save.mockResolvedValue(goal);
+
+      await service.create(USER_SUB, { title: 'Run daily' } as any);
+      jest.useRealTimers();
+
+      const task = taskRepo.create.mock.calls[0][0];
+      expect(task.dueOn).toBe('2026-10-18');
+      expect(task.dueDate).toEqual(new Date('2026-10-17T19:00:00Z'));
     });
 
     // The app has no way to add a task, so a goal seeded with none was a dead

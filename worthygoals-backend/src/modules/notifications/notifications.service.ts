@@ -66,6 +66,23 @@ export class NotificationsService {
       },
       ['userId', 'token'],
     );
+    // users.timezone is the one zone every "today" uses; a registering device
+    // is a fresh reading of it.
+    if (dto.timezone) {
+      await this.tokenRepo.manager.query(
+        `UPDATE users SET timezone = $1 WHERE id = $2 AND timezone <> $1`,
+        [dto.timezone, userId],
+      );
+    }
+  }
+
+  /** The user's zone — what the processor's pacing and quiet hours use. */
+  async userTimezone(userId: number): Promise<string> {
+    const [row] = await this.tokenRepo.manager.query(
+      `SELECT timezone FROM users WHERE id = $1`,
+      [userId],
+    );
+    return safeTimeZone(row?.timezone);
   }
 
   async unregisterToken(userId: number, token: string): Promise<void> {
@@ -91,8 +108,9 @@ export class NotificationsService {
    *
    * The crons used to load every active token table-wide in one query and
    * then walk it with serial Redis round-trips per slot. Paging by userId keeps
-   * memory flat as the user count grows. A user's first token's timezone
-   * wins — the same choice the processor makes.
+   * memory flat as the user count grows. The zone is users.timezone — the
+   * one the app keeps current — not a token's, which is only as fresh as the
+   * device's last registration.
    */
   private async *activeUserPages(): AsyncGenerator<
     Array<{ userId: number; timezone: string }>
@@ -102,10 +120,11 @@ export class NotificationsService {
       const page: Array<{ userId: number; timezone: string | null }> =
         await this.tokenRepo.manager.query(
           `
-          SELECT DISTINCT ON ("userId") "userId", timezone
-            FROM push_tokens
-           WHERE active = true AND "userId" > $1
-           ORDER BY "userId", "createdAt"
+          SELECT DISTINCT ON (pt."userId") pt."userId", u.timezone
+            FROM push_tokens pt
+            JOIN users u ON u.id = pt."userId"
+           WHERE pt.active = true AND pt."userId" > $1
+           ORDER BY pt."userId"
            LIMIT $2
           `,
           [afterUserId, USER_PAGE_SIZE],

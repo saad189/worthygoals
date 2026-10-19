@@ -40,7 +40,7 @@ export class BoardService {
 
     const [winCards, milestoneCards] = await Promise.all([
       this.fetchWinCards(user.id),
-      this.fetchMilestoneCards(user.id),
+      this.fetchMilestoneCards(user.id, user.timezone),
     ]);
 
     return [...winCards, ...milestoneCards].sort(
@@ -89,7 +89,10 @@ export class BoardService {
     });
   }
 
-  private async fetchMilestoneCards(userId: number): Promise<BoardItemDto[]> {
+  private async fetchMilestoneCards(
+    userId: number,
+    timezone: string,
+  ): Promise<BoardItemDto[]> {
     // All statuses on purpose: a completed goal is itself a milestone. The
     // days come from SQL instead of hydrating every task and completion.
     const [goals, daysByGoal] = await Promise.all([
@@ -105,6 +108,7 @@ export class BoardService {
       }),
       completionDaysByGoal(this.goalRepo.manager, userId, {
         activeGoalsOnly: false,
+        timezone,
       }),
     ]);
 

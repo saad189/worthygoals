@@ -21,6 +21,7 @@ import { UsersService } from '../../users/users.service';
 import { AiGatewayService } from 'src/core/ai/gateway/ai-gateway.service';
 import { SafetyService } from 'src/core/safety/safety.service';
 import { TasksService } from '../tasks.service';
+import { addDays, localDay } from 'src/common/timezone';
 
 const USER_ID = 1;
 const GOAL_ID = '11111111-1111-4111-8111-111111111111';
@@ -365,10 +366,25 @@ describe('TasksService', () => {
         occurrenceIndex: 1,
         parentTaskId: TASK_ID,
       });
-      const tomorrow = new Date();
-      tomorrow.setHours(0, 0, 0, 0);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      expect(retry.dueDate).toEqual(tomorrow);
+      expect(retry.dueOn).toBe(addDays(localDay('UTC'), 1));
+    });
+
+    // 20:30 UTC on Oct 17 is already 01:30 on Oct 18 in Karachi, so the
+    // user's tomorrow is Oct 19 — the server's would have been Oct 18.
+    it("schedules the retry for the user's tomorrow, at their midnight", async () => {
+      jest.useFakeTimers().setSystemTime(new Date('2026-10-17T20:30:00Z'));
+      usersService.findByAccountSub.mockResolvedValue({
+        id: USER_ID,
+        timezone: 'Asia/Karachi',
+      });
+      await service.explain(SUB, TASK_ID, {
+        reason: ExplanationReason.COULDNT,
+      });
+      jest.useRealTimers();
+
+      const retry = taskRepo.create.mock.calls.at(-1)[0];
+      expect(retry.dueOn).toBe('2026-10-19');
+      expect(retry.dueDate).toEqual(new Date('2026-10-18T19:00:00Z'));
     });
 
     it('leaves recurring tasks to the roll-forward job', async () => {
@@ -409,28 +425,32 @@ describe('TasksService', () => {
   });
 
   describe('materializeRecurringTasks', () => {
-    beforeEach(() =>
-      jest.useFakeTimers().setSystemTime(new Date('2026-09-27T00:30:00')),
-    );
-    afterEach(() => jest.useRealTimers());
+    // 05:00 UTC Sep 27 = Sep 26 22:00 in Los Angeles, Sep 27 14:00 in Tokyo.
+    const NOW = new Date('2026-09-27T05:00:00Z');
 
-    const parent = (id: string, freq: string, due: string) => ({
+    const parent = (
+      id: string,
+      freq: string,
+      dueOn: string,
+      timezone = 'UTC',
+    ) => ({
       id,
       goalId: 'g1',
       title: 'Run',
       description: null,
       repeatFrequency: freq,
-      dueDate: new Date(due),
+      dueOn,
       occurrenceIndex: 2,
+      timezone,
     });
 
-    it('inserts the next occurrence for each returned parent in one statement', async () => {
+    it('inserts the next occurrence for each due parent in one statement', async () => {
       taskRepo.query.mockResolvedValueOnce([
-        parent('p1', 'daily', '2026-09-28T09:00:00'),
-        parent('p2', 'weekly', '2026-09-20T09:00:00'),
+        parent('p1', 'daily', '2026-09-27'),
+        parent('p2', 'weekly', '2026-09-13'),
       ]);
 
-      const created = await service.materializeRecurringTasks();
+      const created = await service.materializeRecurringTasks(NOW);
 
       expect(created).toBe(2);
       expect(taskRepo.insert).toHaveBeenCalledTimes(1);
@@ -438,20 +458,46 @@ describe('TasksService', () => {
       expect(rows[0]).toMatchObject({
         parentTaskId: 'p1',
         occurrenceIndex: 3,
-        dueDate: new Date('2026-09-29T09:00:00'),
+        dueOn: '2026-09-28',
+        dueDate: new Date('2026-09-28T00:00:00Z'),
       });
-      expect(rows[1].dueDate).toEqual(new Date('2026-09-27T09:00:00'));
-      // Only parents with no next occurrence come back from SQL.
-      expect(taskRepo.query.mock.calls[0][0]).toContain('NOT EXISTS');
+      // Missed runs catch up to today, not to a day in the past.
+      expect(rows[1].dueOn).toBe('2026-09-27');
+      // Only parents with no next occurrence, on active goals, come back.
+      const sql = taskRepo.query.mock.calls[0][0];
+      expect(sql).toContain('NOT EXISTS');
+      expect(sql).toContain("g.status = 'active'");
+    });
+
+    it("waits for the day to arrive in the user's own zone", async () => {
+      taskRepo.query.mockResolvedValueOnce([
+        parent('la', 'daily', '2026-09-27', 'America/Los_Angeles'),
+        parent('tokyo', 'daily', '2026-09-27', 'Asia/Tokyo'),
+      ]);
+
+      expect(await service.materializeRecurringTasks(NOW)).toBe(1);
+
+      const [row] = taskRepo.insert.mock.calls[0][0];
+      expect(row.parentTaskId).toBe('tokyo');
+      expect(row.dueOn).toBe('2026-09-28');
+      expect(row.dueDate).toEqual(new Date('2026-09-27T15:00:00Z')); // Tokyo midnight
+    });
+
+    // A zone Postgres or the runtime doesn't know must not stop the job.
+    it('falls back to UTC for an unknown zone', async () => {
+      taskRepo.query.mockResolvedValueOnce([
+        parent('p1', 'daily', '2026-09-27', 'Mars/Olympus'),
+      ]);
+      expect(await service.materializeRecurringTasks(NOW)).toBe(1);
     });
 
     it('pages by id until a short page', async () => {
       const full = Array.from({ length: 500 }, (_, i) =>
-        parent(`p${String(i).padStart(3, '0')}`, 'daily', '2026-09-28'),
+        parent(`p${String(i).padStart(3, '0')}`, 'daily', '2026-09-26'),
       );
       taskRepo.query.mockResolvedValueOnce(full).mockResolvedValueOnce([]);
 
-      await service.materializeRecurringTasks();
+      await service.materializeRecurringTasks(NOW);
 
       expect(taskRepo.query).toHaveBeenCalledTimes(2);
       expect(taskRepo.query.mock.calls[1][1][0]).toBe('p499');
@@ -472,25 +518,43 @@ describe('TasksService', () => {
     });
   });
 
-  describe('nextDueDate', () => {
-    const now = new Date('2026-03-01T12:00:00');
+  describe('nextDueOn', () => {
     it('clamps monthly to the last day of a short month', () => {
       expect(
-        service.nextDueDate(
-          new Date('2026-01-31T00:00:00'),
+        service.nextDueOn(
+          '2026-01-31',
           TaskRepeatFrequency.MONTHLY,
-          new Date('2026-02-01T12:00:00'),
+          '2026-02-01',
         ),
-      ).toEqual(new Date('2026-02-28T00:00:00'));
+      ).toBe('2026-02-28');
+    });
+    it('keeps the original day-of-month after a short month', () => {
+      expect(
+        service.nextDueOn(
+          '2026-01-31',
+          TaskRepeatFrequency.MONTHLY,
+          '2026-03-01',
+        ),
+      ).toBe('2026-03-31');
     });
     it('catches up to today after missed runs', () => {
       expect(
-        service.nextDueDate(
-          new Date('2026-02-20T00:00:00'),
+        service.nextDueOn(
+          '2026-02-20',
           TaskRepeatFrequency.DAILY,
-          now,
+          '2026-03-01',
         ),
-      ).toEqual(new Date('2026-03-01T00:00:00'));
+      ).toBe('2026-03-01');
+    });
+    it('steps one day across a DST change', () => {
+      // US clocks went forward on 2026-03-08.
+      expect(
+        service.nextDueOn(
+          '2026-03-08',
+          TaskRepeatFrequency.DAILY,
+          '2026-03-08',
+        ),
+      ).toBe('2026-03-09');
     });
   });
 });

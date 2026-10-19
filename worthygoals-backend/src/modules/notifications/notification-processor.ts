@@ -1,4 +1,3 @@
-import { safeTimeZone } from 'src/common/timezone';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger, Optional } from '@nestjs/common';
 import { Job } from 'bullmq';
@@ -62,7 +61,7 @@ export class NotificationProcessor extends WorkerHost {
       return;
     }
 
-    const tz = safeTimeZone(tokens[0].timezone);
+    const tz = await this.notifService.userTimezone(userId);
     const allowed = await this.notifService.checkPacingAllowed(userId, tz);
     if (!allowed) {
       this.logger.debug(`User ${userId} hit daily cap — dropping ${kind}`);
