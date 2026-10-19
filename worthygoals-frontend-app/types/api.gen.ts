@@ -4,15 +4,14 @@
  */
 
 export interface paths {
-    "/dashboard": {
+    "/": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get dashboard aggregate data */
-        get: operations["getDashboard"];
+        get: operations["AppController_getHello"];
         put?: never;
         post?: never;
         delete?: never;
@@ -21,15 +20,210 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/board": {
+    "/users/profile": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get motivational board items */
-        get: operations["getBoard"];
+        get: operations["UsersController_getProfile"];
+        /** Update the authenticated user profile */
+        put: operations["UsersController_updateProfile"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/me/data-export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** GDPR: export all data for the authenticated user */
+        post: operations["UsersController_exportMyData"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** GDPR: permanently delete the authenticated user account and all associated data */
+        delete: operations["UsersController_deleteMyAccount"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create the profile for the authenticated account */
+        post: operations["UsersController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/refresh-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_refresh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/signup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_signup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/confirm-signup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_confirmSignup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/confirmation-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_resendConfirmationCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/forgot-password-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_triggerForgotPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/change-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_confirmChangePassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mentors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MentorsController_findAll"];
         put?: never;
         post?: never;
         delete?: never;
@@ -38,52 +232,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tasks": {
+    "/mentors/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List tasks for a goal */
-        get: operations["listTasks"];
+        get: operations["MentorsController_findOne"];
         put?: never;
-        /** Create a task */
-        post: operations["createTask"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tasks/{id}/complete": {
+    "/conversations": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["ConversationsController_findAll"];
         put?: never;
-        /** Mark a task complete */
-        post: operations["completeTask"];
+        post: operations["ConversationsController_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tasks/{id}/explain": {
+    "/conversations/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["ConversationsController_findOne"];
         put?: never;
-        /** Submit a task explanation (skipped/failed) */
-        post: operations["explainTask"];
+        post?: never;
+        delete: operations["ConversationsController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["ConversationsController_update"];
+        trace?: never;
+    };
+    "/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MessagesController_list"];
+        put?: never;
+        post: operations["MessagesController_send"];
         delete?: never;
         options?: never;
         head?: never;
@@ -99,8 +305,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** AI-assisted goal proposal */
-        post: operations["proposeGoal"];
+        post: operations["GoalsController_propose"];
         delete?: never;
         options?: never;
         head?: never;
@@ -114,10 +319,218 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get: operations["GoalsController_findAll"];
+        put?: never;
+        post: operations["GoalsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goals/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GoalsController_findOne"];
+        put?: never;
+        post?: never;
+        delete: operations["GoalsController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["GoalsController_update"];
+        trace?: never;
+    };
+    "/media/upload-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
         get?: never;
         put?: never;
-        /** Create a goal */
-        post: operations["createGoal"];
+        /** Get a presigned PUT URL to upload a media file to S3/R2 */
+        post: operations["MediaController_createUploadUrl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TasksController_findAll"];
+        put?: never;
+        post: operations["TasksController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TasksController_findOne"];
+        put?: never;
+        post?: never;
+        delete: operations["TasksController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["TasksController_update"];
+        trace?: never;
+    };
+    "/tasks/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TasksController_complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks/{id}/explain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TasksController_explain"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DashboardController_getDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["NotificationsController_registerToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/token/unregister": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["NotificationsController_unregisterToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["NotificationsController_getTokens"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/board": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["BoardController_getBoard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StatusController_list"];
+        put?: never;
+        post: operations["StatusController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/weekly-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WeeklyReviewController_getReview"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -128,24 +541,673 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** @enum {string} */
-        TaskStatus: "pending" | "completed" | "skipped";
-        /** @enum {string} */
-        TaskRepeatFrequency: "none" | "daily" | "weekly" | "monthly";
-        /** @enum {string} */
-        ExplanationReason: "couldnt" | "forgot" | "chose_not_to";
-        /** @enum {string} */
-        BoardItemType: "win" | "milestone";
-        /** @enum {string} */
-        MilestoneKind: "streak_7" | "streak_30" | "goal_completed";
-        TaskSummary: {
+        ResponseUserDto: {
+            firstName: string;
+            lastName: string;
+            email: string;
+            id: number;
+            localtion: Record<string, never>;
+            role: Record<string, never>;
+            /** @description Null when no date of birth was given. */
+            age: number | null;
+            /** @description Onboarding tone preference (soft | firm | intense); null until chosen. */
+            tone?: string | null;
+            /** @description Onboarding-matched mentor (personality slug); null until chosen. */
+            personalityId?: string | null;
+        };
+        UpdateUserDto: Record<string, never>;
+        CreateUserDto: {
+            /**
+             * Format: email
+             * @description Ignored — the profile takes the Cognito account's email. Accepted so existing clients don't fail validation.
+             * @example user@example.com
+             */
+            email?: string;
+            /**
+             * @description The first name of the user
+             * @example John
+             */
+            firstName?: string;
+            /**
+             * @description The last name of the user
+             * @example Doe
+             */
+            lastName?: string;
+            /**
+             * @description The date of birth of the user
+             * @example 1990-01-01
+             */
+            dateOfBirth?: string;
+            /**
+             * @description The gender of the user
+             * @example m
+             */
+            gender?: string;
+            /**
+             * @description The latitude of the user's location
+             * @example 37.7749
+             */
+            latitude?: number;
+            /**
+             * @description The longitude of the user's location
+             * @example -122.4194
+             */
+            longitude?: number;
+            /**
+             * @description The user's onboarding tone preference (forced-choice deck result)
+             * @example firm
+             * @enum {string}
+             */
+            tone?: "soft" | "firm" | "intense";
+            /**
+             * @description The user's onboarding-matched mentor (personality slug)
+             * @example marcus
+             * @enum {string}
+             */
+            personalityId?: "marcus" | "lyra" | "goggs";
+        };
+        LoginAuthDto: {
+            /**
+             * Format: email
+             * @description The email of the user
+             * @example user@example.com
+             */
+            email: string;
+            /**
+             * @description The password of the user
+             * @example Str0ngP@ssw0rd!
+             */
+            password: string;
+        };
+        AuthTokens: {
+            accessToken: string;
+            idToken: string;
+            refreshToken: string;
+        };
+        RefreshTokenDto: {
+            /**
+             * @description The username of the requesting user
+             * @example 708c49fc-c031-7162-c945-84722ffc91a4
+             */
+            username: string;
+            /** @description refresh token */
+            refreshToken: string;
+        };
+        SignUpAuthDto: {
+            /**
+             * Format: email
+             * @description The email of the user
+             * @example user@example.com
+             */
+            email: string;
+            /**
+             * @description The password of the user
+             * @example Str0ngP@ssw0rd!
+             */
+            password: string;
+            /**
+             * @description The repeated password of the user
+             * @example Str0ngP@ssw0rd!
+             */
+            repeatedPassword: string;
+        };
+        ConfirmSignUpDto: {
+            /**
+             * Format: email
+             * @description The email of the user
+             * @example user@example.com
+             */
+            email: string;
+            /**
+             * @description The confirmation code received by the user
+             * @example 123456
+             */
+            code: string;
+        };
+        ConfirmationCodeDto: {
+            /**
+             * Format: email
+             * @description The email of the user
+             * @example user@example.com
+             */
+            email: string;
+        };
+        ConfirmPasswordDto: {
+            /**
+             * Format: email
+             * @description The email of the user
+             * @example user@example.com
+             */
+            email: string;
+            /**
+             * @description The confirmation code received by the user
+             * @example 123456
+             */
+            code: string;
+            /**
+             * @description The new password of the user
+             * @example NewStr0ngP@ssw0rd!
+             */
+            password: string;
+            /**
+             * @description The repeated password of the user
+             * @example Str0ngP@ssw0rd!
+             */
+            repeatedPassword: string;
+        };
+        Account: {
+            id: number;
+            sub: string;
+            email: string;
+            isSignUp: boolean;
+            user: components["schemas"]["User"];
+            /** Format: date-time */
+            dateAdded: string;
+            /** Format: date-time */
+            dateUpdated: string;
+        };
+        Permission: {
+            id: number;
+            name: string;
+            roles: components["schemas"]["Role"][];
+            /** Format: date-time */
+            dateAdded: string;
+            /** Format: date-time */
+            dateUpdated: string;
+        };
+        Role: {
+            id: number;
+            name: string;
+            permissions: components["schemas"]["Permission"][];
+            users: components["schemas"]["User"][];
+            /** Format: date-time */
+            dateAdded: string;
+            /** Format: date-time */
+            dateUpdated: string;
+        };
+        Mentor: {
+            id: number;
+            slug: string;
+            personalityId: string | null;
+            name: string;
+            title?: string;
+            shortDescription?: string;
+            longDescription?: string;
+            avatarUrl?: string;
+            coverImageUrl?: string;
+            language: string;
+            supportedLanguages?: string[];
+            /** @enum {string} */
+            communicationStyle: "gentle" | "analytical" | "motivational" | "direct" | "straightforward" | "empathetic" | "calm" | "energetic" | "clear";
+            /** @enum {string} */
+            responseLength: "short" | "medium" | "long";
+            sortOrder: number;
+            personalityTraits?: Record<string, never>;
+            promptBlocks: Record<string, never>;
+            topicPolicy?: Record<string, never>;
+            safetyPolicy?: Record<string, never>;
+            memoryPolicy?: Record<string, never>;
+            modelConfig?: Record<string, never>;
+            isActive: boolean;
+            /** @enum {string} */
+            visibility: "public" | "private" | "beta";
+            isPremium: boolean;
+            requiredPlan?: string;
+            version: number;
+            avgRating: number;
+            totalSessions: number;
+            conversations: components["schemas"]["Conversation"][];
+            messages: components["schemas"]["Message"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        MessageAttachment: {
+            id: string;
+            messageId: string;
+            message: components["schemas"]["Message"];
+            /** @enum {string} */
+            type: "image" | "audio" | "file";
+            /** @enum {string} */
+            storageProvider: "s3" | "r2" | "gcs" | "azure";
+            objectKey: string;
+            mimeType: string | null;
+            sizeBytes: string | null;
+            durationMs: number | null;
+            width: number | null;
+            height: number | null;
+            checksumSha256: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        MessageFeedback: {
+            id: string;
+            messageId: string;
+            message: components["schemas"]["Message"];
+            /** @description who gave the feedback (usually the chatting user) */
+            userId: number;
+            user: components["schemas"]["User"];
+            rating: number;
+            tags: Record<string, never> | null;
+            comment: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        Message: {
+            id: string;
+            conversationId: string;
+            conversation: components["schemas"]["Conversation"];
+            /** @enum {string} */
+            role: "user" | "mentor" | "system" | "tool";
+            /**
+             * @description Author links (optional depending on role)
+             *     - role=user   => userId not null
+             *     - role=mentor => mentorId not null
+             *     - system/tool => both null
+             */
+            userId: number | null;
+            user: components["schemas"]["User"] | null;
+            mentorId: number | null;
+            mentor: components["schemas"]["Mentor"] | null;
+            /** @enum {string} */
+            contentType: "text" | "image" | "audio" | "file" | "mixed";
+            text: string | null;
+            content: Record<string, never> | null;
+            clientMessageId: string | null;
+            replyToMessageId: string | null;
+            tokensIn: number | null;
+            tokensOut: number | null;
+            safetyFlags: Record<string, never> | null;
+            /** Format: date-time */
+            archivedAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            attachments: components["schemas"]["MessageAttachment"][];
+            feedback: components["schemas"]["MessageFeedback"][];
+        };
+        User: {
+            /** @description Auto-incremented primary key */
+            id: number;
+            account: components["schemas"]["Account"];
+            email: string;
+            firstName: string;
+            lastName: string;
+            /** Format: date-time */
+            dateOfBirth: string | null;
+            gender: string;
+            latitude: number;
+            longitude: number;
+            isAdmin: boolean;
+            tier: string;
+            /**
+             * @description Onboarding tone preference (soft | firm | intense) — the forced-choice
+             *     deck's result, persisted server-side so voiced surfaces (notifications,
+             *     personas) can scale to it. The earned-escalation slope builds on this.
+             */
+            tone: string;
+            /**
+             * @description Onboarding-matched mentor (personality slug: marcus | lyra | goggs),
+             *     persisted so "your mentor" survives a reinstall and is known before the
+             *     first goal exists — decoupled from goal.mentorId (F2). Nullable: existing
+             *     users fall back to the goal-derived mentor until they re-onboard.
+             */
+            personalityId: string;
+            role: components["schemas"]["Role"];
+            conversations: components["schemas"]["Conversation"][];
+            messages: components["schemas"]["Message"][];
+            feedback: components["schemas"]["MessageFeedback"][];
+            /** Format: date-time */
+            dateAdded: string;
+            /** Format: date-time */
+            dateUpdated: string;
+        };
+        ConversationSummary: {
+            id: string;
+            conversationId: string;
+            conversation: components["schemas"]["Conversation"];
+            /** @enum {string} */
+            summaryType: "rolling" | "monthly" | "milestone";
+            fromMessageId: string;
+            toMessageId: string;
+            summaryText: string;
+            summaryEmotions: Record<string, never> | null;
+            summaryTopics: Record<string, never> | null;
+            keyFacts: Record<string, never> | null;
+            model: string | null;
+            promptVersion: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ConversationMemoryItem: {
+            id: string;
+            conversationId: string;
+            conversation: components["schemas"]["Conversation"];
+            key: string;
+            value: Record<string, never>;
+            confidence: number | null;
+            sourceMessageId: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        Conversation: {
+            id: string;
+            userId: number;
+            user: components["schemas"]["User"];
+            mentorId: number;
+            mentor: components["schemas"]["Mentor"];
+            /** @enum {string} */
+            status: "active" | "archived" | "deleted";
+            title: string | null;
+            /** Format: date-time */
+            lastMessageAt: string | null;
+            lastMessageId: string | null;
+            metadata: Record<string, never> | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            messages: components["schemas"]["Message"][];
+            summaries: components["schemas"]["ConversationSummary"][];
+            memoryItems: components["schemas"]["ConversationMemoryItem"][];
+        };
+        CreateConversationDto: {
+            mentorId: number;
+            title?: string;
+            metadata?: Record<string, never>;
+        };
+        UpdateConversationDto: {
+            /** @enum {string} */
+            status?: "active" | "archived" | "deleted";
+        };
+        MessageResponseDto: {
+            id: string;
+            conversationId: string;
+            role: string;
+            contentType: string;
+            text: string | null;
+            clientMessageId: string | null;
+            createdAt: string;
+            userId: number | null;
+            mentorId: number | null;
+        };
+        SendTextMessageDto: {
+            conversationId: string;
+            text: string;
+            clientMessageId?: string;
+        };
+        ProposeGoalDto: {
+            /** @example I want to run a half-marathon by October */
+            raw: string;
+        };
+        GoalProposalDto: {
+            /** @example Run a half-marathon */
+            title: string;
+            /** @example 13.1 miles of training time and physical discomfort */
+            costText?: string;
+            /** @example Improved cardiovascular health and personal accomplishment */
+            benefitText?: string;
+            /** @example Letting sedentary habits win; missing the October race window */
+            failureText?: string;
+            /** @example 2026-10-01T00:00:00.000Z */
+            deadline?: string;
+            /**
+             * @example {
+             *       "frequency": "weekly",
+             *       "days": [
+             *         1,
+             *         3,
+             *         6
+             *       ]
+             *     }
+             */
+            repeatRule?: {
+                [key: string]: unknown;
+            };
+            /** @enum {string} */
+            category?: "power" | "knowledge" | "spiritual";
+            /** @example Maintain a weekly schedule of long-run, tempo, and recovery runs. */
+            description?: string;
+        };
+        CreateGoalDto: {
+            /** @example 20-minute morning run */
+            title: string;
+            description?: string;
+            /**
+             * @default power
+             * @enum {string}
+             */
+            category?: "power" | "knowledge" | "spiritual";
+            /** @example 1 */
+            mentorId?: number;
+            costText?: string;
+            benefitText?: string;
+            failureText?: string;
+            /** @example 2026-12-31T00:00:00.000Z */
+            deadline?: string;
+            /**
+             * @example {
+             *       "frequency": "daily"
+             *     }
+             */
+            repeatRule?: {
+                [key: string]: unknown;
+            };
+            /** @example 50 */
+            stakeAmount?: number;
+            imageUri?: string;
+        };
+        ResponseGoalDto: {
+            id: string;
+            userId: number;
+            mentorId?: number;
+            title: string;
+            description?: string;
+            /** @enum {string} */
+            category: "power" | "knowledge" | "spiritual";
+            /** @enum {string} */
+            status: "active" | "paused" | "completed" | "archived";
+            costText?: string;
+            benefitText?: string;
+            failureText?: string;
+            /** Format: date-time */
+            deadline?: string;
+            repeatRule?: Record<string, never>;
+            stakeAmount?: number;
+            imageUri?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpdateGoalDto: {
+            /** @example 20-minute morning run */
+            title?: string;
+            description?: string;
+            /**
+             * @default power
+             * @enum {string}
+             */
+            category?: "power" | "knowledge" | "spiritual";
+            /** @example 1 */
+            mentorId?: number;
+            costText?: string;
+            benefitText?: string;
+            failureText?: string;
+            /** @example 2026-12-31T00:00:00.000Z */
+            deadline?: string;
+            /**
+             * @example {
+             *       "frequency": "daily"
+             *     }
+             */
+            repeatRule?: {
+                [key: string]: unknown;
+            };
+            /** @example 50 */
+            stakeAmount?: number;
+            imageUri?: string;
+            /** @enum {string} */
+            status?: "active" | "paused" | "completed" | "archived";
+        };
+        CreateUploadUrlDto: {
+            fileName: string;
+            contentType: string;
+            byteSize: number;
+            width?: number;
+            height?: number;
+        };
+        UploadUrlResponseDto: {
+            /** @description Presigned PUT URL; the declared size and content type are signed in. */
+            uploadUrl: string;
+            /** @description Pass this back as mediaId when attaching the photo. */
+            mediaId: string;
+            s3Key: string;
+        };
+        CreateTaskDto: {
+            /** @example Morning 5km run */
+            title: string;
+            /** @example goal-uuid-here */
+            goalId: string;
+            description?: string;
+            /** @example 2026-06-01T07:00:00.000Z */
+            dueDate?: string;
+            /**
+             * @default none
+             * @enum {string}
+             */
+            repeatFrequency?: "none" | "daily" | "weekly" | "monthly";
+        };
+        TaskCompletion: {
+            id: string;
+            taskId: string;
+            /** @description 1–4: 😣 😐 🙂 🔥 */
+            moodScore: number;
+            reflection?: string;
+            /** @description FK to a future media table (M06) */
+            memoryPictureId?: string;
+            mentorReaction?: string;
+            task: components["schemas"]["Task"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        TaskExplanation: {
+            id: string;
+            taskId: string;
+            /** @enum {string} */
+            reason: "couldnt" | "forgot" | "chose_not_to";
+            freeText?: string;
+            task: components["schemas"]["Task"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        Task: {
+            id: string;
+            goalId: string;
+            title: string;
+            description?: string;
+            /** @enum {string} */
+            status: "pending" | "completed" | "skipped";
+            /** Format: date-time */
+            dueDate?: string;
+            /** @enum {string} */
+            repeatFrequency: "none" | "daily" | "weekly" | "monthly";
+            /** @description Populated for recurring instances: which occurrence # is this */
+            occurrenceIndex: number;
+            /** @description UUID of the parent recurring task (null for originals) */
+            parentTaskId?: string;
+            goal: components["schemas"]["Goal"];
+            completions: components["schemas"]["TaskCompletion"][];
+            explanations: components["schemas"]["TaskExplanation"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        Goal: {
+            id: string;
+            userId: number;
+            mentorId?: number;
+            title: string;
+            description?: string;
+            /** @enum {string} */
+            category: "power" | "knowledge" | "spiritual";
+            /** @enum {string} */
+            status: "active" | "paused" | "completed" | "archived";
+            costText?: string;
+            benefitText?: string;
+            failureText?: string;
+            /** Format: date-time */
+            deadline?: string;
+            repeatRule?: Record<string, never>;
+            stakeAmount?: number;
+            imageUri?: string;
+            tasks: components["schemas"]["Task"][];
+            user: components["schemas"]["User"];
+            mentor?: components["schemas"]["Mentor"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpdateTaskDto: {
+            /** @example Morning 5km run */
+            title?: string;
+            description?: string;
+            /** @example 2026-06-01T07:00:00.000Z */
+            dueDate?: string;
+            /**
+             * @default none
+             * @enum {string}
+             */
+            repeatFrequency?: "none" | "daily" | "weekly" | "monthly";
+            /** @enum {string} */
+            status?: "pending" | "completed" | "skipped";
+        };
+        CompleteTaskDto: {
+            /**
+             * @description 1 = 😣  2 = 😐  3 = 🙂  4 = 🔥
+             * @example 3
+             */
+            moodScore: number;
+            reflection?: string;
+            /** @description UUID of an uploaded media item (M06) */
+            memoryPictureId?: string;
+            /** @description Personality ID for mentor reaction generation */
+            personalityId?: string;
+        };
+        TaskCompletionResponseDto: {
+            data: components["schemas"]["TaskCompletion"];
+            /** @description The mentor's in-voice reaction, when one was generated. */
+            mentorReaction?: string;
+            /** @description True when the text tripped the crisis classifier; mentorReaction is the resources copy. */
+            safetyFlag?: boolean;
+        };
+        ExplainTaskDto: {
+            /** @enum {string} */
+            reason: "couldnt" | "forgot" | "chose_not_to";
+            freeText?: string;
+            /** @description Personality ID for mentor reaction generation */
+            personalityId?: string;
+        };
+        TaskExplanationResponseDto: {
+            data: components["schemas"]["TaskExplanation"];
+            /** @description The mentor's in-voice reaction, when one was generated. */
+            mentorReaction?: string;
+            /** @description True when the text tripped the crisis classifier; mentorReaction is the resources copy. */
+            safetyFlag?: boolean;
+        };
+        TaskSummaryDto: {
             id: string;
             title: string;
             goalId: string;
             status: string;
-            dueDate?: string | null;
+            /** Format: date-time */
+            dueDate?: string;
         };
-        GoalSummary: {
+        GoalSummaryDto: {
             id: string;
             title: string;
             category: string;
@@ -154,116 +1216,124 @@ export interface components {
             todayTaskCount: number;
             completedTodayCount: number;
         };
-        TodayProgress: {
+        TodayProgressDto: {
             completed: number;
             total: number;
         };
-        DashboardData: {
-            todaysTasks: components["schemas"]["TaskSummary"][];
-            /** @description Completion counts indexed Mon=0 … Sun=6 */
+        DashboardResponseDto: {
+            todaysTasks: components["schemas"]["TaskSummaryDto"][];
+            /** @description Completion counts indexed Mon=0 … Sun=6 for the current calendar week */
             weekCompletions: number[];
-            goals: components["schemas"]["GoalSummary"][];
-            todayProgress: components["schemas"]["TodayProgress"];
+            goals: components["schemas"]["GoalSummaryDto"][];
+            todayProgress: components["schemas"]["TodayProgressDto"];
         };
-        BoardItem: {
-            id: string;
-            type: components["schemas"]["BoardItemType"];
-            taskTitle?: string | null;
-            goalTitle?: string | null;
-            goalCategory?: string | null;
-            moodScore?: number | null;
-            reflection?: string | null;
-            mentorReaction?: string | null;
-            mediaUrl?: string | null;
-            milestoneKind?: components["schemas"]["MilestoneKind"];
-            streakDays?: number | null;
-            /** Format: date-time */
-            createdAt: string;
+        RegisterTokenDto: {
+            /** @example ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx] */
+            token: string;
+            /**
+             * @default expo
+             * @enum {string}
+             */
+            platform?: "expo" | "fcm" | "apns";
+            /** @example America/New_York */
+            timezone?: string;
         };
-        TaskItem: {
+        UnregisterTokenDto: {
+            /** @example ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx] */
+            token: string;
+        };
+        PushToken: {
             id: string;
-            goalId: string;
-            title: string;
-            description?: string | null;
-            status: components["schemas"]["TaskStatus"];
-            dueDate?: string | null;
-            repeatFrequency: components["schemas"]["TaskRepeatFrequency"];
-            occurrenceIndex: number;
-            parentTaskId?: string | null;
+            userId: number;
+            token: string;
+            platform: Record<string, never>;
+            timezone: string;
+            active: boolean;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+            user?: components["schemas"]["User"];
         };
-        CreateTaskPayload: {
-            title: string;
-            goalId: string;
-            description?: string;
-            dueDate?: string;
-            repeatFrequency?: components["schemas"]["TaskRepeatFrequency"];
-        };
-        CompleteTaskPayload: {
-            moodScore: number;
+        BoardItemDto: {
+            id: string;
+            /** @enum {string} */
+            type: "win" | "milestone";
+            taskTitle?: string;
+            goalTitle?: string;
+            goalCategory?: string;
+            /** @description 1–4: 😣 😐 🙂 🔥 */
+            moodScore?: number;
             reflection?: string;
-            memoryPictureId?: string;
-            personalityId?: string;
-        };
-        ExplainTaskPayload: {
-            reason: components["schemas"]["ExplanationReason"];
-            freeText?: string;
-            personalityId?: string;
-        };
-        TaskCompletion: {
-            id: string;
-            taskId: string;
-            moodScore: number;
-            reflection?: string | null;
-            memoryPictureId?: string | null;
+            mentorReaction?: string;
+            /** @description Pre-signed GET URL for the memory photo (1-hour TTL) */
+            mediaUrl?: string;
+            /** @enum {string} */
+            milestoneKind?: "streak_7" | "streak_30" | "goal_completed";
+            streakDays?: number;
             /** Format: date-time */
             createdAt: string;
         };
-        TaskExplanation: {
+        StatusReactionDto: {
+            /** @description personalityId slug (marcus / lyra / goggs). */
+            personalityId: string;
+            /** @description Mentor display name. */
+            mentorName: string;
+            /** @description The in-voice reaction text. */
+            text: string;
+        };
+        StatusPostDto: {
             id: string;
-            taskId: string;
-            reason: components["schemas"]["ExplanationReason"];
-            freeText?: string | null;
+            text: string;
             /** Format: date-time */
             createdAt: string;
+            /** @description Presigned GET url for the attached photo, if any. */
+            imageUrl?: string | null;
+            reactions: components["schemas"]["StatusReactionDto"][];
+            /** @description Set when the status tripped the crisis gate: no mentor reactions were generated. */
+            safetyFlag?: boolean;
+            /** @description The safe response with crisis resources, when safetyFlag. */
+            crisisResponse?: string;
         };
-        TaskCompletionResponse: {
-            data: components["schemas"]["TaskCompletion"];
-            mentorReaction?: string | null;
-            safetyFlag?: boolean | null;
+        CreateStatusDto: {
+            /**
+             * @description The free-text status broadcast to the team.
+             * @example wrote 500 words today. skipped the run.
+             */
+            text: string;
+            /** @description Optional photo — media id from the presign upload path (screen 12's 📷 chip). */
+            mediaId?: string;
         };
-        TaskExplanationResponse: {
-            data: components["schemas"]["TaskExplanation"];
-            mentorReaction?: string | null;
-            safetyFlag?: boolean | null;
-        };
-        GoalProposal: {
+        GoalWeekRowDto: {
+            goalId: string;
             title: string;
-            description?: string | null;
-            costText?: string | null;
-            benefitText?: string | null;
-            failureText?: string | null;
-            deadline?: string | null;
-            repeatRule?: Record<string, never> | null;
-            category?: string | null;
+            /** @description personalityId slug — marcus / lyra / goggs. Drives the avatar + voice styling. */
+            mentorPersonalityId: string;
+            mentorName: string;
+            /** @description Completions logged this week (Mon–Sun). */
+            thisWeekCount: number;
+            /** @description Completions logged the prior week. */
+            lastWeekCount: number;
+            /** @description thisWeekCount − lastWeekCount. */
+            delta: number;
+            /** @enum {string} */
+            trend: "up" | "flat" | "down";
+            /** @description No completions this week — the row to talk about. */
+            danger: boolean;
+            /** @description The goal's mentor reacting to the week, in voice. */
+            commentary: string;
         };
-        CreateGoalPayload: {
-            title: string;
-            description?: string;
-            costText?: string;
-            benefitText?: string;
-            failureText?: string;
-            deadline?: string;
-            repeatRule?: Record<string, never>;
-            category?: string;
-            mentorId?: number;
-            stakeAmount?: number;
-        };
-        CreateGoalResponse: {
-            id: string;
+        WeeklyReviewDto: {
+            /** @description Monday 00:00 of the week under review (ISO). */
+            weekStart: string;
+            /** @description Sunday 23:59:59 of the week under review (ISO). */
+            weekEnd: string;
+            /** @description ISO week number. */
+            weekNumber: number;
+            /** @description Goals with at least one completion this week. */
+            onTrackCount: number;
+            totalGoals: number;
+            goals: components["schemas"]["GoalWeekRowDto"][];
         };
     };
     responses: never;
@@ -274,7 +1344,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    getDashboard: {
+    AppController_getHello: {
         parameters: {
             query?: never;
             header?: never;
@@ -283,18 +1353,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Dashboard data */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DashboardData"];
+                    "application/json": string;
                 };
             };
         };
     };
-    getBoard: {
+    UsersController_getProfile: {
         parameters: {
             query?: never;
             header?: never;
@@ -303,21 +1372,500 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Board items */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BoardItem"][];
+                    "application/json": components["schemas"]["ResponseUserDto"];
                 };
             };
         };
     };
-    listTasks: {
+    UsersController_updateProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseUserDto"];
+                };
+            };
+        };
+    };
+    UsersController_exportMyData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    UsersController_deleteMyAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsersController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUserDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseUserDto"];
+                };
+            };
+        };
+    };
+    AuthController_login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginAuthDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthTokens"];
+                };
+            };
+        };
+    };
+    AuthController_refresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshTokenDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthTokens"];
+                };
+            };
+        };
+    };
+    AuthController_logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_signup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignUpAuthDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+        };
+    };
+    AuthController_confirmSignup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmSignUpDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+        };
+    };
+    AuthController_resendConfirmationCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmationCodeDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    AuthController_triggerForgotPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmationCodeDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    AuthController_confirmChangePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmPasswordDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+        };
+    };
+    MentorsController_findAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Mentor"][];
+                };
+            };
+        };
+    };
+    MentorsController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Mentor"];
+                };
+            };
+        };
+    };
+    ConversationsController_findAll: {
+        parameters: {
+            query: {
+                mentorId: string;
+                limit: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conversation"][];
+                };
+            };
+        };
+    };
+    ConversationsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateConversationDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conversation"];
+                };
+            };
+        };
+    };
+    ConversationsController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conversation"];
+                };
+            };
+        };
+    };
+    ConversationsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ConversationsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateConversationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conversation"];
+                };
+            };
+        };
+    };
+    MessagesController_list: {
+        parameters: {
+            query: {
+                conversationId: string;
+                limit: string;
+                before: string;
+                beforeId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponseDto"][];
+                };
+            };
+        };
+    };
+    MessagesController_send: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendTextMessageDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponseDto"];
+                };
+            };
+        };
+    };
+    GoalsController_propose: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProposeGoalDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalProposalDto"];
+                };
+            };
+        };
+    };
+    GoalsController_findAll: {
         parameters: {
             query?: {
-                goalId?: string;
+                limit?: string;
             };
             header?: never;
             path?: never;
@@ -325,18 +1873,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Task list */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskItem"][];
+                    "application/json": components["schemas"]["ResponseGoalDto"][];
                 };
             };
         };
     };
-    createTask: {
+    GoalsController_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -345,22 +1892,61 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateTaskPayload"];
+                "application/json": components["schemas"]["CreateGoalDto"];
             };
         };
         responses: {
-            /** @description Created task */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskItem"];
+                    "application/json": components["schemas"]["ResponseGoalDto"];
                 };
             };
         };
     };
-    completeTask: {
+    GoalsController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseGoalDto"];
+                };
+            };
+        };
+    };
+    GoalsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GoalsController_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -371,22 +1957,129 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CompleteTaskPayload"];
+                "application/json": components["schemas"]["UpdateGoalDto"];
             };
         };
         responses: {
-            /** @description Completion result with optional mentor reaction */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskCompletionResponse"];
+                    "application/json": components["schemas"]["ResponseGoalDto"];
                 };
             };
         };
     };
-    explainTask: {
+    MediaController_createUploadUrl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUploadUrlDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadUrlResponseDto"];
+                };
+            };
+        };
+    };
+    TasksController_findAll: {
+        parameters: {
+            query: {
+                goalId: string;
+                limit?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"][];
+                };
+            };
+        };
+    };
+    TasksController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaskDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+        };
+    };
+    TasksController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+        };
+    };
+    TasksController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -397,67 +2090,238 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ExplainTaskPayload"];
+                "application/json": components["schemas"]["UpdateTaskDto"];
             };
         };
         responses: {
-            /** @description Explanation result with optional mentor reaction */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskExplanationResponse"];
+                    "application/json": components["schemas"]["Task"];
                 };
             };
         };
     };
-    proposeGoal: {
+    TasksController_complete: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: string;
+            };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": {
-                    raw: string;
-                };
+                "application/json": components["schemas"]["CompleteTaskDto"];
             };
         };
         responses: {
-            /** @description AI-structured goal proposal */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoalProposal"];
-                };
-            };
-        };
-    };
-    createGoal: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateGoalPayload"];
-            };
-        };
-        responses: {
-            /** @description Created goal */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateGoalResponse"];
+                    "application/json": components["schemas"]["TaskCompletionResponseDto"];
+                };
+            };
+        };
+    };
+    TasksController_explain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExplainTaskDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskExplanationResponseDto"];
+                };
+            };
+        };
+    };
+    DashboardController_getDashboard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardResponseDto"];
+                };
+            };
+        };
+    };
+    NotificationsController_registerToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterTokenDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    NotificationsController_unregisterToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnregisterTokenDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    NotificationsController_getTokens: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushToken"][];
+                };
+            };
+        };
+    };
+    BoardController_getBoard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardItemDto"][];
+                };
+            };
+        };
+    };
+    StatusController_list: {
+        parameters: {
+            query?: {
+                limit?: string;
+                /** @description ISO timestamp cursor */
+                before?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusPostDto"][];
+                };
+            };
+        };
+    };
+    StatusController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStatusDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusPostDto"];
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusPostDto"];
+                };
+            };
+        };
+    };
+    WeeklyReviewController_getReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeeklyReviewDto"];
                 };
             };
         };

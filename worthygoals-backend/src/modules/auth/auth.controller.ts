@@ -8,7 +8,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiCreatedResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginAuthDto, RefreshTokenDto } from './dto/sign-in.dto';
 import {
@@ -65,12 +65,14 @@ export class AuthController {
 
   @Throttle(AUTH_THROTTLE)
   @Post('signup')
+  @ApiCreatedResponse({ type: Boolean })
   async signup(@Body() auth: SignUpAuthDto) {
     return this.authService.signUpUser(auth);
   }
 
   @Throttle(AUTH_THROTTLE)
   @Post('confirm-signup')
+  @ApiCreatedResponse({ type: Boolean })
   async confirmSignup(@Body() { email, code }: ConfirmSignUpDto) {
     return this.authService.confirmSignUp(email, code);
   }
@@ -89,6 +91,7 @@ export class AuthController {
 
   @Throttle(AUTH_THROTTLE)
   @Post('change-password')
+  @ApiCreatedResponse({ type: Boolean })
   async confirmChangePassword(@Body() confirmPassDto: ConfirmPasswordDto) {
     return this.authService.confirmForgotPassword(confirmPassDto);
   }

@@ -31,6 +31,11 @@ echo "── Backend: API contract ───────────────
   && git diff --exit-code --stat -- openapi.json) \
   || { echo "✗ openapi.json is stale — it has been regenerated; commit it"; exit 1; }
 
+# The app's types are generated from that spec; a backend DTO change that the
+# app hasn't picked up fails here instead of at runtime.
+(cd "$ROOT/worthygoals-frontend-app" && npm run ci:check-api --silent >/dev/null) \
+  || { echo "✗ types/api.gen.ts is stale — run 'npm run generate:api' in worthygoals-frontend-app and commit it"; exit 1; }
+
 echo "── Backend: dependency audit (critical) ─────────"
 (cd "$ROOT/worthygoals-backend" && npm audit --audit-level=critical >/dev/null) \
   || { echo "✗ critical advisory — run 'npm audit' in worthygoals-backend"; exit 1; }

@@ -3,6 +3,7 @@ import { Body, Controller, Post, Request, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/common/guards';
 import { CreateUploadUrlDto } from './dto/create-upload-url.dto';
+import { UploadUrlResponseDto } from './dto/upload-url-response.dto';
 import { MediaService } from './media.service';
 
 @ApiTags('Media')
@@ -19,7 +20,7 @@ export class MediaController {
   createUploadUrl(
     @Request() req: AuthenticatedRequest,
     @Body() dto: CreateUploadUrlDto,
-  ) {
+  ): Promise<UploadUrlResponseDto> {
     return this.mediaService.createUploadUrl(req.user.sub, dto);
   }
 }

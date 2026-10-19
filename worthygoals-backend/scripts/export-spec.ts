@@ -1,6 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { AppModule } from '../src/modules/app/app.module';
+// The compiled app, not src: the @nestjs/swagger CLI plugin (nest-cli.json)
+// documents DTOs, entities and response types at build time, and ts-node
+// compiles without it — which is why most responses had no schema.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { AppModule } = require('../dist/modules/app/app.module');
 import { writeFileSync } from 'fs';
 import { resolve } from 'path';
 
