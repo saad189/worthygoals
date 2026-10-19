@@ -1,0 +1,16 @@
+# Team lists the three mentors; the messages list opens from it and back.
+appId: com.saad189.worthygoalsfrontendapp
+name: Team → messages
+tags: [smoke]
+---
+- runFlow: subflows/launch.yaml
+- tapOn: "team, tab.*"
+# Each mentor row reads "<Name>. <role>. <blurb>" to VoiceOver.
+- assertVisible: "Marcus\\. the lieutenant.*"
+- assertVisible: "Lyra\\. the steady one.*"
+- assertVisible: "Goggs\\. the volume.*"
+- assertVisible: "Chat with Marcus"
+- tapOn: "Messages"
+- assertVisible: "YOUR CONVERSATIONS"
+- tapOn: "Go back"
+- assertVisible: "YOUR MENTORS"

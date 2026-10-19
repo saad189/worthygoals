@@ -1,0 +1,43 @@
+# Goals: drill into a goal, open a task's "Did you do it?" moment, take the
+# "Not today" path to the reason picker, then back out without answering —
+# so the flow is repeatable and writes nothing.
+appId: com.saad189.worthygoalsfrontendapp
+name: Goal → answer moment → reason picker
+tags: [smoke]
+---
+- runFlow: subflows/launch.yaml
+- tapOn: "goals, tab.*"
+- assertVisible: "\\+ New goal"
+- tapOn:
+    text: "Open goal .*"
+    index: 0
+- assertVisible: "your goal"
+- runFlow:
+    when:
+      visible: "Answer for .*"
+    commands:
+      - tapOn:
+          text: "Answer for .*"
+          index: 0
+      - assertVisible: "Did you do it\\?"
+      - tapOn: "Not today"
+      - assertVisible: "Which one is it\\?"
+      - assertVisible: "Couldn't"
+      - assertVisible: "Forgot"
+      - assertVisible: "Chose not to"
+      # Close the sheet without recording a reason.
+      - swipe:
+          direction: DOWN
+          from: "Which one is it\\?"
+# The first tap right after the sheet closes can be swallowed while its
+# gesture settles; tap again if we're still on the goal.
+- waitForAnimationToEnd
+- tapOn: "Back to goals"
+- runFlow:
+    when:
+      visible: "Back to goals"
+    commands:
+      - tapOn: "Back to goals"
+- extendedWaitUntil:
+    visible: "\\+ New goal"
+    timeout: 5000

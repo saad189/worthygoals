@@ -1,0 +1,16 @@
+# Today: the landing screen renders the mentor card, the plan and the week,
+# and every tab is reachable.
+appId: com.saad189.worthygoalsfrontendapp
+name: Today renders
+tags: [smoke]
+---
+- runFlow: subflows/launch.yaml
+- assertVisible: "UP NEXT"
+# The week strip sits below the task list; scroll it into view.
+- scrollUntilVisible:
+    element: "Open the weekly review"
+    direction: DOWN
+- assertVisible: "goals, tab.*"
+- assertVisible: "team, tab.*"
+- assertVisible: "feed, tab.*"
+- assertVisible: "me, tab.*"
