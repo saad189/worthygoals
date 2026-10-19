@@ -53,6 +53,8 @@ interface Props {
    *  regardless of which reason was picked (design: "3RD MISS THIS WEEK"). */
   missCountThisWeek?: number;
   onSubmit: (payload: ExplainTaskPayload) => void;
+  /** The seriousness check's two exits that change the goal itself. */
+  onGoalAction?: (action: 'pause' | 'let_go') => void;
   onClose: () => void;
 }
 
@@ -73,6 +75,7 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
       safetyFlag,
       missCountThisWeek = 0,
       onSubmit,
+      onGoalAction,
       onClose,
     },
     ref,
@@ -134,12 +137,14 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
 
     // The three real outs on the seriousness check. All record the reason the
     // user actually picked; "push harder" keeps the sheet for the mentor's
-    // reaction, the other two close out. (Pausing / archiving the goal itself
-    // is a backend lifecycle step that doesn't exist yet — see handoff.)
+    // reaction. Pause takes the goal off today until it's resumed; Let it go
+    // retires it (it stays in Goals, and can be brought back).
     const handleSeriousCommit = (action: 'push' | 'pause' | 'let_go') => {
       triggerPersonalityHaptic(personalityId);
       onSubmit({ reason: reason ?? 'chose_not_to', personalityId: personalityId ?? undefined });
-      if (action !== 'push') onClose();
+      if (action === 'push') return;
+      onGoalAction?.(action);
+      onClose();
     };
 
     const s = StyleSheet.create({

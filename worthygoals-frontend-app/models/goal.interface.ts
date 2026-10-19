@@ -25,6 +25,9 @@ export interface GoalItem {
 // The shape returned by GET /goals (the backend's ResponseGoalDto). That route
 // isn't described in openapi.json yet, so this is hand-written to match it —
 // keep in sync with src/modules/goals/dto/response-goal.dto.ts on the backend.
+/** `paused` is "Pause this goal"; `archived` is "Let it go". */
+export type GoalStatus = 'active' | 'paused' | 'completed' | 'archived';
+
 export interface ApiGoal {
     id: string;
     userId: number;
@@ -32,7 +35,7 @@ export interface ApiGoal {
     title: string;
     description?: string;
     category: string;
-    status: string;
+    status: GoalStatus;
     costText?: string;
     benefitText?: string;
     failureText?: string;

@@ -52,6 +52,7 @@ const mockTask = { id: 't1', title: '5k run', status: 'pending', updatedAt: new 
 
 jest.mock('@/hooks/useGoals', () => ({
   useGoals: () => ({ goals: [mockGoal], loading: false, error: null, refetch: jest.fn() }),
+  useSetGoalStatus: () => ({ setStatus: jest.fn(), updating: false }),
 }));
 jest.mock('@/hooks/useMentors', () => ({ useMentors: () => ({ mentors: [] }) }));
 jest.mock('@/hooks/useTasks', () => ({
