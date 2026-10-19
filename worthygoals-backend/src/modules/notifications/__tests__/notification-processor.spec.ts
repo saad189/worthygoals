@@ -61,6 +61,7 @@ describe('NotificationProcessor', () => {
   const notifService = {
     getTokens: jest.fn(),
     userTimezone: jest.fn().mockResolvedValue('UTC'),
+    todayWork: jest.fn(),
     checkPacingAllowed: jest.fn().mockResolvedValue(true),
     tokensSentToday: jest.fn().mockResolvedValue(new Set()),
     recordSent: jest.fn(),
@@ -74,6 +75,11 @@ describe('NotificationProcessor', () => {
     jest.clearAllMocks();
     notifService.checkPacingAllowed.mockResolvedValue(true);
     notifService.tokensSentToday.mockResolvedValue(new Set());
+    notifService.todayWork.mockResolvedValue({
+      activeGoals: 1,
+      total: 1,
+      pending: 1,
+    });
     mockSend.mockResolvedValue([{ status: 'ok', id: 'ticket-1' }]);
 
     const module: TestingModule = await Test.createTestingModule({
@@ -100,6 +106,61 @@ describe('NotificationProcessor', () => {
 
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0][0]).toContain(String(USER_ID));
+  });
+
+  // The push gap: task_due and weekly_review had copy but nothing sent them,
+  // and the daily pushes went out whether or not there was anything to do.
+  describe('which push a slot becomes', () => {
+    const sentKinds = () =>
+      notifService.recordSent.mock.calls.map((c) => c[1] as string);
+    const work = (activeGoals: number, total: number, pending: number) =>
+      notifService.todayWork.mockResolvedValue({ activeGoals, total, pending });
+
+    beforeEach(() => {
+      notifService.getTokens.mockResolvedValue([
+        { token: 'ExponentPushToken[xxx]' },
+      ]);
+      usersService.findOne.mockResolvedValue({ id: USER_ID });
+    });
+
+    it.each([
+      ['evening with open tasks', 'evening_check_in', [1, 2, 1], 'task_due'],
+      [
+        'evening with all answered',
+        'evening_check_in',
+        [1, 2, 0],
+        'evening_check_in',
+      ],
+      ['evening on an empty day', 'evening_check_in', [1, 0, 0], null],
+      ['morning with work due', 'morning_setup', [1, 1, 1], 'morning_setup'],
+      ['morning with nothing due', 'morning_setup', [1, 0, 0], null],
+      [
+        'weekly review with an active goal',
+        'weekly_review',
+        [1, 0, 0],
+        'weekly_review',
+      ],
+      // Everything paused or let go: the mentor really goes quiet.
+      ['weekly review, all goals paused', 'weekly_review', [0, 0, 0], null],
+      ['evening, all goals paused', 'evening_check_in', [0, 0, 0], null],
+    ] as const)('%s', async (_, kind, [goals, total, pending], expected) => {
+      work(goals, total, pending);
+      await processor.process(job({ kind }));
+      expect(sentKinds()).toEqual(expected ? [expected] : []);
+    });
+
+    it('never gates a lapse re-engagement', async () => {
+      work(0, 0, 0);
+      await processor.process(job({ kind: 're_engage' }));
+      expect(sentKinds()).toEqual(['re_engage']);
+      expect(notifService.todayWork).not.toHaveBeenCalled();
+    });
+
+    it('sends the resolved kind in the push data, which the app routes on', async () => {
+      work(1, 1, 1);
+      await processor.process(job({ kind: 'evening_check_in' }));
+      expect(mockSend.mock.calls[0][0][0].data.kind).toBe('task_due');
+    });
   });
 
   it('voices the copy from users.personalityId', async () => {
