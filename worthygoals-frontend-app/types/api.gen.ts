@@ -280,6 +280,22 @@ export interface paths {
         patch: operations["ConversationsController_update"];
         trace?: never;
     };
+    "/conversations/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ConversationsController_markRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/messages": {
         parameters: {
             query?: never;
@@ -554,6 +570,8 @@ export interface components {
             tone?: string | null;
             /** @description Onboarding-matched mentor (personality slug); null until chosen. */
             personalityId?: string | null;
+            /** @description IANA zone every "today" is computed in; the app re-sends it on change. */
+            timezone?: string;
         };
         UpdateUserDto: Record<string, never>;
         CreateUserDto: {
@@ -605,6 +623,11 @@ export interface components {
              * @enum {string}
              */
             personalityId?: "marcus" | "lyra" | "goggs";
+            /**
+             * @description The device's IANA timezone. The app re-sends it whenever it changes; every 'today' is computed in it.
+             * @example Asia/Karachi
+             */
+            timezone?: string;
         };
         LoginAuthDto: {
             /**
@@ -789,7 +812,9 @@ export interface components {
             userId: number;
             user: components["schemas"]["User"];
             rating: number;
-            tags: Record<string, never> | null;
+            tags: {
+                [key: string]: unknown;
+            } | null;
             comment: string | null;
             /** Format: date-time */
             createdAt: string;
@@ -813,12 +838,16 @@ export interface components {
             /** @enum {string} */
             contentType: "text" | "image" | "audio" | "file" | "mixed";
             text: string | null;
-            content: Record<string, never> | null;
+            content: {
+                [key: string]: unknown;
+            } | null;
             clientMessageId: string | null;
             replyToMessageId: string | null;
             tokensIn: number | null;
             tokensOut: number | null;
-            safetyFlags: Record<string, never> | null;
+            safetyFlags: {
+                [key: string]: unknown;
+            } | null;
             /** Format: date-time */
             archivedAt: string | null;
             /** Format: date-time */
@@ -853,6 +882,12 @@ export interface components {
              *     users fall back to the goal-derived mentor until they re-onboard.
              */
             personalityId: string;
+            /**
+             * @description The user's IANA zone, sent by the app whenever the device's zone changes.
+             *     Every "today" — the today screen, roll-forward, streaks, the week window,
+             *     push hours — is computed in it, never in the server's zone.
+             */
+            timezone: string;
             role: components["schemas"]["Role"];
             conversations: components["schemas"]["Conversation"][];
             messages: components["schemas"]["Message"][];
@@ -871,9 +906,15 @@ export interface components {
             fromMessageId: string;
             toMessageId: string;
             summaryText: string;
-            summaryEmotions: Record<string, never> | null;
-            summaryTopics: Record<string, never> | null;
-            keyFacts: Record<string, never> | null;
+            summaryEmotions: {
+                [key: string]: unknown;
+            } | null;
+            summaryTopics: {
+                [key: string]: unknown;
+            } | null;
+            keyFacts: {
+                [key: string]: unknown;
+            } | null;
             model: string | null;
             promptVersion: string | null;
             /** Format: date-time */
@@ -884,7 +925,9 @@ export interface components {
             conversationId: string;
             conversation: components["schemas"]["Conversation"];
             key: string;
-            value: Record<string, never>;
+            value: {
+                [key: string]: unknown;
+            };
             confidence: number | null;
             sourceMessageId: string | null;
             /** Format: date-time */
@@ -904,7 +947,15 @@ export interface components {
             /** Format: date-time */
             lastMessageAt: string | null;
             lastMessageId: string | null;
-            metadata: Record<string, never> | null;
+            /**
+             * Format: date-time
+             * @description When the user last had this thread open. A mentor message newer than this
+             *     is unread; the app's messages list shows the dot from it.
+             */
+            lastReadAt: string | null;
+            metadata: {
+                [key: string]: unknown;
+            } | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -916,7 +967,9 @@ export interface components {
         CreateConversationDto: {
             mentorId: number;
             title?: string;
-            metadata?: Record<string, never>;
+            metadata?: {
+                [key: string]: unknown;
+            };
         };
         UpdateConversationDto: {
             /** @enum {string} */
@@ -934,6 +987,7 @@ export interface components {
             mentorId: number | null;
         };
         SendTextMessageDto: {
+            /** Format: uuid */
             conversationId: string;
             text: string;
             clientMessageId?: string;
@@ -1014,7 +1068,9 @@ export interface components {
             failureText?: string;
             /** Format: date-time */
             deadline?: string;
-            repeatRule?: Record<string, never>;
+            repeatRule?: {
+                [key: string]: unknown;
+            };
             stakeAmount?: number;
             imageUri?: string;
             /** Format: date-time */
@@ -1069,7 +1125,10 @@ export interface components {
         CreateTaskDto: {
             /** @example Morning 5km run */
             title: string;
-            /** @example goal-uuid-here */
+            /**
+             * Format: uuid
+             * @example goal-uuid-here
+             */
             goalId: string;
             description?: string;
             /** @example 2026-06-01T07:00:00.000Z */
@@ -1112,6 +1171,13 @@ export interface components {
             status: "pending" | "completed" | "skipped";
             /** Format: date-time */
             dueDate?: string;
+            /**
+             * @description The user's calendar day this task belongs to ("YYYY-MM-DD"). "Today" is
+             *     `dueOn = localDay(user.timezone)`, so a timezone change can't push a task
+             *     onto a neighbouring day; `dueDate` stays as that day's local midnight for
+             *     display.
+             */
+            dueOn?: string;
             /** @enum {string} */
             repeatFrequency: "none" | "daily" | "weekly" | "monthly";
             /** @description Populated for recurring instances: which occurrence # is this */
@@ -1141,7 +1207,9 @@ export interface components {
             failureText?: string;
             /** Format: date-time */
             deadline?: string;
-            repeatRule?: Record<string, never>;
+            repeatRule?: {
+                [key: string]: unknown;
+            };
             stakeAmount?: number;
             imageUri?: string;
             tasks: components["schemas"]["Task"][];
@@ -1173,7 +1241,10 @@ export interface components {
              */
             moodScore: number;
             reflection?: string;
-            /** @description UUID of an uploaded media item (M06) */
+            /**
+             * Format: uuid
+             * @description UUID of an uploaded media item (M06)
+             */
             memoryPictureId?: string;
             /** @description Personality ID for mentor reaction generation */
             personalityId?: string;
@@ -1246,7 +1317,8 @@ export interface components {
             id: string;
             userId: number;
             token: string;
-            platform: Record<string, never>;
+            /** @enum {string} */
+            platform: "expo" | "fcm" | "apns";
             timezone: string;
             active: boolean;
             /** Format: date-time */
@@ -1301,7 +1373,10 @@ export interface components {
              * @example wrote 500 words today. skipped the run.
              */
             text: string;
-            /** @description Optional photo — media id from the presign upload path (screen 12's 📷 chip). */
+            /**
+             * Format: uuid
+             * @description Optional photo — media id from the presign upload path (screen 12's 📷 chip).
+             */
             mediaId?: string;
         };
         GoalWeekRowDto: {
@@ -1684,9 +1759,10 @@ export interface operations {
     };
     ConversationsController_findAll: {
         parameters: {
-            query: {
-                mentorId: string;
-                limit: string;
+            query?: {
+                mentorId?: string;
+                limit?: string;
+                include?: unknown;
             };
             header?: never;
             path?: never;
@@ -1729,7 +1805,9 @@ export interface operations {
     };
     ConversationsController_findOne: {
         parameters: {
-            query?: never;
+            query?: {
+                include?: unknown;
+            };
             header?: never;
             path: {
                 id: string;
@@ -1792,13 +1870,32 @@ export interface operations {
             };
         };
     };
+    ConversationsController_markRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     MessagesController_list: {
         parameters: {
             query: {
                 conversationId: string;
-                limit: string;
-                before: string;
-                beforeId: string;
+                limit?: string;
+                before?: string;
+                beforeId?: string;
             };
             header?: never;
             path?: never;
@@ -2289,14 +2386,6 @@ export interface operations {
             };
         };
         responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StatusPostDto"];
-                };
-            };
             201: {
                 headers: {
                     [name: string]: unknown;

@@ -508,7 +508,7 @@
         "parameters": [
           {
             "name": "mentorId",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
               "type": "string"
@@ -516,11 +516,17 @@
           },
           {
             "name": "limit",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "include",
+            "required": false,
+            "in": "query",
+            "schema": {}
           }
         ],
         "responses": {
@@ -593,6 +599,12 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "include",
+            "required": false,
+            "in": "query",
+            "schema": {}
           }
         ],
         "responses": {
@@ -728,7 +740,7 @@
           },
           {
             "name": "limit",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
               "type": "string"
@@ -736,7 +748,7 @@
           },
           {
             "name": "before",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
               "type": "string"
@@ -744,7 +756,7 @@
           },
           {
             "name": "beforeId",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
               "type": "string"
@@ -1535,16 +1547,6 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StatusPostDto"
-                }
-              }
-            }
-          },
           "201": {
             "description": "",
             "content": {
@@ -1645,6 +1647,10 @@
             "type": "string",
             "nullable": true,
             "description": "Onboarding-matched mentor (personality slug); null until chosen."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "IANA zone every \"today\" is computed in; the app re-sends it on change."
           }
         },
         "required": [
@@ -2238,6 +2244,7 @@
           },
           "tags": {
             "type": "object",
+            "additionalProperties": true,
             "nullable": true
           },
           "comment": {
@@ -2289,6 +2296,7 @@
           },
           "user": {
             "nullable": true,
+            "type": "object",
             "allOf": [
               {
                 "$ref": "#/components/schemas/User"
@@ -2301,6 +2309,7 @@
           },
           "mentor": {
             "nullable": true,
+            "type": "object",
             "allOf": [
               {
                 "$ref": "#/components/schemas/Mentor"
@@ -2323,6 +2332,7 @@
           },
           "content": {
             "type": "object",
+            "additionalProperties": true,
             "nullable": true
           },
           "clientMessageId": {
@@ -2343,6 +2353,7 @@
           },
           "safetyFlags": {
             "type": "object",
+            "additionalProperties": true,
             "nullable": true
           },
           "archivedAt": {
@@ -2437,6 +2448,10 @@
             "type": "string",
             "description": "Onboarding-matched mentor (personality slug: marcus | lyra | goggs),\npersisted so \"your mentor\" survives a reinstall and is known before the\nfirst goal exists — decoupled from goal.mentorId (F2). Nullable: existing\nusers fall back to the goal-derived mentor until they re-onboard."
           },
+          "timezone": {
+            "type": "string",
+            "description": "The user's IANA zone, sent by the app whenever the device's zone changes.\nEvery \"today\" — the today screen, roll-forward, streaks, the week window,\npush hours — is computed in it, never in the server's zone."
+          },
           "role": {
             "$ref": "#/components/schemas/Role"
           },
@@ -2481,6 +2496,7 @@
           "tier",
           "tone",
           "personalityId",
+          "timezone",
           "role",
           "conversations",
           "messages",
@@ -2520,14 +2536,17 @@
           },
           "summaryEmotions": {
             "type": "object",
+            "additionalProperties": true,
             "nullable": true
           },
           "summaryTopics": {
             "type": "object",
+            "additionalProperties": true,
             "nullable": true
           },
           "keyFacts": {
             "type": "object",
+            "additionalProperties": true,
             "nullable": true
           },
           "model": {
@@ -2575,7 +2594,8 @@
             "type": "string"
           },
           "value": {
-            "type": "object"
+            "type": "object",
+            "additionalProperties": true
           },
           "confidence": {
             "type": "number",
@@ -2645,8 +2665,15 @@
             "type": "string",
             "nullable": true
           },
+          "lastReadAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When the user last had this thread open. A mentor message newer than this\nis unread; the app's messages list shows the dot from it."
+          },
           "metadata": {
             "type": "object",
+            "additionalProperties": true,
             "nullable": true
           },
           "createdAt": {
@@ -2686,6 +2713,7 @@
           "title",
           "lastMessageAt",
           "lastMessageId",
+          "lastReadAt",
           "metadata",
           "createdAt",
           "updatedAt",
@@ -2705,7 +2733,8 @@
             "maxLength": 180
           },
           "metadata": {
-            "type": "object"
+            "type": "object",
+            "additionalProperties": true
           }
         },
         "required": [
@@ -2776,7 +2805,8 @@
         "type": "object",
         "properties": {
           "conversationId": {
-            "type": "string"
+            "type": "string",
+            "format": "uuid"
           },
           "text": {
             "type": "string",
@@ -2968,7 +2998,8 @@
             "type": "string"
           },
           "repeatRule": {
-            "type": "object"
+            "type": "object",
+            "additionalProperties": true
           },
           "stakeAmount": {
             "type": "number"
@@ -3071,7 +3102,7 @@
           },
           "contentType": {
             "type": "string",
-            "pattern": "/^image\\/(jpeg|png|webp|gif|heic|heif)$/"
+            "pattern": "^image\\/(jpeg|png|webp|gif|heic|heif)$"
           },
           "byteSize": {
             "type": "number",
@@ -3126,6 +3157,7 @@
           },
           "goalId": {
             "type": "string",
+            "format": "uuid",
             "example": "goal-uuid-here"
           },
           "description": {
@@ -3254,6 +3286,10 @@
             "format": "date-time",
             "type": "string"
           },
+          "dueOn": {
+            "type": "string",
+            "description": "The user's calendar day this task belongs to (\"YYYY-MM-DD\"). \"Today\" is\n`dueOn = localDay(user.timezone)`, so a timezone change can't push a task\nonto a neighbouring day; `dueDate` stays as that day's local midnight for\ndisplay."
+          },
           "repeatFrequency": {
             "enum": [
               "none",
@@ -3358,7 +3394,8 @@
             "type": "string"
           },
           "repeatRule": {
-            "type": "object"
+            "type": "object",
+            "additionalProperties": true
           },
           "stakeAmount": {
             "type": "number"
@@ -3451,6 +3488,7 @@
           },
           "memoryPictureId": {
             "type": "string",
+            "format": "uuid",
             "description": "UUID of an uploaded media item (M06)"
           },
           "personalityId": {
@@ -3645,12 +3683,12 @@
             "example": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
           },
           "platform": {
-            "type": "string",
             "enum": [
               "expo",
               "fcm",
               "apns"
             ],
+            "type": "string",
             "default": "expo"
           },
           "timezone": {
@@ -3689,7 +3727,12 @@
             "type": "string"
           },
           "platform": {
-            "type": "object"
+            "type": "string",
+            "enum": [
+              "expo",
+              "fcm",
+              "apns"
+            ]
           },
           "timezone": {
             "type": "string"
@@ -3727,11 +3770,11 @@
             "type": "string"
           },
           "type": {
-            "type": "string",
             "enum": [
               "win",
               "milestone"
-            ]
+            ],
+            "type": "string"
           },
           "taskTitle": {
             "type": "string"
@@ -3757,12 +3800,12 @@
             "description": "Pre-signed GET URL for the memory photo (1-hour TTL)"
           },
           "milestoneKind": {
-            "type": "string",
             "enum": [
               "streak_7",
               "streak_30",
               "goal_completed"
-            ]
+            ],
+            "type": "string"
           },
           "streakDays": {
             "type": "number"
@@ -3851,6 +3894,7 @@
           },
           "mediaId": {
             "type": "string",
+            "format": "uuid",
             "description": "Optional photo — media id from the presign upload path (screen 12's 📷 chip)."
           }
         },
@@ -3887,12 +3931,12 @@
             "description": "thisWeekCount − lastWeekCount."
           },
           "trend": {
-            "type": "string",
             "enum": [
               "up",
               "flat",
               "down"
-            ]
+            ],
+            "type": "string"
           },
           "danger": {
             "type": "boolean",

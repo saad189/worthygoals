@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiCreatedResponse,
   ApiOkResponse,
   ApiQuery,
   ApiTags,
@@ -51,7 +52,7 @@ export class StatusController {
   }
 
   @Post()
-  @ApiOkResponse({ type: StatusPostDto })
+  @ApiCreatedResponse({ type: StatusPostDto })
   create(
     @Request() req: AuthenticatedRequest,
     @Body() dto: CreateStatusDto,
