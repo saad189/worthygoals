@@ -554,6 +554,34 @@
         ]
       }
     },
+    "/conversations/{id}/read": {
+      "post": {
+        "operationId": "ConversationsController_markRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Conversations"
+        ]
+      }
+    },
     "/messages": {
       "get": {
         "operationId": "MessagesController_list",

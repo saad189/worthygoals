@@ -18,6 +18,7 @@ import { useNavigation } from "expo-router";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { ParamListBase, useRoute } from "@react-navigation/native";
 import { useMessages } from "@/hooks/useMessages";
+import conversationsService from "@/services/conversations.service";
 import { StatusBar } from "expo-status-bar";
 import { mapTime } from "@/helpers/TimeMapper";
 import { ROUTE_NAMES } from "@/constants";
@@ -80,6 +81,11 @@ export default function ChatViewScreen() {
   useEffect(() => {
     if (lastMessageId) shouldScrollToBottomRef.current = true;
   }, [lastMessageId]);
+  // On screen = read, including a reply that lands while it's open. Best
+  // effort: a failure only leaves the dot until the next visit.
+  useEffect(() => {
+    if (chatDetail?.id) conversationsService.markRead(chatDetail.id).catch(() => {});
+  }, [chatDetail?.id, lastMessageId]);
   useEffect(() => {
     if (isMentorTyping) shouldScrollToBottomRef.current = true;
   }, [isMentorTyping]);

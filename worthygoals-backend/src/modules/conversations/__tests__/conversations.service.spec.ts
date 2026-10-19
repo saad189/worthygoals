@@ -35,3 +35,28 @@ describe('ConversationsService.create', () => {
     ).resolves.toMatchObject({ userId: 7, mentorId: 1 });
   });
 });
+
+// QA-40: the messages list's unread dot was hard-coded to "read".
+describe('ConversationsService.markRead', () => {
+  const conversationRepo = { update: jest.fn() };
+  const service = new ConversationsService(
+    conversationRepo as any,
+    {} as any,
+    { findByAccountSub: jest.fn().mockResolvedValue({ id: 7 }) } as any,
+  );
+
+  it("stamps the thread read, scoped to the caller's own conversations", async () => {
+    conversationRepo.update.mockResolvedValue({ affected: 1 });
+    await service.markRead({ id: 'c1', sub: 's' });
+    const [where, set] = conversationRepo.update.mock.calls[0];
+    expect(where).toEqual({ id: 'c1', userId: 7 });
+    expect(set.lastReadAt).toBeInstanceOf(Date);
+  });
+
+  it("404s on a conversation that isn't the caller's", async () => {
+    conversationRepo.update.mockResolvedValue({ affected: 0 });
+    await expect(
+      service.markRead({ id: 'someone-elses', sub: 's' }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+});

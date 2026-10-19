@@ -13,6 +13,8 @@ type ApiConversation = {
   mentorId: number;
   createdAt: string;
   lastMessageAt: string | null;
+  /** When the user last had the thread open (null: never). */
+  lastReadAt?: string | null;
   messages?: ApiConversationMessage[];
   mentor?: {
     id: number;
@@ -25,6 +27,7 @@ type ApiConversation = {
 type ApiConversationMessage = {
   id: string;
   text?: string | null;
+  role?: string;
   createdAt: string;
   contentType?: string | null;
 };
@@ -56,6 +59,19 @@ function extractConversationId(conversation: any): string {
     );
   }
   return String(id);
+}
+
+/**
+ * A thread is unread when its newest message is the mentor's and arrived after
+ * the user last had it open. The user's own last word never counts.
+ */
+export function isThreadRead(
+  latest: { role?: string; createdAt?: string } | null | undefined,
+  lastReadAt: string | null | undefined,
+): boolean {
+  if (!latest?.createdAt || latest.role === "user") return true;
+  if (!lastReadAt) return false;
+  return new Date(latest.createdAt).getTime() <= new Date(lastReadAt).getTime();
 }
 
 type ApiMessage = {
@@ -120,7 +136,7 @@ export class ConversationsService {
           avatar,
           lastMessage,
           time,
-          isRead: true,
+          isRead: isThreadRead(latestMessage, c.lastReadAt),
         };
       });
     } catch (error: any) {
@@ -278,6 +294,12 @@ export class ConversationsService {
     } catch (error: any) {
       throw new Error(formatErrorMessage(error));
     }
+  }
+
+  /** The thread is on screen: clears its unread dot in the messages list. */
+  async markRead(conversationId: string): Promise<void> {
+    this.assertApiConfigured();
+    await this.api.post(`/${this.endpoint}/${conversationId}/read`);
   }
 }
 
