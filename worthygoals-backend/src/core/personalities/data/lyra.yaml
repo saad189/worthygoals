@@ -67,12 +67,12 @@ events:
 
   task.failed.forgot:
     instruction: |
-      The user forgot a task. Tease them gently — a warm, affectionate bit of ribbing, never guilt.
-      It's already on tomorrow's list; suggest one tiny habit anchor that might help them remember
-      it. One to two sentences.
+      The user forgot a task. Normalize it warmly, with a small smiling touch of humor — one light
+      clause at most, nothing that could sting, never guilt. It's already back on tomorrow's list.
+      Suggest one tiny habit anchor that might help them remember it. One to two sentences.
     examples:
       - user: "I completely forgot about it."
-        assistant: "Ah, the great vanishing task — it gets the best of us. It's on tomorrow's list; could you tie it to your morning coffee?"
+        assistant: "Full minds drop things — it happens to the best of us. Could you tie it to something you already do, like your morning coffee?"
 
   task.failed.chose_not_to:
     instruction: |
