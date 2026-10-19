@@ -59,7 +59,7 @@ export interface CompletionSheetHandle {
 
 const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
   ({ taskTitle, personalityId, submitting, mentorReaction, safetyFlag, onSubmit, onClose }, ref) => {
-    const { colors, space, radius } = useAppTheme();
+    const { colors, space, radius, voice } = useAppTheme(personalityId ?? undefined);
     const sheetRef = useRef<BottomSheet>(null);
     const [mood, setMood] = useState<1 | 2 | 3 | 4 | null>(null);
     const [reflection, setReflection] = useState('');
@@ -215,11 +215,9 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
         backgroundColor: colors.canvas,
       },
       mentorRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: space['3'] },
-      // The mentor reaction is a paragraph, not a headline: override the
-      // display variant's 3xl size down to a readable serif-italic body so the
-      // lines don't overlap.
+      // The mentor reaction is a paragraph in the mentor's own type (`voice`):
+      // sans for Marcus, serif italic for Lyra, mono caps for Goggs.
       reactionText: {
-        fontStyle: 'italic',
         fontSize: 18,
         lineHeight: 27,
         marginBottom: space['4'],
@@ -238,7 +236,7 @@ const CompletionSheet = forwardRef<CompletionSheetHandle, Props>(
           <MentorAvatar mentor={personalityId ?? 'marcus'} size={32} />
           <Text variant="eyebrow">{showingCrisis ? 'Resources' : mentorName}</Text>
         </View>
-        <Text variant={showingCrisis ? 'body' : 'display'} style={showingCrisis ? s.crisisText : s.reactionText}>
+        <Text variant="body" style={showingCrisis ? s.crisisText : [voice, s.reactionText]}>
           {showingCrisis ? CRISIS_RESOURCES : mentorReaction}
         </Text>
         <Button label="Close" onPress={onClose} />

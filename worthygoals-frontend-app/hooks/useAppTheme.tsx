@@ -34,6 +34,7 @@ import {
   Shadow,
   Duration,
 } from '@/constants/tokens';
+import type { TextStyle } from 'react-native';
 import { theme as lightPaperTheme, darkTheme as darkPaperTheme } from '@/core/theme';
 
 export type AppTheme = {
@@ -46,6 +47,12 @@ export type AppTheme = {
    */
   accent:     string;
   bubbleRadius: number;
+  /**
+   * The mentor's reading type for in-voice copy (reactions, nudges): Marcus
+   * sans, Lyra serif italic, Goggs mono UPPERCASE. Font only — callers pick
+   * the colour, since Goggs sits on a rust fill in some places and not others.
+   */
+  voice:      TextStyle;
   scheme:     'light' | 'dark';
   isDark:     boolean;
   paperTheme: typeof lightPaperTheme | typeof darkPaperTheme;
@@ -75,6 +82,18 @@ function mentorAccent(
   }
 }
 
+/** Per-mentor reading type — the polyphonic feed's "each mentor in their own type". */
+function mentorVoice(mentorId: string | undefined): TextStyle {
+  switch (mentorId) {
+    case 'lyra':
+      return { fontFamily: FontFamily.serifItalic, fontStyle: 'italic' };
+    case 'goggs':
+      return { fontFamily: FontFamily.mono, letterSpacing: 0.3, textTransform: 'uppercase' };
+    default:
+      return { fontFamily: FontFamily.sans };
+  }
+}
+
 /**
  * @param mentorId optional personality slug — tints `accent` (and `bubbleRadius`)
  *                 to that mentor. Omit for the neutral brand theme.
@@ -89,6 +108,7 @@ export function useAppTheme(mentorId?: string): AppTheme {
     colors,
     accent,
     bubbleRadius,
+    voice:       mentorVoice(mentorId),
     scheme,
     isDark,
     paperTheme:  isDark ? darkPaperTheme : lightPaperTheme,

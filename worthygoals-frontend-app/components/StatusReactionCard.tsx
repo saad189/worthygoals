@@ -21,7 +21,7 @@ type Props = {
 
 export default function StatusReactionCard({ reaction, onPress }: Props) {
   const slug = reaction.personalityId;
-  const { colors, accent, bubbleRadius, fonts, space, radius } =
+  const { colors, accent, bubbleRadius, voice, space, radius } =
     useAppTheme(slug);
 
   const isGoggs = slug === 'goggs';
@@ -37,11 +37,7 @@ export default function StatusReactionCard({ reaction, onPress }: Props) {
         borderLeftColor: accent,
       };
 
-  const bodyStyle = isGoggs
-    ? { color: colors.white, fontFamily: fonts.mono, letterSpacing: 0.3 }
-    : isLyra
-      ? { color: accent, fontFamily: fonts.serifItalic, fontStyle: 'italic' as const }
-      : { color: colors.text };
+  const bodyColor = isGoggs ? colors.white : isLyra ? accent : colors.text;
 
   return (
     <Pressable
@@ -69,7 +65,7 @@ export default function StatusReactionCard({ reaction, onPress }: Props) {
         >
           {reaction.mentorName}
         </Text>
-        <Text variant={isGoggs ? 'mono' : 'body'} style={[{ marginTop: space['2'] }, bodyStyle]}>
+        <Text variant={isGoggs ? 'mono' : 'body'} style={[{ marginTop: space['2'], color: bodyColor }, voice]}>
           {reaction.text}
         </Text>
       </View>
