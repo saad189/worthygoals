@@ -42,6 +42,8 @@ jest.mock('@/components/DidYouDoIt', () => ({
   },
 }));
 jest.mock('expo-router', () => ({
+  router: { setParams: jest.fn() },
+  useLocalSearchParams: () => ({}),
   useNavigation: () => ({ navigate: jest.fn(), goBack: jest.fn(), setOptions: jest.fn() }),
 }));
 

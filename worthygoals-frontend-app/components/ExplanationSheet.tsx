@@ -77,7 +77,7 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
     },
     ref,
   ) => {
-    const { colors, space, radius } = useAppTheme();
+    const { colors, space, radius, voice } = useAppTheme(personalityId ?? undefined);
     const sheetRef = useRef<BottomSheet>(null);
     const [reason, setReason] = useState<ExplanationReason | null>(null);
     const [phase, setPhase] = useState<Phase>('pick');
@@ -163,8 +163,8 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
         backgroundColor: colors.canvas,
       },
       mentorRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: space['3'] },
-      // Paragraph, not a headline — shrink the display variant so lines don't overlap.
-      reactionText: { fontStyle: 'italic', fontSize: 18, lineHeight: 27, marginBottom: space['4'] },
+      // Paragraph in the mentor's own type (`voice`), not the serif display headline.
+      reactionText: { fontSize: 18, lineHeight: 27, marginBottom: space['4'] },
       crisisText: { lineHeight: 22, marginBottom: space['4'] },
       seriousQ: { marginBottom: space['3'] },
       outStack: { gap: space['2'], marginTop: space['1'] },
@@ -181,7 +181,7 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
           <MentorAvatar mentor={personalityId ?? 'marcus'} size={32} />
           <Text variant="eyebrow">{showingCrisis ? 'Resources' : mentorName}</Text>
         </View>
-        <Text variant={showingCrisis ? 'body' : 'display'} style={showingCrisis ? s.crisisText : s.reactionText}>
+        <Text variant="body" style={showingCrisis ? s.crisisText : [voice, s.reactionText]}>
           {showingCrisis
             ? "Your wellbeing matters far more than any goal.\n\nIf you're in crisis:\n• Call or text 988\n• Text HOME to 741741\n• findahelpline.com"
             : mentorReaction}
@@ -212,7 +212,7 @@ const ExplanationSheet = forwardRef<ExplanationSheetHandle, Props>(
           <MentorAvatar mentor={personalityId ?? 'marcus'} size={32} />
           <Text variant="eyebrow">{mentorName}</Text>
         </View>
-        <Text variant="body" style={s.reactionText}>
+        <Text variant="body" style={[voice, s.reactionText]}>
           {seriousLine}
         </Text>
         <View style={s.outStack}>

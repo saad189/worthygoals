@@ -17,6 +17,7 @@ import {
   Goal,
 } from 'src/database/models';
 import {
+  ExplanationReason,
   GoalStatus,
   TaskRepeatFrequency,
   TaskStatus,
@@ -40,6 +41,13 @@ export interface TaskReactionResult<T> {
 const UNIQUE_VIOLATION = '23505';
 
 const RECURRING_PAGE_SIZE = 500;
+
+/** What the user said, when they only tapped a reason ("Not today" sheet). */
+const MISS_LINE: Record<ExplanationReason, (title: string) => string> = {
+  [ExplanationReason.COULDNT]: (t) => `I couldn't do "${t}" today.`,
+  [ExplanationReason.FORGOT]: (t) => `I forgot to do "${t}".`,
+  [ExplanationReason.CHOSE_NOT_TO]: (t) => `I chose not to do "${t}" today.`,
+};
 
 @Injectable()
 export class TasksService {
@@ -267,9 +275,14 @@ export class TasksService {
     await this.attachReaction(result, user.id, dto.personalityId, {
       safetyText: dto.freeText ?? '',
       event: `task.failed.${dto.reason}`,
-      context: { reason: dto.reason, freeText: dto.freeText ?? '' },
-      userMessage:
-        dto.freeText || `I ${dto.reason.replace('_', ' ')} complete the task.`,
+      context: {
+        goalName: goal.title,
+        reason: dto.reason,
+        freeText: dto.freeText ?? '',
+      },
+      // With no free text the reason is all the model has to answer, and it
+      // used to read "I forgot complete the task." (QA-28).
+      userMessage: dto.freeText || MISS_LINE[dto.reason](task.title),
     });
 
     if (dto.freeText) {

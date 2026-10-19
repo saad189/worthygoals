@@ -315,6 +315,21 @@ describe('TasksService', () => {
       );
     });
 
+    // QA-28: with no free text the model got "I forgot complete the task."
+    it.each([
+      [ExplanationReason.COULDNT, `I couldn't do "Run" today.`],
+      [ExplanationReason.FORGOT, `I forgot to do "Run".`],
+      [ExplanationReason.CHOSE_NOT_TO, `I chose not to do "Run" today.`],
+    ])(
+      'tells the mentor the %s reason in plain words',
+      async (reason, line) => {
+        await service.explain(SUB, TASK_ID, { reason, personalityId: 'lyra' });
+        expect(aiGateway.chat.mock.calls[0][0].messages).toEqual([
+          { role: 'user', content: line },
+        ]);
+      },
+    );
+
     it('returns safety response when crisis signal detected in freeText', async () => {
       safetyService.isCrisisSignal.mockReturnValue(true);
       const result = await service.explain(SUB, TASK_ID, {

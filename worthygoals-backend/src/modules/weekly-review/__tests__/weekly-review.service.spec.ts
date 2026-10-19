@@ -147,4 +147,34 @@ describe('WeeklyReviewService', () => {
     expect(review.goals[0].commentary.length).toBeGreaterThan(0);
     expect(review.goals[0].commentary).not.toContain('commentary from');
   });
+
+  // QA-34: 0 done + 2 skips is trend `flat` (0 vs 0), and Lyra said
+  // "A steady week. That counts too."
+  describe('a week with nothing done', () => {
+    const skippedTwice = () =>
+      ({
+        id: 'g6',
+        title: 'journal',
+        mentor: { personalityId: 'lyra', name: 'Lyra' },
+        tasks: [
+          { completions: [], explanations: [completionAt(0), completionAt(0)] },
+        ],
+      }) as any;
+
+    it('tells the model about the skips', async () => {
+      goalRepo.find.mockResolvedValue([skippedTwice()]);
+      await service.getReview(USER_SUB);
+      expect(gateway.chat.mock.calls[0][0].messages[0].content).toContain(
+        'This week: 0 completion(s), 2 skip(s); last week: 0. Trend: flat.',
+      );
+    });
+
+    it('does not fall back to "steady" copy', async () => {
+      gateway.chat.mockRejectedValue(new Error('model down'));
+      goalRepo.find.mockResolvedValue([skippedTwice()]);
+      const [row] = (await service.getReview(USER_SUB)).goals;
+      expect(row.trend).toBe('flat');
+      expect(row.commentary).not.toMatch(/steady/i);
+    });
+  });
 });

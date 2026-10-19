@@ -101,7 +101,14 @@ const DashboardScreen = () => {
       <Card
         key={task.id}
         style={styles.taskCard}
-        onPress={() => router.navigate(`/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.TODO_LIST_SCREEN}` as never)}
+        // Opens this task's "Did you do it?" moment, not just the goals tab.
+        onPress={() =>
+          router.navigate({
+            pathname: `/${ROUTE_NAMES.TABS.self}/${ROUTE_NAMES.TABS.TODO_LIST_SCREEN}`,
+            params: { goalId: task.goalId, taskId: task.id },
+          } as never)
+        }
+        accessibilityLabel={`Answer for ${task.title}`}
       >
         <View style={styles.taskRow}>
           <View style={[styles.taskTick, { borderColor: colors.border }]} />
